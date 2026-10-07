@@ -692,7 +692,7 @@ body: JSON.stringify({
     paymentReference,
 
   callback_url:
-    "http://localhost:5173/event-payment/callback"
+    "https://eventbookingsystem-gkh7.vercel.app/event-payment/callback"
 })
         }
       );

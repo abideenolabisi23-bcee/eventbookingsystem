@@ -757,7 +757,7 @@ const initializeFoodPayment = async (
   reference,
 
   callback_url:
-    "http://localhost:5173/food-payment/callback",
+    "https://eventbookingsystem-gkh7.vercel.app/food-payment/callback",
 
   metadata: {
     type: "food",

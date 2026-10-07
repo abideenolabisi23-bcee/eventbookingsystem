@@ -324,7 +324,7 @@ const initializeApartmentPayment = async (
               paymentReference,
 
             callback_url:
-              "http://localhost:5173/apartment-payment/callback"
+              "https://eventbookingsystem-gkh7.vercel.app/apartment-payment/callback"
           })
         }
       );

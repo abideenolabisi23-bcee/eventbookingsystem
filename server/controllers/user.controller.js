@@ -836,7 +836,7 @@ const forgotPassword = async (req, res) => {
     }
 
     const resetLink =
-      `http://localhost:5173${resetPath}/${resetToken}`;
+      `https://eventbookingsystem-gkh7.vercel.app${resetPath}/${resetToken}`;
 
     const mailOptions = {
       from: process.env.APP_EMAIL,
