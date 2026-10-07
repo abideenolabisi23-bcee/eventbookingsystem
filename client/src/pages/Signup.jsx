@@ -123,7 +123,7 @@ const Signup = () => {
 
         const response =
           await axios.post(
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/register",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/register",
             payload
           );
 

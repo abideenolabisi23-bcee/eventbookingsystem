@@ -20,7 +20,7 @@ const OrganizerProtectedRoute = () => {
 
       try {
         const response = await axios.get(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

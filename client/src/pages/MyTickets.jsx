@@ -148,7 +148,7 @@ const MyTickets = () => {
 
           axios.get(
 
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/my",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/my",
 
             {
 
@@ -162,7 +162,7 @@ const MyTickets = () => {
 
           axios.get(
 
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-tickets/my",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-tickets/my",
 
             {
 
@@ -173,7 +173,7 @@ const MyTickets = () => {
           ),
 
           axios.get(
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/my",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/my",
             {
               headers,
             }

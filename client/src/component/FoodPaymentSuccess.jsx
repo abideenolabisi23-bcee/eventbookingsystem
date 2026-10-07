@@ -43,7 +43,7 @@ const FoodPaymentSuccess = () => {
 
   const fetchOrder = async (orderId, token) => {
     const response = await axios.get(
-      `http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/${orderId}`,
+      `https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/${orderId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -75,7 +75,7 @@ const FoodPaymentSuccess = () => {
       setError("");
 
       const response = await axios.get(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/verify/${reference}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/verify/${reference}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

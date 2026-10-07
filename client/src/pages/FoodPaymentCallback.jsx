@@ -51,7 +51,7 @@ const FoodPaymentCallback = () => {
 
       try {
         const response = await axios.get(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/verify/${reference}`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/verify/${reference}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

@@ -17,7 +17,7 @@ const Events = () => {
     const fetchEvents = async () => {
       try {
         const response = await fetch(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/events"
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/events"
         );
 
         const result = await response.json();

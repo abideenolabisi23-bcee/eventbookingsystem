@@ -32,7 +32,7 @@ const AdminForgotPassword = () => {
             setLoading(true);
 
             const response = await axios.post(
-                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/forgot-password",
+                "https://eventbookingsystem-sooty.vercel.app/api/v1/forgot-password",
                 {
                     email: email
                         .trim()

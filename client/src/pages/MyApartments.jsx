@@ -32,7 +32,7 @@ const MyApartments = () => {
       setLoading(true);
 
       const response = await fetch(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments",
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments",
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -87,7 +87,7 @@ const MyApartments = () => {
 
     try {
       const response = await fetch(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments/${apartmentId}/availability`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/apartments/${apartmentId}/availability`,
         {
           method: "PATCH",
           headers: {

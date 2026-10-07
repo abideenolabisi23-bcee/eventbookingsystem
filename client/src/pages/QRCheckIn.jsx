@@ -76,7 +76,7 @@ const QRCheckIn = () => {
 
     try {
       const response = await axios.get(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/check-ins`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/check-ins`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`
@@ -156,7 +156,7 @@ const QRCheckIn = () => {
         : { ticketCode: cleanCode };
 
       const response = await axios.post(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/validate",
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/validate",
         payload,
         {
           headers: {
@@ -288,7 +288,7 @@ const QRCheckIn = () => {
       setSuccessMessage("");
 
       const response = await axios.post(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/check-in",
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/check-in",
         {
           ticketCode: code
         },

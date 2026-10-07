@@ -36,7 +36,7 @@ function ApartmentBookingDetails() {
         setError("");
 
         const response = await axios.get(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-bookings/${id}`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-bookings/${id}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

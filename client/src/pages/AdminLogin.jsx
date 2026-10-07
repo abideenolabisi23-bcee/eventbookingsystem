@@ -70,7 +70,7 @@ const AdminLogin = () => {
             setLoading(true);
 
             const response = await axios.post(
-                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/login",
+                "https://eventbookingsystem-sooty.vercel.app/api/v1/login",
                 {
                     email: formData.email
                         .trim()

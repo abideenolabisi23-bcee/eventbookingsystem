@@ -22,7 +22,7 @@ const OrganizerDashboard = () => {
 
       try {
         const response = await fetch(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/dashboard",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/dashboard",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`

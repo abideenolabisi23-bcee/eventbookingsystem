@@ -66,13 +66,13 @@ const AdminFood = () => {
             const [foodsResponse, ordersResponse] =
                 await Promise.all([
                     axios.get(
-                        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods",
+                        "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods",
                         {
                             headers: getHeaders(),
                         }
                     ),
                     axios.get(
-                        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
+                        "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
                         {
                             headers: getHeaders(),
                         }
@@ -232,7 +232,7 @@ const AdminFood = () => {
             setDetailsLoading(true);
 
             const response = await axios.get(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods/${foodId}`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods/${foodId}`,
                 {
                     headers: getHeaders(),
                 }
@@ -284,7 +284,7 @@ const AdminFood = () => {
             setActionLoading(food._id);
 
             const response = await axios.patch(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods/${food._id}/${action}`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods/${food._id}/${action}`,
                 {},
                 {
                     headers: getHeaders(),

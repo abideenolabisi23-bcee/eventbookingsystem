@@ -36,7 +36,7 @@ const MyFoodOrders = () => {
         setError("");
 
         const response = await axios.get(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/my",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/my",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

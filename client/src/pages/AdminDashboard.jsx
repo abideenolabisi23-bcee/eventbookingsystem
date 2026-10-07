@@ -42,11 +42,11 @@ const AdminDashboard = () => {
         const [dashboardResponse, providersResponse] =
           await Promise.all([
             axios.get(
-              "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/dashboard",
+              "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/dashboard",
               config
             ),
             axios.get(
-              "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/pending",
+              "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/pending",
               config
             ),
           ]);

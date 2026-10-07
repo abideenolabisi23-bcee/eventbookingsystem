@@ -54,12 +54,12 @@ const Profile = () => {
           ticketsResponse,
         ] = await Promise.all([
           axios.get(
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
             config
           ),
 
           axios.get(
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/my",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/my",
             config
           ),
         ]);
@@ -251,7 +251,7 @@ const Profile = () => {
 
       const response =
         await axios.patch(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
           formData,
           {
             headers: {

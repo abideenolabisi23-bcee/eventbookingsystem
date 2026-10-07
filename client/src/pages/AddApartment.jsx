@@ -226,7 +226,7 @@ const AddApartment = () => {
       });
 
       const response = await fetch(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments",
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/apartments",
         {
           method: "POST",
           headers: {

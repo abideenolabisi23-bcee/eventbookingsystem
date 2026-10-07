@@ -28,7 +28,7 @@ const EventStaff = () => {
   const fetchEvent = async () => {
     try {
       const response = await axios.get(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`
@@ -73,7 +73,7 @@ const EventStaff = () => {
       setMessage("");
 
       const response = await axios.post(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/staff`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/staff`,
         {
           email: email.trim()
         },
@@ -111,7 +111,7 @@ const EventStaff = () => {
 
     try {
       const response = await axios.delete(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/staff/${staffId}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/staff/${staffId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`

@@ -69,7 +69,7 @@ const OrganizerApartmentBookings = () => {
 
         try {
             const response = await axios.get(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments/${id}/bookings`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments/${id}/bookings`,
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`
@@ -108,7 +108,7 @@ const OrganizerApartmentBookings = () => {
 
         try {
             const response = await axios.get(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments/${id}/booking-stats`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments/${id}/booking-stats`,
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`
@@ -272,7 +272,7 @@ const OrganizerApartmentBookings = () => {
             setActionLoading(booking._id);
 
             const response = await axios.patch(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartment-bookings/${booking._id}/check-in`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartment-bookings/${booking._id}/check-in`,
                 {},
                 {
                     headers: {
@@ -325,7 +325,7 @@ const OrganizerApartmentBookings = () => {
             setActionLoading(booking._id);
 
             const response = await axios.patch(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartment-bookings/${booking._id}/check-out`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartment-bookings/${booking._id}/check-out`,
                 {},
                 {
                     headers: {

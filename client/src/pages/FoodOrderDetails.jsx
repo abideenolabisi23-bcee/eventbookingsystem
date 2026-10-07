@@ -27,7 +27,7 @@ function FoodOrderDetails() {
 
       try {
         const response = await axios.get(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/${id}`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/${id}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

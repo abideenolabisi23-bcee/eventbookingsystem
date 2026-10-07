@@ -77,19 +77,19 @@ const AdminBookings = () => {
                 foodResponse,
             ] = await Promise.all([
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-bookings",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-bookings",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-bookings",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-bookings",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
                     {
                         headers: getHeaders(),
                     }

@@ -38,7 +38,7 @@ const FoodDetails = () => {
         setError("");
 
         const response = await axios.get(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/foods/${id}`
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/foods/${id}`
         );
 
         setFood(response.data.data);
@@ -112,7 +112,7 @@ const FoodDetails = () => {
 
       const orderResponse =
         await axios.post(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders",
           {
             foodId: food._id,
             quantity: Number(quantity),
@@ -141,7 +141,7 @@ const FoodDetails = () => {
 
       const paymentResponse =
         await axios.post(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/initialize",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/initialize",
           {
             orderId,
           },

@@ -107,7 +107,7 @@ const AdminResetPassword = () => {
             setLoading(true);
 
             const response = await axios.patch(
-                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/reset-password/${token}`,
+                `https://eventbookingsystem-sooty.vercel.app/api/v1/reset-password/${token}`,
                 {
                     password: formData.password,
                     confirmPassword:

@@ -253,43 +253,43 @@ const AdminNotifications = () => {
 
             const responses = await Promise.allSettled([
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/pending",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/pending",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-payments",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-payments",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-payments",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-bookings",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-bookings",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-bookings",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-bookings",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
                     {
                         headers: getHeaders(),
                     }

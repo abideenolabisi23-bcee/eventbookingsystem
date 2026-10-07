@@ -110,7 +110,7 @@ const AdminSettings = () => {
             setProfileError("");
 
             const response = await axios.get(
-                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+                "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
                 {
                     headers: getHeaders(),
                 }
@@ -241,7 +241,7 @@ const AdminSettings = () => {
             setSavingProfile(true);
 
             const response = await axios.put(
-                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+                "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
                 {
                     firstname: editProfile.firstname.trim(),
                     lastname: editProfile.lastname.trim(),
@@ -341,7 +341,7 @@ const AdminSettings = () => {
             formData.append("profilePicture", file);
 
             const response = await axios.patch(
-                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
+                "https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
                 formData,
                 {
                     headers: {
@@ -447,7 +447,7 @@ const AdminSettings = () => {
             setChangingPassword(true);
 
             const response = await axios.patch(
-                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/change-password",
+                "https://eventbookingsystem-sooty.vercel.app/api/v1/change-password",
                 {
                     currentPassword:
                         passwordForm.currentPassword,
@@ -573,7 +573,7 @@ const AdminSettings = () => {
         try {
             if (getToken() && refreshToken) {
                 await axios.post(
-                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
+                    "https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
                     {
                         refreshToken,
                     },

@@ -34,7 +34,7 @@ const OrganizerEventDetails = () => {
         }
 
         const response = await axios.get(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`

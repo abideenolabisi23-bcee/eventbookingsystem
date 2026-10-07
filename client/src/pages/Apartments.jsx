@@ -19,7 +19,7 @@ const Apartments = () => {
         setError("");
 
         const response = await axios.get(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments"
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/apartments"
         );
 
         setApartments(response.data.data || []);

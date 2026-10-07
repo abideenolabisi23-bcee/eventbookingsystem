@@ -202,7 +202,7 @@ const OrganizerRegister = () => {
 
         const response =
           await axios.post(
-            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/register-organizer",
+            "https://eventbookingsystem-sooty.vercel.app/api/v1/register-organizer",
             payload
           );
 

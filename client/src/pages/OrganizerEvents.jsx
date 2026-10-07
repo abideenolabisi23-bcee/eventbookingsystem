@@ -56,14 +56,14 @@ const OrganizerEvents = () => {
       setLoading(true);
 
       const [profileResponse, eventsResponse] = await Promise.all([
-        axios.get("http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile", {
+        axios.get("https://eventbookingsystem-sooty.vercel.app/api/v1/profile", {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         }),
 
         axios.get(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -207,7 +207,7 @@ const OrganizerEvents = () => {
       setDeleting(true);
 
       const response = await axios.delete(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/events/${eventId}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/events/${eventId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -259,7 +259,7 @@ const OrganizerEvents = () => {
     try {
       if (accessToken && refreshToken) {
         await axios.post(
-          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
           {
             refreshToken,
           },

@@ -46,7 +46,7 @@ const AdminUsers = () => {
       setError("");
 
       const response = await axios.get(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users?role=user",
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users?role=user",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -163,7 +163,7 @@ const AdminUsers = () => {
       setActionLoading(userId);
 
       const response = await axios.get(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${userId}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -213,7 +213,7 @@ const AdminUsers = () => {
       setActionLoading(user._id);
 
       const response = await axios.patch(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${user._id}/${action}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${user._id}/${action}`,
         {},
         {
           headers: {

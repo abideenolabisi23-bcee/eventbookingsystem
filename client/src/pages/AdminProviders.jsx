@@ -50,7 +50,7 @@ const AdminProviders = () => {
       setError("");
 
       const response = await axios.get(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers",
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -268,7 +268,7 @@ const AdminProviders = () => {
       setDetailsLoading(true);
 
       const response = await axios.get(
-        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}`,
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -339,7 +339,7 @@ const AdminProviders = () => {
         action === "reject"
       ) {
         response = await axios.patch(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}/${action}`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}/${action}`,
           {},
           {
             headers: {
@@ -351,7 +351,7 @@ const AdminProviders = () => {
 
       if (action === "suspend") {
         response = await axios.patch(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${provider._id}/suspend`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${provider._id}/suspend`,
           {},
           {
             headers: {
@@ -363,7 +363,7 @@ const AdminProviders = () => {
 
       if (action === "reactivate") {
         response = await axios.patch(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${provider._id}/reactivate`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${provider._id}/reactivate`,
           {},
           {
             headers: {
@@ -375,7 +375,7 @@ const AdminProviders = () => {
 
       if (action === "remove") {
         response = await axios.delete(
-          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}`,
+          `https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

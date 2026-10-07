@@ -32,7 +32,7 @@ const Food = () => {
       setError("");
 
       const response = await axios.get(
-        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/foods"
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/foods"
       );
 
       setFoods(response.data?.data || []);
