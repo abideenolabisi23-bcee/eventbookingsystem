@@ -393,52 +393,52 @@ const OrganizerEvents = () => {
           </div>
 
           <div className="organizer-events-nav-section">
-            <span>EVENT OPERATIONS</span>
+  <span>EVENT OPERATIONS</span>
 
-            <NavLink
-              to="/organizer/events"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-people"></i>
-              Bookings & Attendees
-            </NavLink>
+  <NavLink
+    to="/organizer/events"
+    onClick={() => setSidebarOpen(false)}
+  >
+    <i className="bi bi-people"></i>
+    Bookings & Attendees
+  </NavLink>
 
-            <NavLink
-              to="/organizer/events"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-person-badge"></i>
-              Event Staff
-            </NavLink>
+  <NavLink
+    to="/organizer/events"
+    onClick={() => setSidebarOpen(false)}
+  >
+    <i className="bi bi-person-badge"></i>
+    Event Staff
+  </NavLink>
 
-            <NavLink
-              to="/organizer/check-in"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-qr-code-scan"></i>
-              QR Check-in
-            </NavLink>
-          </div>
+  <NavLink
+    to="/organizer/check-in"
+    onClick={() => setSidebarOpen(false)}
+  >
+    <i className="bi bi-qr-code-scan"></i>
+    QR Check-in
+  </NavLink>
+</div>
 
-          <div className="organizer-events-nav-section">
-            <span>ACCOUNT</span>
+<div className="organizer-events-nav-section">
+  <span>ACCOUNT</span>
 
-            <NavLink
-              to="/organizer/profile"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-person-circle"></i>
-              Profile & Settings
-            </NavLink>
+  <NavLink
+    to="/organizer/profile"
+    onClick={() => setSidebarOpen(false)}
+  >
+    <i className="bi bi-person-circle"></i>
+    Profile & Settings
+  </NavLink>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-            >
-              <i className="bi bi-box-arrow-right"></i>
-              Logout
-            </button>
-          </div>
+  <button
+    type="button"
+    onClick={handleLogout}
+  >
+    <i className="bi bi-box-arrow-right"></i>
+    Logout
+  </button>
+</div>
         </nav>
       </aside>
 
