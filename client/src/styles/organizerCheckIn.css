@@ -1,0 +1,461 @@
+.organizer-checkin-page {
+  min-height: 100vh;
+  background: #fff8f9;
+  color: #291218;
+  display: flex;
+  font-family: "DM Sans", sans-serif;
+}
+
+.organizer-checkin-sidebar {
+  width: 270px;
+  min-height: 100vh;
+  background: #4b0013;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.organizer-checkin-logo {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  padding: 20px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.organizer-checkin-logo img {
+  max-width: 145px;
+  max-height: 58px;
+  object-fit: contain;
+}
+
+.organizer-checkin-sidebar-content {
+  flex: 1;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+
+.organizer-checkin-menu-section {
+  margin-bottom: 28px;
+}
+
+.organizer-checkin-menu-label {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 0 13px;
+  margin: 0 0 10px;
+}
+
+.organizer-checkin-menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.74);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
+  margin-bottom: 4px;
+}
+
+.organizer-checkin-menu-item i {
+  font-size: 17px;
+}
+
+.organizer-checkin-menu-item:hover,
+.organizer-checkin-menu-item.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.organizer-checkin-menu-item.active {
+  box-shadow: inset 3px 0 0 #f4dde2;
+}
+
+.organizer-checkin-logout {
+  margin: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: white;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.organizer-checkin-logout:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.organizer-checkin-main {
+  flex: 1;
+  margin-left: 270px;
+  min-height: 100vh;
+}
+
+.organizer-checkin-topbar {
+  height: 82px;
+  background: white;
+  border-bottom: 1px solid #f0dfe3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 42px;
+}
+
+.organizer-checkin-back {
+  border: 0;
+  background: transparent;
+  color: #68001c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.organizer-checkin-user {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.organizer-checkin-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f4dde2;
+  color: #68001c;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.organizer-checkin-user-name,
+.organizer-checkin-user-role {
+  display: block;
+}
+
+.organizer-checkin-user-name {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.organizer-checkin-user-role {
+  color: #94777f;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.organizer-checkin-hero {
+  margin: 42px 42px 22px;
+  padding: 38px;
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 90% 20%,
+      rgba(244, 221, 226, 0.22),
+      transparent 30%
+    ),
+    linear-gradient(135deg, #4b0013, #68001c);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  box-shadow: 0 18px 50px rgba(75, 0, 19, 0.14);
+}
+
+.organizer-checkin-hero-icon {
+  width: 66px;
+  height: 66px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.13);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.organizer-checkin-eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: #f4dde2;
+  margin: 0 0 7px;
+}
+
+.organizer-checkin-hero h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 36px;
+  margin: 0 0 9px;
+}
+
+.organizer-checkin-hero > div:last-child > p:last-child {
+  color: rgba(255, 255, 255, 0.76);
+  max-width: 650px;
+  margin: 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.organizer-checkin-security {
+  margin: 0 42px;
+  border: 1px solid #eed9de;
+  background: #fff;
+  border-radius: 15px;
+  padding: 17px 20px;
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  color: #68001c;
+}
+
+.organizer-checkin-security strong {
+  color: #291218;
+  font-size: 14px;
+}
+
+.organizer-checkin-security p {
+  color: #80656c;
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.organizer-checkin-section-heading {
+  margin: 38px 42px 20px;
+}
+
+.organizer-checkin-section-heading p {
+  color: #9b6d79;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+  margin: 0 0 7px;
+}
+
+.organizer-checkin-section-heading h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 27px;
+  margin: 0;
+  color: #291218;
+}
+
+.organizer-checkin-options {
+  padding: 0 42px 50px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.organizer-checkin-card {
+  background: white;
+  border: 1px solid #ecdce0;
+  border-radius: 22px;
+  padding: 27px;
+  min-height: 410px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 38px rgba(75, 0, 19, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.organizer-checkin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 45px rgba(75, 0, 19, 0.11);
+}
+
+.organizer-checkin-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.organizer-checkin-card-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: #fff0f3;
+  color: #68001c;
+  display: grid;
+  place-items: center;
+}
+
+.organizer-checkin-card-tag {
+  background: #fff0f3;
+  color: #68001c;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+
+.organizer-checkin-card-content {
+  flex: 1;
+}
+
+.organizer-checkin-card h3 {
+  font-family: "Playfair Display", serif;
+  color: #291218;
+  font-size: 25px;
+  margin: 24px 0 10px;
+}
+
+.organizer-checkin-card-content > p {
+  color: #826870;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0 0 23px;
+}
+
+.organizer-checkin-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #654d54;
+  font-size: 13px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.organizer-checkin-feature svg {
+  color: #68001c;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.organizer-checkin-open-button {
+  width: 100%;
+  border: 0;
+  background: #68001c;
+  color: white;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.organizer-checkin-open-button:hover {
+  background: #4b0013;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1000px) {
+  .organizer-checkin-sidebar {
+    width: 220px;
+  }
+
+  .organizer-checkin-main {
+    margin-left: 220px;
+  }
+
+  .organizer-checkin-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .organizer-checkin-sidebar {
+    display: none;
+  }
+
+  .organizer-checkin-main {
+    margin-left: 0;
+  }
+
+  .organizer-checkin-topbar {
+    height: 70px;
+    padding: 0 18px;
+  }
+
+  .organizer-checkin-user > div:last-child {
+    display: none;
+  }
+
+  .organizer-checkin-hero {
+    margin: 22px 18px 16px;
+    padding: 26px 22px;
+    align-items: flex-start;
+  }
+
+  .organizer-checkin-hero-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
+
+  .organizer-checkin-hero h1 {
+    font-size: 27px;
+  }
+
+  .organizer-checkin-security {
+    margin: 0 18px;
+  }
+
+  .organizer-checkin-section-heading {
+    margin: 30px 18px 17px;
+  }
+
+  .organizer-checkin-section-heading h2 {
+    font-size: 23px;
+  }
+
+  .organizer-checkin-options {
+    padding: 0 18px 35px;
+    grid-template-columns: 1fr;
+  }
+
+  .organizer-checkin-card {
+    min-height: auto;
+    padding: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .organizer-checkin-back {
+    font-size: 0;
+  }
+
+  .organizer-checkin-back svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .organizer-checkin-hero {
+    display: block;
+  }
+
+  .organizer-checkin-hero-icon {
+    margin-bottom: 18px;
+  }
+
+  .organizer-checkin-hero h1 {
+    font-size: 25px;
+  }
+}

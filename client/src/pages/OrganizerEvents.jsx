@@ -56,11 +56,14 @@ const OrganizerEvents = () => {
       setLoading(true);
 
       const [profileResponse, eventsResponse] = await Promise.all([
-        axios.get("https://eventbookingsystem-sooty.vercel.app/api/v1/profile", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }),
+        axios.get(
+          "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        ),
 
         axios.get(
           "https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events",
@@ -103,7 +106,7 @@ const OrganizerEvents = () => {
         "error",
         "Unable to load events",
         error.response?.data?.message ||
-        "Your events could not be loaded at this time."
+          "Your events could not be loaded at this time."
       );
     } finally {
       setLoading(false);
@@ -228,7 +231,7 @@ const OrganizerEvents = () => {
         "success",
         "Event deleted",
         response.data.message ||
-        "The event has been deleted successfully."
+          "The event has been deleted successfully."
       );
     } catch (error) {
       console.log(error);
@@ -246,7 +249,7 @@ const OrganizerEvents = () => {
         "error",
         "Unable to delete event",
         error.response?.data?.message ||
-        "The event could not be deleted at this time."
+          "The event could not be deleted at this time."
       );
     } finally {
       setDeleting(false);
@@ -312,8 +315,9 @@ const OrganizerEvents = () => {
   return (
     <div className="organizer-events-page">
       <aside
-        className={`organizer-events-sidebar ${sidebarOpen ? "sidebar-open" : ""
-          }`}
+        className={`organizer-events-sidebar ${
+          sidebarOpen ? "sidebar-open" : ""
+        }`}
       >
         <div className="organizer-events-brand">
           <div className="organizer-events-brand-main">
@@ -408,7 +412,7 @@ const OrganizerEvents = () => {
             </NavLink>
 
             <NavLink
-              to="/organizer/events"
+              to="/organizer/check-in"
               onClick={() => setSidebarOpen(false)}
             >
               <i className="bi bi-qr-code-scan"></i>
@@ -427,7 +431,10 @@ const OrganizerEvents = () => {
               Profile & Settings
             </NavLink>
 
-            <button type="button" onClick={handleLogout}>
+            <button
+              type="button"
+              onClick={handleLogout}
+            >
               <i className="bi bi-box-arrow-right"></i>
               Logout
             </button>
@@ -436,8 +443,9 @@ const OrganizerEvents = () => {
       </aside>
 
       <div
-        className={`organizer-events-overlay ${sidebarOpen ? "show" : ""
-          }`}
+        className={`organizer-events-overlay ${
+          sidebarOpen ? "show" : ""
+        }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
 
@@ -698,9 +706,7 @@ const OrganizerEvents = () => {
                           type="button"
                           className="organizer-event-checkin"
                           onClick={() =>
-                            navigate(
-                              `/organizer/events/${event._id}/check-in`
-                            )
+                            navigate("/organizer/check-in")
                           }
                         >
                           <i className="bi bi-qr-code-scan"></i>

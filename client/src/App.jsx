@@ -43,6 +43,8 @@ import EditApartment from "./pages/EditApartment";
 
 import OrganizerProtectedRoute from "./component/OrganizerProtectedRoute";
 import OrganizerApartmentBookings from "./pages/OrganizerApartmentBookings";
+import OrganizerCheckIn from "./pages/OrganizerCheckIn";
+
 
 import Food from "./component/Food";
 import FoodDetails from "./component/FoodDetails";
@@ -65,6 +67,7 @@ import AdminPayments from "./pages/AdminPayments";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminSettings from "./pages/AdminSettings";
 
+import ApartmentQRCheckIn from "./pages/ApartmentQRCheckIn";
 function App() {
   return (
     <BrowserRouter>
@@ -265,6 +268,32 @@ function App() {
             element={<OrganizerApartmentDetails />}
           />
 
+          <Route
+  path="/organizer/check-in"
+  element={
+    <OrganizerProtectedRoute>
+      <OrganizerCheckIn />
+    </OrganizerProtectedRoute>
+  }
+/>
+
+<Route
+  path="/organizer/check-in/events"
+  element={
+    <OrganizerProtectedRoute>
+      <QRCheckIn />
+    </OrganizerProtectedRoute>
+  }
+/>
+
+<Route
+  path="/organizer/apartments/:id/check-in"
+  element={
+    <OrganizerProtectedRoute>
+      <ApartmentQRCheckIn />
+    </OrganizerProtectedRoute>
+  }
+/>
           <Route
             path="/organizer/apartments/:id/edit"
             element={<EditApartment />}

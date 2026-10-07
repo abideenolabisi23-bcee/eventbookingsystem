@@ -1,12 +1,15 @@
 const express = require("express");
 
 const {
-  verifyUser
+  verifyUser,
+  isOrganizer,
+  isApprovedProvider
 } = require("../controllers/user.controller");
 
 const {
   getMyApartmentTickets,
-  getApartmentTicketById
+  getApartmentTicketById,
+  validateApartmentTicket
 } = require("../controllers/apartmentTicket.controller");
 
 const router = express.Router();
@@ -15,6 +18,14 @@ router.get(
   "/apartment-tickets/my",
   verifyUser,
   getMyApartmentTickets
+);
+
+router.post(
+  "/apartment-tickets/validate",
+  verifyUser,
+  isOrganizer,
+  isApprovedProvider,
+  validateApartmentTicket
 );
 
 router.get(

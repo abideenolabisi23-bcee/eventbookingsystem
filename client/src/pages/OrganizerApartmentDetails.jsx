@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+
 import {
   ArrowLeft,
   MapPin,
@@ -18,8 +19,10 @@ import {
   CookingPot,
   Sofa,
   Fence,
-  Images
+  Images,
+  QrCode
 } from "lucide-react";
+
 import "../styles/organizerApartmentDetails.css";
 
 const OrganizerApartmentDetails = () => {
@@ -50,7 +53,7 @@ const OrganizerApartmentDetails = () => {
 
         setError(
           error.response?.data?.message ||
-          "Cannot load apartment details."
+            "Cannot load apartment details."
         );
       } finally {
         setLoading(false);
@@ -198,6 +201,19 @@ const OrganizerApartmentDetails = () => {
               className="organizer-details-bookings-button"
               onClick={() =>
                 navigate(
+                  `/organizer/apartments/${apartment._id}/check-in`
+                )
+              }
+            >
+              <QrCode size={17} />
+              QR Check-In
+            </button>
+
+            <button
+              type="button"
+              className="organizer-details-bookings-button"
+              onClick={() =>
+                navigate(
                   `/organizer/apartments/${apartment._id}/bookings`
                 )
               }
@@ -230,10 +246,11 @@ const OrganizerApartmentDetails = () => {
               </span>
 
               <span
-                className={`organizer-property-status ${apartment.isAvailable
-                  ? "available"
-                  : "unavailable"
-                  }`}
+                className={`organizer-property-status ${
+                  apartment.isAvailable
+                    ? "available"
+                    : "unavailable"
+                }`}
               >
                 <span></span>
 
@@ -485,6 +502,19 @@ const OrganizerApartmentDetails = () => {
 
               <strong>{apartment.totalUnits || 0}</strong>
             </div>
+
+            <button
+              type="button"
+              className="organizer-price-bookings-button"
+              onClick={() =>
+                navigate(
+                  `/organizer/apartments/${apartment._id}/check-in`
+                )
+              }
+            >
+              <QrCode size={17} />
+              QR Check-In
+            </button>
 
             <button
               type="button"
