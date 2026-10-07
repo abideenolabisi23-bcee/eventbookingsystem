@@ -1,0 +1,1031 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+.oab-page {
+  min-height: 100vh;
+  background: #fffafa;
+  color: #291218;
+  font-family: "DM Sans", sans-serif;
+}
+
+.oab-topbar {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #f0e3e6;
+  backdrop-filter: blur(15px);
+}
+
+.oab-topbar-inner {
+  width: min(1180px, calc(100% - 40px));
+  height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.oab-brand img {
+  width: 105px;
+  display: block;
+}
+
+.oab-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.oab-topbar-actions a {
+  position: relative;
+  color: #745e64;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.oab-topbar-actions a:hover,
+.oab-topbar-actions .oab-topbar-active {
+  color: #68001c;
+}
+
+.oab-topbar-active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -12px;
+  left: 0;
+  height: 2px;
+  border-radius: 20px;
+  background: #68001c;
+}
+
+.oab-main {
+  padding: 35px 0 100px;
+}
+
+.oab-container {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.oab-back-row {
+  margin-bottom: 25px;
+}
+
+.oab-back-row a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #765f65;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.oab-back-row a:hover {
+  color: #68001c;
+  transform: translateX(-3px);
+}
+
+.oab-hero {
+  position: relative;
+  min-height: 290px;
+  padding: 45px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at 85% 25%,
+      rgba(244, 221, 226, 0.2),
+      transparent 28%
+    ),
+    linear-gradient(
+      135deg,
+      #39000f 0%,
+      #4b0013 55%,
+      #68001c 100%
+    );
+  box-shadow: 0 25px 70px rgba(75, 0, 19, 0.14);
+}
+
+.oab-hero::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -70px;
+  bottom: -160px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+}
+
+.oab-hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 620px;
+}
+
+.oab-eyebrow {
+  display: block;
+  margin-bottom: 10px;
+  color: #f4cdd6;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+}
+
+.oab-hero h1 {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Playfair Display", serif;
+  font-size: clamp(38px, 5vw, 55px);
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.oab-hero-copy > p {
+  max-width: 560px;
+  margin: 14px 0 25px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.oab-property {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.oab-property-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.13);
+  color: #ffffff;
+}
+
+.oab-property strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.oab-property span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #dcbfc6;
+  font-size: 9px;
+}
+
+.oab-hero-decoration {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.oab-hero-decoration > div {
+  width: 170px;
+  height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  text-align: center;
+}
+
+.oab-hero-decoration span {
+  color: #ffffff;
+  font-family: "Playfair Display", serif;
+  font-size: 46px;
+  line-height: 1;
+}
+
+.oab-hero-decoration small {
+  max-width: 85px;
+  margin-top: 8px;
+  color: #e3c8cf;
+  font-size: 9px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.oab-stats {
+  margin: 25px 0 55px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.oab-stat-card {
+  min-height: 105px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #eee0e4;
+  border-radius: 17px;
+  background: #ffffff;
+}
+
+.oab-stat-icon {
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff0f3;
+  color: #68001c;
+}
+
+.oab-stat-card span {
+  display: block;
+  margin-bottom: 4px;
+  color: #967f85;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.oab-stat-card strong {
+  color: #35131c;
+  font-family: "Playfair Display", serif;
+  font-size: 23px;
+}
+
+.oab-bookings-section {
+  padding-top: 5px;
+}
+
+.oab-section-heading {
+  margin-bottom: 23px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.oab-section-heading > div:first-child > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #68001c;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.oab-section-heading h2 {
+  margin: 0;
+  color: #32131c;
+  font-family: "Playfair Display", serif;
+  font-size: 33px;
+}
+
+.oab-section-heading p {
+  margin: 8px 0 0;
+  color: #8a7379;
+  font-size: 12px;
+}
+
+.oab-result-count {
+  color: #917b81;
+  font-size: 11px;
+}
+
+.oab-toolbar {
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 12px;
+}
+
+.oab-search {
+  min-height: 48px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #eadde0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #9b8289;
+}
+
+.oab-search input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #3c1c25;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.oab-search input::placeholder {
+  color: #b09da2;
+}
+
+.oab-search button {
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #68001c;
+  cursor: pointer;
+}
+
+.oab-toolbar select {
+  padding: 0 13px;
+  border: 1px solid #eadde0;
+  border-radius: 12px;
+  outline: none;
+  background: #ffffff;
+  color: #5f484e;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.oab-table-card {
+  overflow: hidden;
+  border: 1px solid #eee1e4;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 12px 35px rgba(68, 12, 27, 0.04);
+}
+
+.oab-table-scroll {
+  overflow-x: auto;
+}
+
+.oab-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.oab-table th {
+  padding: 15px 16px;
+  background: #fff7f9;
+  border-bottom: 1px solid #eee1e4;
+  color: #8a7077;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.oab-table td {
+  padding: 18px 16px;
+  border-bottom: 1px solid #f3e9eb;
+  color: #5d444b;
+  font-size: 11px;
+  vertical-align: middle;
+}
+
+.oab-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.oab-table tbody tr {
+  transition: 0.2s ease;
+}
+
+.oab-table tbody tr:hover {
+  background: #fffbfc;
+}
+
+.oab-guest-cell {
+  min-width: 190px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.oab-avatar {
+  width: 39px;
+  height: 39px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f4dde2;
+  color: #68001c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.oab-guest-cell strong,
+.oab-stay-cell strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #32131c;
+  font-size: 11px;
+}
+
+.oab-guest-cell span,
+.oab-stay-cell span {
+  color: #9a848a;
+  font-size: 9px;
+}
+
+.oab-date-cell span {
+  display: block;
+  color: #4d343b;
+  font-weight: 600;
+}
+
+.oab-date-cell small {
+  display: block;
+  margin-top: 3px;
+  color: #a18b90;
+  font-size: 9px;
+}
+
+.oab-room-number {
+  color: #4b0013;
+  font-size: 13px;
+}
+
+.oab-amount {
+  color: #4b0013;
+  font-size: 12px;
+}
+
+.oab-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+  border-radius: 50px;
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.oab-status-confirmed,
+.oab-status-paid,
+.oab-status-checked_in {
+  background: #eaf8ef;
+  color: #287144;
+}
+
+.oab-status-pending,
+.oab-status-upcoming {
+  background: #fff6dc;
+  color: #8c6511;
+}
+
+.oab-status-cancelled,
+.oab-status-failed {
+  background: #ffeaed;
+  color: #a32b3d;
+}
+
+.oab-status-checked_out {
+  background: #edf1f8;
+  color: #46556d;
+}
+
+.oab-status-refunded {
+  background: #f1eaff;
+  color: #68429a;
+}
+
+.oab-view-button {
+  padding: 8px 13px;
+  border: 1px solid #dcc9ce;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #68001c;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.oab-view-button:hover {
+  border-color: #4b0013;
+  background: #4b0013;
+  color: #ffffff;
+}
+
+.oab-empty {
+  min-height: 330px;
+  padding: 50px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #dfcbd0;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.oab-empty > div {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff0f3;
+  color: #68001c;
+}
+
+.oab-empty h3 {
+  margin: 0 0 7px;
+  color: #35131c;
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+}
+
+.oab-empty p {
+  max-width: 420px;
+  margin: 0;
+  color: #8c757b;
+  font-size: 12px;
+}
+
+.oab-empty button {
+  margin-top: 17px;
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 8px;
+  background: #4b0013;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.oab-modal-overlay,
+.oab-feedback-overlay {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  padding: 30px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 5, 12, 0.67);
+  backdrop-filter: blur(7px);
+}
+
+.oab-booking-modal {
+  width: min(720px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 23px;
+  background: #ffffff;
+  box-shadow: 0 30px 90px rgba(24, 0, 7, 0.25);
+}
+
+.oab-modal-header {
+  padding: 27px 30px 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #f0e4e7;
+}
+
+.oab-modal-header span {
+  display: block;
+  margin-bottom: 5px;
+  color: #68001c;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.oab-modal-header h2 {
+  margin: 0 0 4px;
+  color: #32131c;
+  font-family: "Playfair Display", serif;
+  font-size: 27px;
+}
+
+.oab-modal-header p {
+  margin: 0;
+  color: #9b858a;
+  font-size: 10px;
+}
+
+.oab-modal-header > button {
+  width: 37px;
+  height: 37px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff2f4;
+  color: #68001c;
+  cursor: pointer;
+}
+
+.oab-modal-status-row {
+  padding: 18px 30px 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.oab-modal-section {
+  padding: 22px 30px 0;
+}
+
+.oab-modal-section h3 {
+  margin: 0 0 13px;
+  color: #4b0013;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.oab-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.oab-detail-box {
+  min-height: 73px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid #eee1e4;
+  border-radius: 12px;
+  background: #fffafb;
+  color: #68001c;
+}
+
+.oab-detail-box > div {
+  min-width: 0;
+}
+
+.oab-detail-box span {
+  display: block;
+  margin-bottom: 3px;
+  color: #9b848a;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.oab-detail-box strong {
+  display: block;
+  overflow: hidden;
+  color: #3c1b24;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.oab-activity {
+  display: flex;
+  gap: 10px;
+}
+
+.oab-activity > div {
+  flex: 1;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 11px;
+  background: #f7f2f3;
+  color: #68001c;
+}
+
+.oab-activity span {
+  display: flex;
+  flex-direction: column;
+}
+
+.oab-activity small {
+  color: #987f86;
+  font-size: 8px;
+}
+
+.oab-activity strong {
+  margin-top: 2px;
+  color: #3b1b23;
+  font-size: 10px;
+}
+
+.oab-modal-actions {
+  margin-top: 25px;
+  padding: 20px 30px 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  border-top: 1px solid #f0e4e7;
+}
+
+.oab-modal-actions button {
+  min-height: 42px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.oab-secondary-action {
+  border: 1px solid #dfcfd3;
+  background: #ffffff;
+  color: #664e55;
+}
+
+.oab-primary-action {
+  border: 1px solid #4b0013;
+  background: #4b0013;
+  color: #ffffff;
+}
+
+.oab-primary-action:hover {
+  background: #68001c;
+}
+
+.oab-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.oab-feedback-modal {
+  width: min(400px, 100%);
+  padding: 34px 30px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 30px 90px rgba(24, 0, 7, 0.25);
+  text-align: center;
+}
+
+.oab-feedback-icon {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.oab-feedback-icon.success {
+  background: #eaf8ef;
+  color: #287144;
+}
+
+.oab-feedback-icon.error {
+  background: #ffeaed;
+  color: #a32b3d;
+}
+
+.oab-feedback-modal h3 {
+  margin: 0 0 8px;
+  color: #35131c;
+  font-family: "Playfair Display", serif;
+  font-size: 23px;
+}
+
+.oab-feedback-modal p {
+  margin: 0;
+  color: #826b72;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.oab-feedback-modal button {
+  min-width: 110px;
+  margin-top: 20px;
+  padding: 11px 17px;
+  border: 0;
+  border-radius: 9px;
+  background: #4b0013;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.oab-loading-page,
+.oab-error-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fffafa;
+  font-family: "DM Sans", sans-serif;
+  text-align: center;
+}
+
+.oab-loader {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 18px;
+  border: 4px solid #f0dce1;
+  border-top-color: #68001c;
+  border-radius: 50%;
+  animation: oabSpin 0.8s linear infinite;
+}
+
+@keyframes oabSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.oab-loading-page h2,
+.oab-error-page h2 {
+  margin: 0 0 8px;
+  color: #35131c;
+  font-family: "Playfair Display", serif;
+}
+
+.oab-loading-page p,
+.oab-error-page p {
+  max-width: 440px;
+  margin: 0;
+  color: #8c757b;
+  font-size: 12px;
+}
+
+.oab-error-logo {
+  width: 115px;
+  margin-bottom: 30px;
+}
+
+.oab-error-icon {
+  width: 62px;
+  height: 62px;
+  margin-bottom: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffeaed;
+  color: #a32b3d;
+}
+
+.oab-error-page button {
+  margin-top: 20px;
+  padding: 11px 17px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 9px;
+  background: #4b0013;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 1000px) {
+  .oab-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .oab-hero {
+    padding: 40px;
+  }
+}
+
+@media (max-width: 760px) {
+  .oab-topbar-actions a:not(
+      .oab-topbar-active
+    ) {
+    display: none;
+  }
+
+  .oab-hero {
+    min-height: auto;
+    padding: 35px 25px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .oab-hero-decoration {
+    display: none;
+  }
+
+  .oab-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .oab-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .oab-toolbar select {
+    height: 48px;
+  }
+
+  .oab-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .oab-topbar-inner,
+  .oab-container {
+    width: min(
+      100% - 26px,
+      1180px
+    );
+  }
+
+  .oab-topbar-inner {
+    height: 68px;
+  }
+
+  .oab-brand img {
+    width: 90px;
+  }
+
+  .oab-hero {
+    padding: 30px 21px;
+    border-radius: 20px;
+  }
+
+  .oab-hero h1 {
+    font-size: 36px;
+  }
+
+  .oab-property {
+    width: 100%;
+  }
+
+  .oab-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .oab-stat-card {
+    min-height: 90px;
+  }
+
+  .oab-modal-overlay,
+  .oab-feedback-overlay {
+    padding: 15px;
+  }
+
+  .oab-modal-header,
+  .oab-modal-section,
+  .oab-modal-status-row,
+  .oab-modal-actions {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .oab-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .oab-modal-actions button {
+    width: 100%;
+  }
+
+  .oab-activity {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,222 @@
+.payment-callback-page {
+  min-height: 100vh;
+  padding: 60px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(
+      circle at top left,
+      #fff1f4,
+      transparent 40%
+    ),
+    #fffdfc;
+}
+
+.payment-callback-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 50px 40px;
+  background: white;
+  border: 1px solid #eee0e4;
+  border-radius: 25px;
+  box-shadow:
+    0 25px 70px rgba(75, 0, 19, 0.1);
+  text-align: center;
+}
+
+.payment-callback-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 32px;
+}
+
+.payment-callback-icon.success {
+  background: #e8f7ed;
+  color: #18743b;
+}
+
+.payment-callback-icon.failed {
+  background: #ffe8eb;
+  color: #a32136;
+}
+
+.payment-callback-icon.pending {
+  background: #fff3da;
+  color: #8a6200;
+}
+
+.payment-callback-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #68001c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.payment-callback-card h1 {
+  margin: 0 0 12px;
+  color: #32131c;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.payment-callback-card p {
+  max-width: 400px;
+  margin: 0 auto;
+  color: #806a70;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.payment-callback-card > small {
+  display: block;
+  margin-top: 10px;
+  color: #a58f95;
+  font-size: 10px;
+}
+
+.payment-callback-loader {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 25px;
+  border: 5px solid #f3dfe4;
+  border-top-color: #68001c;
+  border-radius: 50%;
+  animation: paymentCallbackSpin 0.8s linear infinite;
+}
+
+.payment-pickup-code {
+  margin: 28px 0;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  background: #fff4f6;
+  border: 1px dashed #d9aeba;
+  border-radius: 15px;
+}
+
+.payment-pickup-code span {
+  color: #92767e;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.payment-pickup-code strong {
+  margin: 5px 0;
+  color: #4b0013;
+  font-size: 27px;
+  letter-spacing: 2px;
+}
+
+.payment-pickup-code small {
+  color: #8b747a;
+  font-size: 10px;
+}
+
+.apartment-confirmation-summary {
+  margin: 28px 0;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  background: #fff7f8;
+  border: 1px solid #f0dfe3;
+  border-radius: 15px;
+  text-align: left;
+}
+
+.apartment-confirmation-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.apartment-confirmation-summary span {
+  color: #947c83;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.apartment-confirmation-summary strong {
+  color: #4b0013;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.payment-callback-actions {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-primary-button,
+.payment-secondary-button {
+  min-height: 49px;
+  padding: 13px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.payment-primary-button {
+  background: #4b0013;
+  color: white;
+}
+
+.payment-primary-button:hover {
+  background: #7c0023;
+  color: white;
+}
+
+.payment-secondary-button {
+  background: #fff6f8;
+  color: #68001c;
+  border: 1px solid #ead8dd;
+}
+
+.payment-secondary-button:hover {
+  background: #f6dfe4;
+  color: #4b0013;
+}
+
+@keyframes paymentCallbackSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .payment-callback-page {
+    padding: 30px 15px;
+  }
+
+  .payment-callback-card {
+    padding: 38px 22px;
+    border-radius: 20px;
+  }
+
+  .payment-callback-card h1 {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 450px) {
+  .apartment-confirmation-summary {
+    grid-template-columns: 1fr;
+  }
+}

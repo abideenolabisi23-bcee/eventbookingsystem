@@ -1,0 +1,376 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+.event-bookings-page {
+  min-height: 100vh;
+  background: #fff8f9;
+  color: #291218;
+  font-family: "DM Sans", sans-serif;
+}
+
+.event-bookings-topbar {
+  height: 82px;
+  padding: 0 6%;
+  background: #ffffff;
+  border-bottom: 1px solid #f1dfe3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.event-bookings-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  cursor: pointer;
+}
+
+.event-bookings-brand img {
+  width: 43px;
+  height: 43px;
+  object-fit: contain;
+}
+
+.event-bookings-brand h2 {
+  margin: 0;
+  color: #4b0013;
+  font-family: "Playfair Display", serif;
+  font-size: 25px;
+}
+
+.event-bookings-brand span {
+  display: block;
+  color: #98727c;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.event-bookings-back {
+  border: 1px solid #e8cdd3;
+  background: #ffffff;
+  color: #4b0013;
+  padding: 11px 17px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.event-bookings-main {
+  width: min(1200px, 90%);
+  margin: 0 auto;
+  padding: 50px 0 70px;
+}
+
+.event-bookings-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.event-bookings-eyebrow {
+  color: #9d5265;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.event-bookings-heading h1 {
+  font-family: "Playfair Display", serif;
+  color: #4b0013;
+  font-size: 39px;
+  margin: 8px 0 8px;
+}
+
+.event-bookings-heading p {
+  color: #80636b;
+  margin: 0;
+}
+
+.event-bookings-staff-btn {
+  border: none;
+  background: #4b0013;
+  color: white;
+  padding: 13px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.event-bookings-event-card {
+  background: linear-gradient(135deg, #4b0013, #68001c);
+  border-radius: 20px;
+  color: white;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.event-bookings-event-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-bookings-event-info h2 {
+  margin: 0 0 8px;
+  font-family: "Playfair Display", serif;
+}
+
+.event-bookings-event-info > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.event-bookings-event-info span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f4dde2;
+  font-size: 14px;
+}
+
+.event-bookings-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.event-bookings-stat {
+  background: white;
+  border: 1px solid #f0dfe3;
+  padding: 22px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.event-bookings-stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: #fff0f3;
+  color: #68001c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-bookings-stat span {
+  display: block;
+  color: #8b6d75;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.event-bookings-stat strong {
+  color: #4b0013;
+  font-size: 21px;
+}
+
+.event-bookings-content {
+  background: white;
+  border: 1px solid #f0dfe3;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.event-bookings-toolbar {
+  padding: 20px;
+  border-bottom: 1px solid #f3e4e7;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.event-bookings-search {
+  width: min(470px, 100%);
+  border: 1px solid #ead6da;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px;
+  color: #936b75;
+}
+
+.event-bookings-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 12px 0;
+  font-family: inherit;
+}
+
+.event-bookings-toolbar select {
+  border: 1px solid #ead6da;
+  background: white;
+  border-radius: 10px;
+  padding: 0 13px;
+  color: #4b0013;
+  outline: none;
+}
+
+.event-bookings-table-wrapper {
+  overflow-x: auto;
+}
+
+.event-bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 950px;
+}
+
+.event-bookings-table th {
+  background: #fff8f9;
+  color: #795b63;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding: 15px 18px;
+}
+
+.event-bookings-table td {
+  padding: 17px 18px;
+  border-top: 1px solid #f4e7ea;
+  font-size: 14px;
+}
+
+.event-bookings-customer {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.event-bookings-avatar {
+  width: 38px;
+  height: 38px;
+  background: #f4dde2;
+  color: #4b0013;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.event-bookings-customer strong,
+.event-bookings-customer span {
+  display: block;
+}
+
+.event-bookings-customer span {
+  color: #90747b;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.event-bookings-reference {
+  font-weight: 600;
+  color: #68001c;
+}
+
+.event-bookings-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: #f4dde2;
+  color: #68001c;
+}
+
+.event-bookings-badge.paid,
+.event-bookings-badge.confirmed {
+  background: #e7f7ed;
+  color: #247444;
+}
+
+.event-bookings-badge.failed,
+.event-bookings-badge.cancelled {
+  background: #ffe8e8;
+  color: #b43131;
+}
+
+.event-bookings-badge.pending {
+  background: #fff4d8;
+  color: #946a00;
+}
+
+.event-bookings-empty {
+  text-align: center;
+  padding: 70px 20px;
+  color: #94727b;
+}
+
+.event-bookings-empty svg {
+  color: #c99ca7;
+}
+
+.event-bookings-empty h3 {
+  color: #4b0013;
+  margin-bottom: 7px;
+}
+
+.event-bookings-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #68001c;
+  font-family: "DM Sans", sans-serif;
+}
+
+.event-bookings-spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #f4dde2;
+  border-top-color: #68001c;
+  border-radius: 50%;
+  animation: eventBookingsSpin 0.8s linear infinite;
+}
+
+@keyframes eventBookingsSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 800px) {
+  .event-bookings-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .event-bookings-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .event-bookings-toolbar {
+    flex-direction: column;
+  }
+
+  .event-bookings-toolbar select {
+    min-height: 44px;
+  }
+}

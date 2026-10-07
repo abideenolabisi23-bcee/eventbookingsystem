@@ -1,0 +1,766 @@
+.vibely-admin {
+  min-height: 100vh;
+  background: #f8f5f6;
+  color: #291218;
+  font-family: "DM Sans", sans-serif;
+}
+
+.vibely-admin-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 255px;
+  padding: 25px 17px 18px;
+  background: #4b0013;
+  color: #fff;
+  overflow-y: auto;
+}
+
+.vibely-admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 8px 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vibely-admin-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  border-radius: 12px;
+  background: #fff;
+  color: #68001c;
+  font-family: "Playfair Display", serif;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.vibely-admin-brand strong {
+  display: block;
+  font-family: "Playfair Display", serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.vibely-admin-brand span {
+  display: block;
+  margin-top: 2px;
+  color: #d9aab5;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.vibely-admin-nav {
+  padding-top: 16px;
+}
+
+.vibely-admin-nav p {
+  margin: 19px 10px 7px;
+  color: #bd8794;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.vibely-admin-nav > a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 42px;
+  margin: 3px 0;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #e8cbd2;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.vibely-admin-nav > a > i {
+  width: 18px;
+  font-size: 14px;
+}
+
+.vibely-admin-nav > a:hover,
+.vibely-admin-nav > a.active {
+  background: rgba(255, 255, 255, 0.11);
+  color: #fff;
+}
+
+.vibely-admin-nav-badge {
+  margin-left: auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #f4dde2;
+  color: #68001c;
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.vibely-admin-sidebar-bottom {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vibely-admin-profile-mini {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+}
+
+.vibely-admin-profile-mini > div {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f4dde2;
+  color: #68001c;
+  font-family: "Playfair Display", serif;
+  font-weight: 800;
+}
+
+.vibely-admin-profile-mini strong {
+  display: block;
+  font-size: 9px;
+}
+
+.vibely-admin-profile-mini span {
+  color: #c99aa5;
+  font-size: 7px;
+}
+
+.vibely-admin-sidebar-bottom > button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: 7px;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #dfb8c1;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.vibely-admin-sidebar-bottom > button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.vibely-admin-main {
+  min-height: 100vh;
+  margin-left: 255px;
+  padding-bottom: 30px;
+}
+
+.vibely-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 83px;
+  padding: 0 35px;
+  border-bottom: 1px solid #eadfe2;
+  background: #fff;
+}
+
+.vibely-admin-header > div:first-child > span {
+  display: block;
+  color: #a07a83;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.vibely-admin-header h1 {
+  margin: 3px 0 0;
+  font-family: "Playfair Display", serif;
+  color: #4b0013;
+  font-size: 24px;
+}
+
+.vibely-admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vibely-admin-header-actions > button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #eadde0;
+  border-radius: 11px;
+  background: #fff;
+  color: #68001c;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.vibely-admin-header-actions > button:hover {
+  border-color: #d7b7bf;
+  background: #fff5f7;
+}
+
+.vibely-admin-header-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-left: 14px;
+  border-left: 1px solid #eadde0;
+}
+
+.vibely-admin-header-user > div {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: #68001c;
+  color: #fff;
+  font-family: "Playfair Display", serif;
+  font-weight: 800;
+}
+
+.vibely-admin-header-user strong {
+  display: block;
+  color: #43222b;
+  font-size: 9px;
+}
+
+.vibely-admin-header-user span {
+  color: #9b7780;
+  font-size: 7px;
+}
+
+.vibely-admin-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin: 28px 32px 0;
+  padding: 31px 34px;
+  border-radius: 22px;
+  background:
+    radial-gradient(
+      circle at 88% 20%,
+      rgba(244, 221, 226, 0.2),
+      transparent 30%
+    ),
+    linear-gradient(135deg, #4b0013, #68001c);
+  color: #fff;
+  box-shadow: 0 18px 45px rgba(75, 0, 19, 0.12);
+}
+
+.vibely-admin-welcome > div:first-child > span {
+  color: #e8bdc7;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+
+.vibely-admin-welcome h2 {
+  max-width: 640px;
+  margin: 7px 0 9px;
+  font-family: "Playfair Display", serif;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.vibely-admin-welcome p {
+  max-width: 650px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.vibely-admin-welcome-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  min-height: 125px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.vibely-admin-welcome-art i {
+  margin-bottom: 9px;
+  color: #f4dde2;
+  font-size: 30px;
+}
+
+.vibely-admin-welcome-art span {
+  color: #d9aab5;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.vibely-admin-welcome-art strong {
+  margin-top: 3px;
+  font-family: "Playfair Display", serif;
+  font-size: 14px;
+}
+
+.vibely-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 13px;
+  margin: 18px 32px;
+}
+
+.vibely-admin-stats > article {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 100px;
+  padding: 17px;
+  border: 1px solid #e9dde0;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 7px 25px rgba(75, 0, 19, 0.035);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.vibely-admin-stats > article:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(75, 0, 19, 0.07);
+}
+
+.vibely-admin-stat-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 43px;
+  width: 43px;
+  height: 43px;
+  border-radius: 13px;
+  background: #fff0f3;
+  color: #68001c;
+  font-size: 17px;
+}
+
+.vibely-admin-stats section {
+  min-width: 0;
+}
+
+.vibely-admin-stats section > span {
+  display: block;
+  color: #98747d;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.vibely-admin-stats section > strong {
+  display: block;
+  margin: 2px 0;
+  color: #4b0013;
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.vibely-admin-stats section > p {
+  margin: 0;
+  color: #ae8e95;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+.vibely-admin-middle,
+.vibely-admin-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+  gap: 17px;
+  margin: 0 32px 18px;
+}
+
+.vibely-admin-panel,
+.vibely-admin-system-card {
+  border: 1px solid #e9dde0;
+  border-radius: 19px;
+  background: #fff;
+  box-shadow: 0 8px 27px rgba(75, 0, 19, 0.035);
+}
+
+.vibely-admin-panel {
+  padding: 21px;
+}
+
+.vibely-admin-panel-title {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.vibely-admin-panel-title span {
+  display: block;
+  color: #9b7780;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.vibely-admin-panel-title h3 {
+  margin: 4px 0 0;
+  font-family: "Playfair Display", serif;
+  color: #4b0013;
+  font-size: 20px;
+}
+
+.vibely-admin-panel-title > a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #68001c;
+  text-decoration: none;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.vibely-admin-panel-title > a:hover {
+  text-decoration: underline;
+}
+
+.vibely-admin-empty {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 25px;
+  text-align: center;
+}
+
+.vibely-admin-empty > div {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 10px;
+  border-radius: 15px;
+  background: #fff0f3;
+  color: #68001c;
+  font-size: 21px;
+}
+
+.vibely-admin-empty strong {
+  color: #4b0013;
+  font-size: 10px;
+}
+
+.vibely-admin-empty p {
+  max-width: 370px;
+  margin: 5px 0 0;
+  color: #9a777f;
+  font-size: 8px;
+  line-height: 1.6;
+}
+
+.vibely-admin-empty > button {
+  margin-top: 16px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #68001c;
+  color: #fff;
+  font-family: "DM Sans", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.vibely-admin-empty > button:hover {
+  background: #4b0013;
+}
+
+.vibely-admin-quick-links {
+  margin-top: 13px;
+}
+
+.vibely-admin-quick-links > a {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid #f0e6e8;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vibely-admin-quick-links > a > i:first-child {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border-radius: 10px;
+  background: #fff1f4;
+  color: #68001c;
+}
+
+.vibely-admin-quick-links strong {
+  display: block;
+  color: #45232c;
+  font-size: 9px;
+}
+
+.vibely-admin-quick-links span {
+  display: block;
+  margin-top: 2px;
+  color: #9d7b83;
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+.vibely-admin-quick-links > a > i:last-child {
+  color: #aa8a91;
+  font-size: 8px;
+}
+
+.vibely-admin-quick-links > a:hover strong {
+  color: #68001c;
+}
+
+.vibely-admin-activity-placeholder {
+  margin-top: 13px;
+}
+
+.vibely-admin-activity-line {
+  display: grid;
+  grid-template-columns: 37px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid #f0e6e8;
+}
+
+.vibely-admin-activity-line > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #68001c;
+  color: #fff;
+  font-size: 13px;
+}
+
+.vibely-admin-activity-line strong {
+  display: block;
+  color: #46242d;
+  font-size: 9px;
+}
+
+.vibely-admin-activity-line p {
+  margin: 3px 0 0;
+  color: #9d7982;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.vibely-admin-activity-line.muted > span {
+  background: #fff0f3;
+  color: #68001c;
+}
+
+.vibely-admin-system-card {
+  padding: 25px;
+  background: linear-gradient(145deg, #fff, #fff7f9);
+}
+
+.vibely-admin-system-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 15px;
+  border-radius: 14px;
+  background: #68001c;
+  color: #fff;
+  font-size: 20px;
+}
+
+.vibely-admin-system-card > span {
+  color: #9b747e;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.vibely-admin-system-card h3 {
+  margin: 5px 0 8px;
+  font-family: "Playfair Display", serif;
+  color: #4b0013;
+  font-size: 21px;
+  overflow-wrap: anywhere;
+}
+
+.vibely-admin-system-card p {
+  margin: 0;
+  color: #96727b;
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.vibely-admin-system-card .vibely-admin-quick-links {
+  margin-top: 17px;
+}
+
+.vibely-admin-system-card .vibely-admin-quick-links > a {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+}
+
+.vibely-admin-system-card
+  .vibely-admin-quick-links
+  > a
+  > i:first-child {
+  width: 33px;
+  height: 33px;
+}
+
+.vibely-admin-system-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #eadde0;
+  color: #5f3c45;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.vibely-admin-system-status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3c8a58;
+  box-shadow: 0 0 0 4px rgba(60, 138, 88, 0.09);
+}
+
+@media (max-width: 1050px) {
+  .vibely-admin-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .vibely-admin-middle,
+  .vibely-admin-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .vibely-admin-welcome-art {
+    display: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .vibely-admin-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  .vibely-admin-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  .vibely-admin-nav p {
+    grid-column: 1 / -1;
+  }
+
+  .vibely-admin-sidebar-bottom {
+    margin-top: 20px;
+  }
+
+  .vibely-admin-main {
+    margin-left: 0;
+  }
+
+  .vibely-admin-header {
+    padding: 0 18px;
+  }
+
+  .vibely-admin-welcome,
+  .vibely-admin-stats,
+  .vibely-admin-middle,
+  .vibely-admin-bottom {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .vibely-admin-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .vibely-admin-welcome {
+    padding: 25px;
+  }
+
+  .vibely-admin-header-user section {
+    display: none;
+  }
+}
+
+@media (max-width: 470px) {
+  .vibely-admin-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .vibely-admin-nav p {
+    grid-column: auto;
+  }
+
+  .vibely-admin-header {
+    height: 74px;
+  }
+
+  .vibely-admin-header h1 {
+    font-size: 21px;
+  }
+
+  .vibely-admin-welcome {
+    margin-top: 18px;
+    padding: 23px 20px;
+  }
+
+  .vibely-admin-welcome h2 {
+    font-size: 25px;
+  }
+
+  .vibely-admin-middle,
+  .vibely-admin-bottom {
+    gap: 13px;
+  }
+
+  .vibely-admin-panel,
+  .vibely-admin-system-card {
+    padding: 18px;
+  }
+
+  .vibely-admin-panel-title {
+    align-items: flex-start;
+  }
+}

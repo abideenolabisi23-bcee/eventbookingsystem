@@ -1,0 +1,152 @@
+.detail-footer {
+  width: 100%;
+  padding: 26px 5%;
+  background:
+    linear-gradient(
+      120deg,
+      #35000e 0%,
+      #4b0013 55%,
+      #5d0019 100%
+    );
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.detail-footer-inner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 35px;
+}
+
+.detail-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.detail-footer-brand img {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.detail-footer-brand h3 {
+  margin: 0;
+  color: #ffffff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.detail-footer-brand span {
+  display: block;
+  margin-top: 4px;
+  color: #f6dfe4;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+}
+
+.detail-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.detail-footer-links a {
+  position: relative;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.detail-footer-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 0;
+  height: 1px;
+  background: #f6dfe4;
+  transition: width 0.25s ease;
+}
+
+.detail-footer-links a:hover {
+  color: #ffffff;
+}
+
+.detail-footer-links a:hover::after {
+  width: 100%;
+}
+
+.detail-footer-right {
+  flex-shrink: 0;
+  text-align: right;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.detail-footer-right p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.detail-footer-right span {
+  display: block;
+  margin-top: 4px;
+  color: #f6dfe4;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 800px) {
+  .detail-footer {
+    padding: 25px 5%;
+  }
+
+  .detail-footer-inner {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .detail-footer-links {
+    gap: 24px;
+  }
+
+  .detail-footer-right {
+    text-align: center;
+  }
+}
+
+@media (max-width: 450px) {
+  .detail-footer-links {
+    gap: 18px;
+  }
+
+  .detail-footer-links a {
+    font-size: 9px;
+  }
+
+  .detail-footer-brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .detail-footer-brand h3 {
+    font-size: 17px;
+  }
+}

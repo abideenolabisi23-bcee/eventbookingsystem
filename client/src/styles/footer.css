@@ -1,0 +1,283 @@
+.vibely-footer {
+  width: 100%;
+  padding: 50px 5% 40px;
+
+  display: grid;
+  grid-template-columns: 1.4fr repeat(6, 1fr);
+  gap: 28px;
+
+  position: relative;
+
+  background: linear-gradient(
+    120deg,
+    #35000e,
+    #4b0013
+  );
+
+  color: #ffffff;
+}
+
+.vibely-footer-brand-column {
+  min-width: 170px;
+}
+
+.vibely-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.vibely-footer-brand img {
+  width: 46px;
+  height: 46px;
+
+  object-fit: cover;
+
+  border-radius: 50%;
+}
+
+.vibely-footer-brand h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 24px;
+  font-weight: 400;
+
+  text-transform: uppercase;
+
+  letter-spacing: 2px;
+}
+
+.vibely-footer-brand span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #f6dfe4;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 6px;
+  font-weight: 600;
+
+  letter-spacing: 1.8px;
+}
+
+.vibely-footer-brand-column > p {
+  margin: 18px 0;
+
+  color: rgba(255, 255, 255, 0.7);
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 10px;
+
+  line-height: 1.6;
+}
+
+.vibely-social-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vibely-social-links a {
+  width: 28px;
+  height: 28px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+
+  color: #ffffff;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 7px;
+
+  text-decoration: none;
+
+  transition: 0.25s ease;
+}
+
+.vibely-social-links a:hover {
+  color: #f6dfe4;
+
+  border-color: rgba(246, 223, 228, 0.6);
+
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vibely-footer-column {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.vibely-footer-column h4 {
+  margin: 0 0 7px;
+
+  color: #ffffff;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  line-height: 1.4;
+}
+
+.vibely-footer-column a,
+.vibely-footer-column p {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.68);
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 9px;
+
+  line-height: 1.5;
+
+  text-decoration: none;
+
+  transition: 0.25s ease;
+}
+
+.vibely-footer-column a {
+  width: fit-content;
+}
+
+.vibely-footer-column a:hover {
+  color: #f6dfe4;
+
+  transform: translateX(2px);
+}
+
+.vibely-partner-column h4 {
+  color: #f4dde2;
+}
+
+.vibely-partner-column a {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.vibely-partner-column a:hover {
+  color: #ffffff;
+}
+
+.vibely-footer-vibe {
+  position: absolute;
+
+  right: 5%;
+  bottom: 22px;
+
+  color: #f6dfe4;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 24px;
+
+  font-style: italic;
+
+  transform: rotate(-5deg);
+}
+
+@media (max-width: 1300px) {
+  .vibely-footer {
+    grid-template-columns: 1.4fr repeat(3, 1fr);
+
+    gap: 40px 30px;
+
+    padding-bottom: 55px;
+  }
+}
+
+@media (max-width: 900px) {
+  .vibely-footer {
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 38px 28px;
+  }
+
+  .vibely-footer-brand-column {
+    grid-column: 1 / -1;
+  }
+
+  .vibely-footer-vibe {
+    position: static;
+
+    grid-column: 1 / -1;
+
+    justify-self: end;
+
+    margin-top: 5px;
+  }
+}
+
+@media (max-width: 700px) {
+  .vibely-footer {
+    grid-template-columns: 1fr 1fr;
+
+    padding: 45px 25px 35px;
+
+    gap: 35px 25px;
+  }
+
+  .vibely-footer-brand-column {
+    grid-column: 1 / -1;
+  }
+
+  .vibely-footer-vibe {
+    grid-column: 1 / -1;
+
+    justify-self: start;
+
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 450px) {
+  .vibely-footer {
+    grid-template-columns: 1fr;
+
+    padding: 40px 22px 30px;
+
+    gap: 30px;
+  }
+
+  .vibely-footer-brand-column,
+  .vibely-footer-vibe {
+    grid-column: auto;
+  }
+
+  .vibely-footer-brand h2 {
+    font-size: 22px;
+  }
+
+  .vibely-footer-column h4 {
+    font-size: 11px;
+  }
+
+  .vibely-footer-column a,
+  .vibely-footer-column p {
+    font-size: 10px;
+  }
+
+  .vibely-footer-vibe {
+    justify-self: start;
+
+    margin-top: 5px;
+  }
+}

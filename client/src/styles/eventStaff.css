@@ -1,0 +1,358 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap");
+
+.event-staff-page {
+  min-height: 100vh;
+  background: #fff8f9;
+  color: #291218;
+  font-family: "DM Sans", sans-serif;
+}
+
+.event-staff-topbar {
+  height: 82px;
+  padding: 0 6%;
+  background: white;
+  border-bottom: 1px solid #f1dfe3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-staff-brand {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.event-staff-brand img {
+  width: 43px;
+  height: 43px;
+  object-fit: contain;
+}
+
+.event-staff-brand h2 {
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  color: #4b0013;
+  font-size: 25px;
+}
+
+.event-staff-brand span {
+  display: block;
+  color: #98727c;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+}
+
+.event-staff-back {
+  border: 1px solid #e8cdd3;
+  background: white;
+  color: #4b0013;
+  padding: 11px 17px;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.event-staff-main {
+  width: min(1050px, 90%);
+  margin: auto;
+  padding: 50px 0 70px;
+}
+
+.event-staff-heading > span {
+  color: #9d5265;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.event-staff-heading h1 {
+  margin: 8px 0;
+  color: #4b0013;
+  font-size: 40px;
+  font-family: "Playfair Display", serif;
+}
+
+.event-staff-heading p {
+  color: #80636b;
+  margin-top: 0;
+}
+
+.event-staff-message {
+  margin-top: 22px;
+  padding: 14px 17px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.event-staff-message.success {
+  background: #e7f7ed;
+  color: #247444;
+}
+
+.event-staff-message.error {
+  background: #ffe8e8;
+  color: #a92727;
+}
+
+.event-staff-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 22px;
+  margin-top: 28px;
+}
+
+.event-staff-add-card,
+.event-staff-list-card {
+  background: white;
+  border: 1px solid #f0dfe3;
+  border-radius: 20px;
+  padding: 27px;
+}
+
+.event-staff-card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: #f4dde2;
+  color: #68001c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-staff-add-card h2,
+.event-staff-list-card h2 {
+  color: #4b0013;
+  font-family: "Playfair Display", serif;
+}
+
+.event-staff-add-card p,
+.event-staff-list-card p {
+  color: #856871;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.event-staff-add-card form {
+  margin-top: 25px;
+}
+
+.event-staff-add-card label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.event-staff-email-input {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #e6cfd5;
+  padding: 0 13px;
+  border-radius: 10px;
+}
+
+.event-staff-email-input svg {
+  color: #9e7480;
+}
+
+.event-staff-email-input input {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 13px 0;
+  font-family: inherit;
+}
+
+.event-staff-add-card form > button,
+.event-staff-actions > button {
+  margin-top: 14px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  background: #4b0013;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-staff-add-card form > button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.event-staff-permission {
+  margin-top: 22px;
+  background: #fff4f6;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  gap: 11px;
+  color: #68001c;
+}
+
+.event-staff-permission strong,
+.event-staff-permission span {
+  display: block;
+}
+
+.event-staff-permission span {
+  color: #896771;
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.event-staff-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.event-staff-list-heading h2 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.event-staff-list-heading p {
+  margin: 0;
+}
+
+.event-staff-list-heading > span {
+  background: #f4dde2;
+  color: #68001c;
+  padding: 8px 11px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+}
+
+.event-staff-list {
+  margin-top: 23px;
+}
+
+.event-staff-person {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid #f1e3e6;
+}
+
+.event-staff-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f4dde2;
+  color: #4b0013;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  margin-right: 12px;
+}
+
+.event-staff-person-info {
+  flex: 1;
+}
+
+.event-staff-person-info strong,
+.event-staff-person-info span {
+  display: block;
+}
+
+.event-staff-person-info span {
+  color: #90747b;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.event-staff-remove {
+  border: none;
+  background: #fff0f0;
+  color: #b53030;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.event-staff-empty {
+  text-align: center;
+  padding: 55px 15px;
+  color: #9b7981;
+}
+
+.event-staff-empty h3 {
+  color: #4b0013;
+}
+
+.event-staff-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.event-staff-actions > button {
+  width: auto;
+  padding-left: 25px;
+  padding-right: 25px;
+}
+
+.event-staff-actions .event-staff-secondary {
+  background: white;
+  color: #4b0013;
+  border: 1px solid #e2c5cc;
+}
+
+.event-staff-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: "DM Sans", sans-serif;
+  color: #68001c;
+}
+
+.event-staff-spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #f4dde2;
+  border-top-color: #68001c;
+  border-radius: 50%;
+  animation: eventStaffSpin 0.8s linear infinite;
+}
+
+@keyframes eventStaffSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 800px) {
+  .event-staff-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-staff-actions {
+    flex-direction: column;
+  }
+
+  .event-staff-actions > button {
+    width: 100%;
+  }
+}

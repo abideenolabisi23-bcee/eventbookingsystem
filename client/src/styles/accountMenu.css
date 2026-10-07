@@ -1,0 +1,334 @@
+.account-menu {
+  position: relative;
+  z-index: 1200;
+}
+
+.account-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 30px;
+  background: transparent;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: 0.2s ease;
+}
+
+.account-menu-trigger:hover {
+  background: #fff7f8;
+}
+
+.account-trigger-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #4b0013;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid #f6dfe4;
+}
+
+.account-trigger-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.account-trigger-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.1;
+}
+
+.account-trigger-info span {
+  margin-bottom: 3px;
+  color: #876d74;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.account-trigger-info strong {
+  max-width: 90px;
+  overflow: hidden;
+  color: #2b0711;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-trigger > i {
+  margin-left: 2px;
+  color: #68001c;
+  font-size: 9px;
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 320px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #f1dfe3;
+  border-radius: 18px;
+  background: #fffdfc;
+  box-shadow:
+    0 20px 60px rgba(75, 0, 19, 0.14),
+    0 4px 15px rgba(0, 0, 0, 0.05);
+  animation: accountMenuOpen 0.18s ease;
+}
+
+@keyframes accountMenuOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.account-dropdown-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px;
+}
+
+.account-dropdown-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #4b0013;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.account-dropdown-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.account-dropdown-user {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-dropdown-user strong {
+  color: #2b0711;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.account-dropdown-user span {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #8b7379;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-dropdown-divider {
+  height: 1px;
+  margin: 7px 4px;
+  background: #f2e6e9;
+}
+
+.account-dropdown-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-dropdown-links a {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px;
+  border-radius: 11px;
+  color: inherit;
+  text-decoration: none;
+  transition: 0.18s ease;
+}
+
+.account-dropdown-links a:hover {
+  background: #fff3f5;
+}
+
+.account-link-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #fff0f3;
+  color: #68001c;
+  font-size: 13px;
+}
+
+.account-dropdown-links a > div:last-child,
+.account-logout-button > div:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-dropdown-links strong {
+  color: #321019;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.account-dropdown-links span {
+  color: #9a8389;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.account-logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: left;
+  transition: 0.18s ease;
+}
+
+.account-logout-button:hover {
+  background: #fff1f3;
+}
+
+.account-logout-button .account-link-icon {
+  color: #8c1830;
+}
+
+.account-logout-button strong {
+  color: #8c1830;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.account-logout-button span {
+  color: #a98b92;
+  font-size: 9px;
+}
+
+.account-menu-loading {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-loading-circle {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #f6dfe4;
+  border-top-color: #4b0013;
+  border-radius: 50%;
+  animation: accountLoading 0.7s linear infinite;
+}
+
+@keyframes accountLoading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.account-auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-login-button,
+.account-signup-button {
+  padding: 10px 23px;
+  border-radius: 50px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.account-login-button {
+  color: #4b0013;
+  background: transparent;
+  border: 1px solid rgba(75, 0, 19, 0.35);
+}
+
+.account-login-button:hover {
+  color: #4b0013;
+  background: #fff7f8;
+}
+
+.account-signup-button {
+  color: #ffffff;
+  background: #4b0013;
+  border: 1px solid #4b0013;
+  box-shadow: 0 7px 18px rgba(75, 0, 19, 0.18);
+}
+
+.account-signup-button:hover {
+  color: #ffffff;
+  background: #7c0023;
+}
+
+@media (max-width: 800px) {
+  .account-trigger-info {
+    display: none;
+  }
+
+  .account-menu-trigger > i {
+    display: none;
+  }
+
+  .account-dropdown {
+    width: min(300px, calc(100vw - 30px));
+    right: 0;
+  }
+
+  .account-trigger-avatar {
+    width: 30px;
+    height: 30px;
+  }
+}
