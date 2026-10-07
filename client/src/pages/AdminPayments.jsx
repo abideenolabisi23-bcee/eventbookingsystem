@@ -77,19 +77,19 @@ const AdminPayments = () => {
                 foodResponse,
             ] = await Promise.all([
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/event-payments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/apartment-payments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/food-payments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-payments",
                     {
                         headers: getHeaders(),
                     }
@@ -679,8 +679,8 @@ const AdminPayments = () => {
                             >
                                 <i
                                     className={`bi ${loading
-                                            ? "bi-arrow-repeat"
-                                            : "bi-arrow-clockwise"
+                                        ? "bi-arrow-repeat"
+                                        : "bi-arrow-clockwise"
                                         }`}
                                 ></i>
 

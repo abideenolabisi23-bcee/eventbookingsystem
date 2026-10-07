@@ -30,7 +30,7 @@ const FoodDetails = () => {
       setError("");
 
       const response = await axios.get(
-        `http://192.168.0.3:5005/api/v1/foods/${id}`
+        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/foods/${id}`
       );
 
       setFood(response.data?.data || null);
@@ -162,7 +162,7 @@ const FoodDetails = () => {
       setOrdering(true);
 
       const response = await axios.post(
-        "http://192.168.0.3:5005/api/v1/food-orders",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders",
         {
           items: [
             {

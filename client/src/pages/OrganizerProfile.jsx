@@ -80,7 +80,7 @@ const OrganizerProfile = () => {
       setLoading(true);
 
       const response = await axios.get(
-        "http://192.168.0.3:5005/api/v1/profile",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -194,7 +194,7 @@ const OrganizerProfile = () => {
       setSaving(true);
 
       const response = await axios.put(
-        "http://192.168.0.3:5005/api/v1/profile",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
         {
           firstname: formData.firstname.trim(),
           lastname: formData.lastname.trim(),
@@ -302,7 +302,7 @@ const OrganizerProfile = () => {
       setUploading(true);
 
       const response = await axios.patch(
-        "http://192.168.0.3:5005/api/v1/profile-picture",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
         photoData,
         {
           headers: {
@@ -363,7 +363,7 @@ const OrganizerProfile = () => {
     try {
       if (accessToken && refreshToken) {
         await axios.post(
-          "http://192.168.0.3:5005/api/v1/logout",
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
           {
             refreshToken,
           },

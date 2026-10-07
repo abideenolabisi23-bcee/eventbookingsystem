@@ -17,7 +17,7 @@ const Events = () => {
     const fetchEvents = async () => {
       try {
         const response = await fetch(
-          "http://192.168.0.3:5005/api/v1/events"
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/events"
         );
 
         const result = await response.json();

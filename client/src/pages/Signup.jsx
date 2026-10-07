@@ -123,7 +123,7 @@ const Signup = () => {
 
         const response =
           await axios.post(
-            "http://192.168.0.3:5005/api/v1/register",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/register",
             payload
           );
 
@@ -390,12 +390,12 @@ const Signup = () => {
                     className={`auth-signup-input ${fieldHasError(
                       "firstname"
                     )
-                        ? "auth-signup-input-error"
-                        : fieldIsValid(
-                          "firstname"
-                        )
-                          ? "auth-signup-input-valid"
-                          : ""
+                      ? "auth-signup-input-error"
+                      : fieldIsValid(
+                        "firstname"
+                      )
+                        ? "auth-signup-input-valid"
+                        : ""
                       }`}
                   >
                     <i className="bi bi-person"></i>
@@ -450,12 +450,12 @@ const Signup = () => {
                     className={`auth-signup-input ${fieldHasError(
                       "lastname"
                     )
-                        ? "auth-signup-input-error"
-                        : fieldIsValid(
-                          "lastname"
-                        )
-                          ? "auth-signup-input-valid"
-                          : ""
+                      ? "auth-signup-input-error"
+                      : fieldIsValid(
+                        "lastname"
+                      )
+                        ? "auth-signup-input-valid"
+                        : ""
                       }`}
                   >
                     <i className="bi bi-person"></i>
@@ -509,12 +509,12 @@ const Signup = () => {
                   className={`auth-signup-input ${fieldHasError(
                     "email"
                   )
-                      ? "auth-signup-input-error"
-                      : fieldIsValid(
-                        "email"
-                      )
-                        ? "auth-signup-input-valid"
-                        : ""
+                    ? "auth-signup-input-error"
+                    : fieldIsValid(
+                      "email"
+                    )
+                      ? "auth-signup-input-valid"
+                      : ""
                     }`}
                 >
                   <i className="bi bi-envelope"></i>
@@ -567,12 +567,12 @@ const Signup = () => {
                   className={`auth-signup-input ${fieldHasError(
                     "password"
                   )
-                      ? "auth-signup-input-error"
-                      : fieldIsValid(
-                        "password"
-                      )
-                        ? "auth-signup-input-valid"
-                        : ""
+                    ? "auth-signup-input-error"
+                    : fieldIsValid(
+                      "password"
+                    )
+                      ? "auth-signup-input-valid"
+                      : ""
                     }`}
                 >
                   <i className="bi bi-lock"></i>

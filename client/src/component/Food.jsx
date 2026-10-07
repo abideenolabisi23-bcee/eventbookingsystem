@@ -32,7 +32,7 @@ const Food = () => {
       setError("");
 
       const response = await axios.get(
-        "http://192.168.0.3:5005/api/v1/foods"
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/foods"
       );
 
       setFoods(response.data?.data || []);
@@ -209,8 +209,8 @@ const Food = () => {
                     type="button"
                     key={category.name}
                     className={`food-category-button ${activeCategory === category.name
-                        ? "active"
-                        : ""
+                      ? "active"
+                      : ""
                       }`}
                     onClick={() =>
                       setActiveCategory(category.name)

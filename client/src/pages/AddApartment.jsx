@@ -226,7 +226,7 @@ const AddApartment = () => {
       });
 
       const response = await fetch(
-        "http://192.168.0.3:5005/api/v1/apartments",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments",
         {
           method: "POST",
           headers: {
@@ -542,8 +542,8 @@ const AddApartment = () => {
               {imageFields.map((field, index) => (
                 <div
                   className={`apartment-image-upload ${field.name === "extraView"
-                      ? "extra-view-upload"
-                      : ""
+                    ? "extra-view-upload"
+                    : ""
                     }`}
                   key={field.name}
                 >

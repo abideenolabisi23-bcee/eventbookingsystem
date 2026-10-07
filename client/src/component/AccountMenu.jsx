@@ -25,7 +25,7 @@ const AccountMenu = () => {
       setLoading(true);
 
       const response = await axios.get(
-        "http://192.168.0.3:5005/api/v1/profile",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -146,7 +146,7 @@ const AccountMenu = () => {
     try {
       if (token) {
         await axios.post(
-          "http://192.168.0.3:5005/api/v1/logout",
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
           {
             refreshToken,
           },
@@ -253,8 +253,8 @@ const AccountMenu = () => {
 
         <i
           className={`bi ${menuOpen
-              ? "bi-chevron-up"
-              : "bi-chevron-down"
+            ? "bi-chevron-up"
+            : "bi-chevron-down"
             }`}
         ></i>
       </button>

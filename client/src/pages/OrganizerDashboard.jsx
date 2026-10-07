@@ -22,7 +22,7 @@ const OrganizerDashboard = () => {
 
       try {
         const response = await fetch(
-          "http://192.168.0.3:5005/api/v1/organizer/dashboard",
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/dashboard",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`
@@ -1061,9 +1061,9 @@ const OrganizerDashboard = () => {
 
                         <span
                           className={`availability-dot ${food.isAvailable &&
-                              food.quantity > 0
-                              ? "available"
-                              : "unavailable"
+                            food.quantity > 0
+                            ? "available"
+                            : "unavailable"
                             }`}
                         ></span>
                       </div>

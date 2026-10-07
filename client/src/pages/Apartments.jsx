@@ -19,7 +19,7 @@ const Apartments = () => {
         setError("");
 
         const response = await axios.get(
-          "http://192.168.0.3:5005/api/v1/apartments"
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments"
         );
 
         setApartments(response.data.data || []);
@@ -197,8 +197,8 @@ const Apartments = () => {
                   type="button"
                   key={type}
                   className={`apartment-filter ${activeType === type
-                      ? "active"
-                      : ""
+                    ? "active"
+                    : ""
                     }`}
                   onClick={() =>
                     setActiveType(type)
@@ -311,9 +311,9 @@ const Apartments = () => {
 
                           <span
                             className={`apartment-availability ${apartment.isAvailable ===
-                                false
-                                ? "unavailable"
-                                : "available"
+                              false
+                              ? "unavailable"
+                              : "available"
                               }`}
                           >
                             {apartment.isAvailable ===

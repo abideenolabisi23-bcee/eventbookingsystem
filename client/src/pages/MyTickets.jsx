@@ -148,7 +148,7 @@ const MyTickets = () => {
 
           axios.get(
 
-            "http://192.168.0.3:5005/api/v1/tickets/my",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/tickets/my",
 
             {
 
@@ -162,7 +162,7 @@ const MyTickets = () => {
 
           axios.get(
 
-            "http://192.168.0.3:5005/api/v1/apartment-tickets/my",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-tickets/my",
 
             {
 
@@ -173,7 +173,7 @@ const MyTickets = () => {
           ),
 
           axios.get(
-            "http://192.168.0.3:5005/api/v1/food-orders/my",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/my",
             {
               headers,
             }
@@ -1419,8 +1419,8 @@ const MyTickets = () => {
                         return (
                           <article
                             className={`food-digital-pass ${isCompleted
-                                ? "food-pass-completed"
-                                : ""
+                              ? "food-pass-completed"
+                              : ""
                               }`}
                             key={ticket._id}
                           >
@@ -1643,9 +1643,9 @@ const MyTickets = () => {
 
                             className={`premium-ticket premium-ticket-${ticket.status} apartment-premium-ticket ${isSelected
 
-                                ? "selected-vibely-ticket"
+                              ? "selected-vibely-ticket"
 
-                                : ""
+                              : ""
 
                               }`}
 

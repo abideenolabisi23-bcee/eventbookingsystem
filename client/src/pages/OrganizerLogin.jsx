@@ -82,7 +82,7 @@ const OrganizerLogin = () => {
 
         const response =
           await axios.post(
-            "http://192.168.0.3:5005/api/v1/login",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/login",
             {
               email:
                 values.email
@@ -426,10 +426,10 @@ const OrganizerLogin = () => {
 
                 <div
                   className={`organizer-login-input ${formik.touched
-                      .email &&
-                      formik.errors.email
-                      ? "organizer-login-input-error"
-                      : ""
+                    .email &&
+                    formik.errors.email
+                    ? "organizer-login-input-error"
+                    : ""
                     }`}
                 >
                   <i className="bi bi-envelope"></i>
@@ -482,11 +482,11 @@ const OrganizerLogin = () => {
 
                 <div
                   className={`organizer-login-input ${formik.touched
-                      .password &&
-                      formik.errors
-                        .password
-                      ? "organizer-login-input-error"
-                      : ""
+                    .password &&
+                    formik.errors
+                      .password
+                    ? "organizer-login-input-error"
+                    : ""
                     }`}
                 >
                   <i className="bi bi-lock"></i>

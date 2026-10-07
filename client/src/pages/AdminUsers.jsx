@@ -46,7 +46,7 @@ const AdminUsers = () => {
       setError("");
 
       const response = await axios.get(
-        "http://192.168.0.3:5005/api/v1/admin/users?role=user",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users?role=user",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -163,7 +163,7 @@ const AdminUsers = () => {
       setActionLoading(userId);
 
       const response = await axios.get(
-        `http://192.168.0.3:5005/api/v1/admin/users/${userId}`,
+        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -213,7 +213,7 @@ const AdminUsers = () => {
       setActionLoading(user._id);
 
       const response = await axios.patch(
-        `http://192.168.0.3:5005/api/v1/admin/users/${user._id}/${action}`,
+        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${user._id}/${action}`,
         {},
         {
           headers: {
@@ -485,8 +485,8 @@ const AdminUsers = () => {
               >
                 <i
                   className={`bi ${loading
-                      ? "bi-arrow-repeat"
-                      : "bi-arrow-clockwise"
+                    ? "bi-arrow-repeat"
+                    : "bi-arrow-clockwise"
                     }`}
                 ></i>
                 {loading ? "Loading..." : "Refresh"}

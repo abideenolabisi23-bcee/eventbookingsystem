@@ -158,7 +158,7 @@ const CreateEvent = () => {
       }
 
       await axios.post(
-        "http://192.168.0.3:5005/api/v1/events",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/events",
         data,
         {
           headers: {

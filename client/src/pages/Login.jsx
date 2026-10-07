@@ -84,7 +84,7 @@ const Login = () => {
 
         const response =
           await axios.post(
-            "http://192.168.0.3:5005/api/v1/login",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/login",
             values
           );
 
@@ -427,10 +427,10 @@ const Login = () => {
 
                 <div
                   className={`auth-login-input ${formik.touched
-                      .email &&
-                      formik.errors.email
-                      ? "auth-login-input-error"
-                      : ""
+                    .email &&
+                    formik.errors.email
+                    ? "auth-login-input-error"
+                    : ""
                     }`}
                 >
                   <div className="auth-login-input-icon">
@@ -479,11 +479,11 @@ const Login = () => {
 
                 <div
                   className={`auth-login-input ${formik.touched
-                      .password &&
-                      formik.errors
-                        .password
-                      ? "auth-login-input-error"
-                      : ""
+                    .password &&
+                    formik.errors
+                      .password
+                    ? "auth-login-input-error"
+                    : ""
                     }`}
                 >
                   <div className="auth-login-input-icon">

@@ -126,7 +126,7 @@ const EditApartment = () => {
                 setError("");
 
                 const response = await axios.get(
-                    "http://192.168.0.3:5005/api/v1/organizer/apartments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -368,7 +368,7 @@ const EditApartment = () => {
             );
 
             const response = await axios.put(
-                `http://192.168.0.3:5005/api/v1/apartments/${id}`,
+                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments/${id}`,
                 data,
                 {
                     headers: {

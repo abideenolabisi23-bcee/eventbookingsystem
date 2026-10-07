@@ -66,13 +66,13 @@ const AdminFood = () => {
             const [foodsResponse, ordersResponse] =
                 await Promise.all([
                     axios.get(
-                        "http://192.168.0.3:5005/api/v1/admin/foods",
+                        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods",
                         {
                             headers: getHeaders(),
                         }
                     ),
                     axios.get(
-                        "http://192.168.0.3:5005/api/v1/admin/food-orders",
+                        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
                         {
                             headers: getHeaders(),
                         }
@@ -232,7 +232,7 @@ const AdminFood = () => {
             setDetailsLoading(true);
 
             const response = await axios.get(
-                `http://192.168.0.3:5005/api/v1/admin/foods/${foodId}`,
+                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods/${foodId}`,
                 {
                     headers: getHeaders(),
                 }
@@ -284,7 +284,7 @@ const AdminFood = () => {
             setActionLoading(food._id);
 
             const response = await axios.patch(
-                `http://192.168.0.3:5005/api/v1/admin/foods/${food._id}/${action}`,
+                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/foods/${food._id}/${action}`,
                 {},
                 {
                     headers: getHeaders(),
@@ -565,8 +565,8 @@ const AdminFood = () => {
                             >
                                 <i
                                     className={`bi ${loading
-                                            ? "bi-arrow-repeat"
-                                            : "bi-arrow-clockwise"
+                                        ? "bi-arrow-repeat"
+                                        : "bi-arrow-clockwise"
                                         }`}
                                 ></i>
 
@@ -808,8 +808,8 @@ const AdminFood = () => {
                                                         <td>
                                                             <span
                                                                 className={`admin-food-status ${food.isAvailable
-                                                                        ? "available"
-                                                                        : "unavailable"
+                                                                    ? "available"
+                                                                    : "unavailable"
                                                                     }`}
                                                             >
                                                                 {food.isAvailable
@@ -977,7 +977,7 @@ const AdminFood = () => {
                                                                     <strong>
                                                                         {order.user
                                                                             ? `${order.user
-                                                                                    .firstname ||
+                                                                                .firstname ||
                                                                                 ""
                                                                                 } ${order.user
                                                                                     .lastname ||
@@ -1100,8 +1100,8 @@ const AdminFood = () => {
 
                             <span
                                 className={`admin-food-modal-status ${selectedFood.isAvailable
-                                        ? "available"
-                                        : "unavailable"
+                                    ? "available"
+                                    : "unavailable"
                                     }`}
                             >
                                 {selectedFood.isAvailable

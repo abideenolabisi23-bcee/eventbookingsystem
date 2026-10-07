@@ -32,7 +32,7 @@ const MyApartments = () => {
       setLoading(true);
 
       const response = await fetch(
-        "http://192.168.0.3:5005/api/v1/organizer/apartments",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/apartments",
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -87,7 +87,7 @@ const MyApartments = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.0.3:5005/api/v1/apartments/${apartmentId}/availability`,
+        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments/${apartmentId}/availability`,
         {
           method: "PATCH",
           headers: {
@@ -316,8 +316,8 @@ const MyApartments = () => {
 
                     <span
                       className={`apartment-status ${apartment.isAvailable
-                          ? "active"
-                          : "inactive"
+                        ? "active"
+                        : "inactive"
                         }`}
                     >
                       {apartment.isAvailable
@@ -436,8 +436,8 @@ const MyApartments = () => {
                       <button
                         type="button"
                         className={`apartment-toggle-button ${apartment.isAvailable
-                            ? "disable"
-                            : "enable"
+                          ? "disable"
+                          : "enable"
                           }`}
                         onClick={() =>
                           toggleAvailability(

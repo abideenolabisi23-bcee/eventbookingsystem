@@ -34,7 +34,7 @@ const MyBookings = () => {
 
       try {
         const response = await axios.get(
-          "http://192.168.0.3:5005/api/v1/bookings/my",
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/bookings/my",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

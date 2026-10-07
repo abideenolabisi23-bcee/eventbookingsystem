@@ -31,7 +31,7 @@ const EventBookings = () => {
     const fetchBookings = async () => {
       try {
         const response = await axios.get(
-          `http://192.168.0.3:5005/api/v1/organizer/events/${id}/bookings`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/organizer/events/${id}/bookings`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`

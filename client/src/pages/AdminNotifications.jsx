@@ -253,43 +253,43 @@ const AdminNotifications = () => {
 
             const responses = await Promise.allSettled([
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/providers/pending",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/pending",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/event-payments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/apartment-payments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/food-payments",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-payments",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/event-bookings",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/event-bookings",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/apartment-bookings",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartment-bookings",
                     {
                         headers: getHeaders(),
                     }
                 ),
                 axios.get(
-                    "http://192.168.0.3:5005/api/v1/admin/food-orders",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/food-orders",
                     {
                         headers: getHeaders(),
                     }
@@ -692,8 +692,8 @@ const AdminNotifications = () => {
                                 >
                                     <i
                                         className={`bi ${loading
-                                                ? "bi-arrow-repeat"
-                                                : "bi-arrow-clockwise"
+                                            ? "bi-arrow-repeat"
+                                            : "bi-arrow-clockwise"
                                             }`}
                                     ></i>
 
@@ -829,8 +829,8 @@ const AdminNotifications = () => {
                                         <article
                                             key={notification._id}
                                             className={`${notification.isRead
-                                                    ? ""
-                                                    : "unread"
+                                                ? ""
+                                                : "unread"
                                                 } ${notification.priority ===
                                                     "attention"
                                                     ? "attention"

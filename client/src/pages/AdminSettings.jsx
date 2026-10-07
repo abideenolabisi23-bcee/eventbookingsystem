@@ -110,7 +110,7 @@ const AdminSettings = () => {
             setProfileError("");
 
             const response = await axios.get(
-                "http://192.168.0.3:5005/api/v1/profile",
+                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
                 {
                     headers: getHeaders(),
                 }
@@ -241,7 +241,7 @@ const AdminSettings = () => {
             setSavingProfile(true);
 
             const response = await axios.put(
-                "http://192.168.0.3:5005/api/v1/profile",
+                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
                 {
                     firstname: editProfile.firstname.trim(),
                     lastname: editProfile.lastname.trim(),
@@ -341,7 +341,7 @@ const AdminSettings = () => {
             formData.append("profilePicture", file);
 
             const response = await axios.patch(
-                "http://192.168.0.3:5005/api/v1/profile-picture",
+                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
                 formData,
                 {
                     headers: {
@@ -447,7 +447,7 @@ const AdminSettings = () => {
             setChangingPassword(true);
 
             const response = await axios.patch(
-                "http://192.168.0.3:5005/api/v1/change-password",
+                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/change-password",
                 {
                     currentPassword:
                         passwordForm.currentPassword,
@@ -573,7 +573,7 @@ const AdminSettings = () => {
         try {
             if (getToken() && refreshToken) {
                 await axios.post(
-                    "http://192.168.0.3:5005/api/v1/logout",
+                    "http://https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
                     {
                         refreshToken,
                     },

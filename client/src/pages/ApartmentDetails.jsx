@@ -49,7 +49,7 @@ const ApartmentDetails = () => {
         setError("");
 
         const response = await axios.get(
-          `http://192.168.0.3:5005/api/v1/apartments/${id}`
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartments/${id}`
         );
 
         setApartment(response.data.data);
@@ -192,7 +192,7 @@ const ApartmentDetails = () => {
 
       const bookingResponse =
         await axios.post(
-          "http://192.168.0.3:5005/api/v1/apartment-bookings",
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-bookings",
           {
             apartmentId: apartment._id,
             stayType,
@@ -231,7 +231,7 @@ const ApartmentDetails = () => {
 
       const paymentResponse =
         await axios.post(
-          "http://192.168.0.3:5005/api/v1/apartment-payments/initialize",
+          "http://https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-payments/initialize",
           {
             bookingId
           },

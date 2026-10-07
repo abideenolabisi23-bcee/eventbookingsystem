@@ -51,7 +51,7 @@ const EventPaymentCallback = () => {
 
       try {
         const response = await axios.get(
-          `http://192.168.0.3:5005/api/v1/payments/verify/${reference}`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/payments/verify/${reference}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

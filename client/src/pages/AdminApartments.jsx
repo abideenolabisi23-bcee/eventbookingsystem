@@ -56,7 +56,7 @@ const AdminApartments = () => {
             setError("");
 
             const response = await axios.get(
-                "http://192.168.0.3:5005/api/v1/admin/apartments",
+                "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartments",
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -197,7 +197,7 @@ const AdminApartments = () => {
             setDetailsLoading(true);
 
             const response = await axios.get(
-                `http://192.168.0.3:5005/api/v1/admin/apartments/${apartmentId}`,
+                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartments/${apartmentId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -253,7 +253,7 @@ const AdminApartments = () => {
             setActionLoading(apartment._id);
 
             const response = await axios.patch(
-                `http://192.168.0.3:5005/api/v1/admin/apartments/${apartment._id}/${action}`,
+                `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/apartments/${apartment._id}/${action}`,
                 {},
                 {
                     headers: {
@@ -588,8 +588,8 @@ const AdminApartments = () => {
                             >
                                 <i
                                     className={`bi ${loading
-                                            ? "bi-arrow-repeat"
-                                            : "bi-arrow-clockwise"
+                                        ? "bi-arrow-repeat"
+                                        : "bi-arrow-clockwise"
                                         }`}
                                 ></i>
 
@@ -835,8 +835,8 @@ const AdminApartments = () => {
                                                     <td>
                                                         <span
                                                             className={`admin-apartment-status ${apartment.isAvailable
-                                                                    ? "available"
-                                                                    : "unavailable"
+                                                                ? "available"
+                                                                : "unavailable"
                                                                 }`}
                                                         >
                                                             {apartment.isAvailable
@@ -959,8 +959,8 @@ const AdminApartments = () => {
 
                             <span
                                 className={`admin-apartment-modal-status ${selectedApartment.isAvailable
-                                        ? "available"
-                                        : "unavailable"
+                                    ? "available"
+                                    : "unavailable"
                                     }`}
                             >
                                 {selectedApartment.isAvailable

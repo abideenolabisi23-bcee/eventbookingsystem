@@ -47,14 +47,14 @@ const PaymentsRefunds = () => {
           refundsResponse,
         ] = await Promise.all([
           axios.get(
-            "http://192.168.0.3:5005/api/v1/payments/my",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/payments/my",
             {
               headers,
             }
           ),
 
           axios.get(
-            "http://192.168.0.3:5005/api/v1/refunds/my",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/refunds/my",
             {
               headers,
             }

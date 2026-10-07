@@ -202,7 +202,7 @@ const OrganizerRegister = () => {
 
         const response =
           await axios.post(
-            "http://192.168.0.3:5005/api/v1/register-organizer",
+            "http://https://eventbookingsystem-sooty.vercel.app/api/v1/register-organizer",
             payload
           );
 
@@ -519,8 +519,8 @@ const OrganizerRegister = () => {
                     className={`organizer-register-input ${hasError(
                       "firstname"
                     )
-                        ? "organizer-register-input-error"
-                        : ""
+                      ? "organizer-register-input-error"
+                      : ""
                       }`}
                   >
                     <i className="bi bi-person"></i>
@@ -566,8 +566,8 @@ const OrganizerRegister = () => {
                     className={`organizer-register-input ${hasError(
                       "lastname"
                     )
-                        ? "organizer-register-input-error"
-                        : ""
+                      ? "organizer-register-input-error"
+                      : ""
                       }`}
                   >
                     <i className="bi bi-person"></i>
@@ -614,8 +614,8 @@ const OrganizerRegister = () => {
                   className={`organizer-register-input ${hasError(
                     "businessName"
                   )
-                      ? "organizer-register-input-error"
-                      : ""
+                    ? "organizer-register-input-error"
+                    : ""
                     }`}
                 >
                   <i className="bi bi-briefcase"></i>
@@ -659,8 +659,8 @@ const OrganizerRegister = () => {
 
                 <div
                   className={`organizer-register-input ${hasError("phone")
-                      ? "organizer-register-input-error"
-                      : ""
+                    ? "organizer-register-input-error"
+                    : ""
                     }`}
                 >
                   <i className="bi bi-telephone"></i>
@@ -700,8 +700,8 @@ const OrganizerRegister = () => {
 
                 <div
                   className={`organizer-register-input ${hasError("email")
-                      ? "organizer-register-input-error"
-                      : ""
+                    ? "organizer-register-input-error"
+                    : ""
                     }`}
                 >
                   <i className="bi bi-envelope"></i>
@@ -743,8 +743,8 @@ const OrganizerRegister = () => {
                   className={`organizer-register-input ${hasError(
                     "password"
                   )
-                      ? "organizer-register-input-error"
-                      : ""
+                    ? "organizer-register-input-error"
+                    : ""
                     }`}
                 >
                   <i className="bi bi-lock"></i>

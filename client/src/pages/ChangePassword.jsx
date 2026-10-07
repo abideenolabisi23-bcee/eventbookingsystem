@@ -93,7 +93,7 @@ const ChangePassword = () => {
       setLoading(true);
 
       const response = await axios.patch(
-        "http://192.168.0.3:5005/api/v1/change-password",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/change-password",
         formData,
         {
           headers: {

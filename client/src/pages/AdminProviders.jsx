@@ -50,7 +50,7 @@ const AdminProviders = () => {
       setError("");
 
       const response = await axios.get(
-        "http://192.168.0.3:5005/api/v1/admin/providers",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -268,7 +268,7 @@ const AdminProviders = () => {
       setDetailsLoading(true);
 
       const response = await axios.get(
-        `http://192.168.0.3:5005/api/v1/admin/providers/${provider._id}`,
+        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -339,7 +339,7 @@ const AdminProviders = () => {
         action === "reject"
       ) {
         response = await axios.patch(
-          `http://192.168.0.3:5005/api/v1/admin/providers/${provider._id}/${action}`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}/${action}`,
           {},
           {
             headers: {
@@ -351,7 +351,7 @@ const AdminProviders = () => {
 
       if (action === "suspend") {
         response = await axios.patch(
-          `http://192.168.0.3:5005/api/v1/admin/users/${provider._id}/suspend`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${provider._id}/suspend`,
           {},
           {
             headers: {
@@ -363,7 +363,7 @@ const AdminProviders = () => {
 
       if (action === "reactivate") {
         response = await axios.patch(
-          `http://192.168.0.3:5005/api/v1/admin/users/${provider._id}/reactivate`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/users/${provider._id}/reactivate`,
           {},
           {
             headers: {
@@ -375,7 +375,7 @@ const AdminProviders = () => {
 
       if (action === "remove") {
         response = await axios.delete(
-          `http://192.168.0.3:5005/api/v1/admin/providers/${provider._id}`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/admin/providers/${provider._id}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -731,8 +731,8 @@ const AdminProviders = () => {
               >
                 <i
                   className={`bi ${loading
-                      ? "bi-arrow-repeat"
-                      : "bi-arrow-clockwise"
+                    ? "bi-arrow-repeat"
+                    : "bi-arrow-clockwise"
                     }`}
                 ></i>
 

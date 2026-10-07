@@ -40,7 +40,7 @@ const EventDetails = () => {
     const fetchEvent = async () => {
       try {
         const response = await axios.get(
-          `http://192.168.0.3:5005/api/v1/events/${id}`
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`
         );
 
         setEvent(response.data.data);
@@ -136,7 +136,7 @@ const EventDetails = () => {
       setBookingSuccess("");
 
       const bookingResponse = await axios.post(
-        "http://192.168.0.3:5005/api/v1/bookings",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/bookings",
         {
           eventId: event._id,
           ticketType: selectedTicketType.name,
@@ -153,7 +153,7 @@ const EventDetails = () => {
         bookingResponse.data.data.booking;
 
       const paymentResponse = await axios.post(
-        "http://192.168.0.3:5005/api/v1/payments/initialize",
+        "http://https://eventbookingsystem-sooty.vercel.app/api/v1/payments/initialize",
         {
           bookingId: booking._id,
         },
@@ -514,8 +514,8 @@ const EventDetails = () => {
                           key={type.name}
                           type="button"
                           className={`ticket-category-card ${selected
-                              ? "selected"
-                              : ""
+                            ? "selected"
+                            : ""
                             } ${soldOut
                               ? "sold-out"
                               : ""

@@ -59,7 +59,7 @@ const EditEvent = () => {
         }
 
         const response = await axios.get(
-          `http://192.168.0.3:5005/api/v1/events/${id}`,
+          `http://https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -206,7 +206,7 @@ const EditEvent = () => {
       }
 
       await axios.put(
-        `http://192.168.0.3:5005/api/v1/events/${id}`,
+        `http://https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
         data,
         {
           headers: {
