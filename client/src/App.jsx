@@ -217,6 +217,11 @@ function App() {
           element={<OrganizerAccountStatus />}
         />
 
+        <Route
+  path="/organizer/rejected"
+  element={<OrganizerAccountStatus />}
+/>
+
         <Route element={<OrganizerProtectedRoute />}>
           <Route
             path="/organizer/dashboard"

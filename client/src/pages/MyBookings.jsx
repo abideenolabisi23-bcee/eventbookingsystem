@@ -1,93 +1,50 @@
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-
 import Navbar from "../component/Navbar";
 import DetailFooter from "../component/DetailFooter";
-
-import vibelyLogo from "../assets/vibely-logo.png";
 import concertImage from "../assets/concert.jpg";
-
 import "../styles/myBookings.css";
 
 const API =
   import.meta.env.VITE_API_URL ||
   "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
-const formatPrice = (price) =>
+const money = (value) =>
   new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
     maximumFractionDigits: 0
-  }).format(Number(price) || 0);
+  }).format(Number(value) || 0);
 
-const formatDate = (value) => {
+const dateText = (value) => {
   if (!value) return "Date unavailable";
-
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date unavailable";
-  }
-
-  return new Intl.DateTimeFormat("en-NG", {
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  return date.toLocaleDateString("en-NG", {
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric"
-  }).format(date);
+  });
 };
 
-const bookingStatusLabel = (status) => {
-  const labels = {
-    pending: "Pending",
-    confirmed: "Confirmed",
-    partially_cancelled: "Partially Cancelled",
-    cancelled: "Cancelled"
-  };
+const pretty = (value) =>
+  String(value || "pending")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-  return labels[status] || status || "Pending";
-};
-
-const paymentStatusLabel = (status) => {
-  const labels = {
-    pending: "Pending",
-    paid: "Paid",
-    failed: "Failed",
-    partially_refunded: "Partially Refunded",
-    refunded: "Refunded"
-  };
-
-  return labels[status] || status || "Pending";
-};
-
-const ticketStatusLabel = (status) => {
-  const labels = {
-    valid: "Valid",
-    used: "Used",
-    cancelled: "Cancelled",
-    refund_pending: "Refund Pending"
-  };
-
-  return labels[status] || status || "Unknown";
-};
-
-const getSelections = (booking) => {
-  if (
-    Array.isArray(booking.ticketSelections) &&
-    booking.ticketSelections.length
-  ) {
+const selectionsOf = (booking) => {
+  if (Array.isArray(booking.ticketSelections) && booking.ticketSelections.length) {
     return booking.ticketSelections;
   }
 
   if (booking.ticketType) {
-    return [
-      {
-        ticketType: booking.ticketType,
-        ticketPrice: booking.ticketPrice,
-        quantity: booking.quantity
-      }
-    ];
+    return [{
+      ticketType: booking.ticketType,
+      ticketPrice: booking.ticketPrice,
+      quantity: booking.quantity
+    }];
   }
 
   return [];
@@ -95,114 +52,139 @@ const getSelections = (booking) => {
 
 export default function MyBookings() {
   const navigate = useNavigate();
-
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [expanded, setExpanded] = useState({});
   const [activeBooking, setActiveBooking] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [refundNotice, setRefundNotice] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  const [refundNotice, setRefundNotice] = useState(null);
 
-  const fetchBookings = useCallback(
-    async (signal) => {
-      const token = localStorage.getItem("accessToken");
+  const goToLogin = useCallback(() => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    navigate("/login", {
+      replace: true,
+      state: { returnTo: "/my-bookings" }
+    });
+  }, [navigate]);
 
-      if (!token) {
-        navigate("/login", {
-          replace: true,
-          state: { returnTo: "/my-bookings" }
-        });
+  const fetchBookings = useCallback(async (signal, silent = false) => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      goToLogin();
+      return;
+    }
+
+    if (silent) setRefreshing(true);
+    else setLoading(true);
+
+    setError("");
+
+    try {
+      const response = await axios.get(`${API}/bookings/my`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal
+      });
+
+      const data = response.data?.data;
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.bookings)
+          ? data.bookings
+          : [];
+
+      if (!signal?.aborted) setBookings(list);
+    } catch (err) {
+      if (axios.isCancel(err) || signal?.aborted) return;
+
+      if (err.response?.status === 401) {
+        goToLogin();
         return;
       }
 
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await axios.get(`${API}/bookings/my`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          signal
-        });
-
-        const data = response.data?.data;
-
-        setBookings(
-          Array.isArray(data)
-            ? data
-            : Array.isArray(data?.bookings)
-              ? data.bookings
-              : []
-        );
-      } catch (err) {
-        if (axios.isCancel(err)) return;
-
-        if (err.response?.status === 401) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-
-          navigate("/login", {
-            replace: true,
-            state: { returnTo: "/my-bookings" }
-          });
-
-          return;
-        }
-
-        setError(
-          err.response?.data?.message ||
-            "Unable to load your bookings."
-        );
-      } finally {
-        if (!signal?.aborted) {
-          setLoading(false);
-        }
+      setError(
+        err.response?.data?.message ||
+        "We couldn't load your bookings. Please try again."
+      );
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
       }
-    },
-    [navigate]
-  );
+    }
+  }, [goToLogin]);
 
   useEffect(() => {
     const controller = new AbortController();
-
     fetchBookings(controller.signal);
-
     return () => controller.abort();
   }, [fetchBookings]);
+
+  const stats = useMemo(() => ({
+    total: bookings.length,
+    confirmed: bookings.filter(
+      (b) => b.bookingStatus === "confirmed"
+    ).length,
+    tickets: bookings.reduce(
+      (sum, b) => sum + (Number(b.quantity) || 0),
+      0
+    ),
+    refunds: bookings.filter(
+      (b) =>
+        ["partially_refunded", "refunded"].includes(b.paymentStatus) ||
+        ["cancelled", "partially_cancelled"].includes(b.bookingStatus) ||
+        b.tickets?.some((t) => t.status === "refund_pending")
+    ).length
+  }), [bookings]);
+
+  const filtered = useMemo(() => {
+    return bookings.filter((booking) => {
+      const event = booking.event || {};
+      const text = [
+        event.title,
+        event.location,
+        booking.bookingReference,
+        ...selectionsOf(booking).map((s) => s.ticketType)
+      ].join(" ").toLowerCase();
+
+      const matchesSearch = text.includes(search.trim().toLowerCase());
+
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "confirmed" && booking.bookingStatus === "confirmed") ||
+        (filter === "pending" &&
+          (booking.bookingStatus === "pending" ||
+            booking.paymentStatus === "pending")) ||
+        (filter === "refunds" &&
+          (["refunded", "partially_refunded"].includes(booking.paymentStatus) ||
+            ["cancelled", "partially_cancelled"].includes(booking.bookingStatus) ||
+            booking.tickets?.some((t) => t.status === "refund_pending")));
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [bookings, search, filter]);
 
   const openManager = (booking) => {
     setActiveBooking(booking);
     setSelectedIds([]);
-    setCancelError("");
     setConfirming(false);
-    setRefundNotice(null);
+    setCancelError("");
   };
 
   const closeManager = () => {
     if (submitting) return;
-
     setActiveBooking(null);
     setSelectedIds([]);
-    setCancelError("");
     setConfirming(false);
-  };
-
-  const toggleTicket = (ticketId) => {
-    if (submitting) return;
-
     setCancelError("");
-    setConfirming(false);
-
-    setSelectedIds((current) =>
-      current.includes(ticketId)
-        ? current.filter((id) => id !== ticketId)
-        : [...current, ticketId]
-    );
   };
 
   const activeTickets = Array.isArray(activeBooking?.tickets)
@@ -214,45 +196,28 @@ export default function MyBookings() {
   );
 
   const refundAmount = selectedTickets.reduce(
-    (total, ticket) =>
-      total +
-      Number(
-        ticket.ticketPrice ??
-          activeBooking?.ticketPrice ??
-          0
-      ),
+    (sum, ticket) =>
+      sum + Number(ticket.ticketPrice ?? activeBooking?.ticketPrice ?? 0),
     0
   );
 
-  const canRequestRefund =
+  const canRefund =
     selectedTickets.length > 0 &&
     selectedTickets.every(
       (ticket) =>
         ticket.status === "valid" &&
-        Number.isFinite(
-          Number(
-            ticket.ticketPrice ??
-              activeBooking?.ticketPrice
-          )
-        ) &&
-        Number(
-          ticket.ticketPrice ??
-            activeBooking?.ticketPrice
-        ) >= 0
+        Number.isFinite(Number(ticket.ticketPrice ?? activeBooking?.ticketPrice)) &&
+        Number(ticket.ticketPrice ?? activeBooking?.ticketPrice) >= 0
     ) &&
     refundAmount > 0;
 
-  const cancelSelectedTickets = async () => {
-    if (!activeBooking || !canRequestRefund || submitting) {
-      return;
-    }
+  const submitCancellation = async () => {
+    if (!activeBooking || !canRefund || submitting) return;
 
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-      navigate("/login", {
-        state: { returnTo: "/my-bookings" }
-      });
+      goToLogin();
       return;
     }
 
@@ -263,836 +228,541 @@ export default function MyBookings() {
       const response = await axios.patch(
         `${API}/bookings/${activeBooking._id}/cancel-tickets`,
         { ticketIds: selectedIds },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const result = response.data?.data || {};
 
       setRefundNotice({
-        message:
-          response.data?.message ||
-          "Your refund request has been submitted.",
-        refundId: result.refundId,
-        refundStatus:
-          result.refundStatus || "pending",
+        message: response.data?.message || "Your refund request has been submitted.",
         amount: result.refundAmount ?? refundAmount,
-        needsAttention:
-          result.refundStatus === "needs-attention"
+        status: result.refundStatus || "pending",
+        refundId: result.refundId
       });
 
-      setActiveBooking(null);
-      setSelectedIds([]);
-      setConfirming(false);
-
-      const refreshController = new AbortController();
-      await fetchBookings(refreshController.signal);
+      closeManagerAfterSuccess();
+      await fetchBookings(undefined, true);
     } catch (err) {
       if (err.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-
-        navigate("/login", {
-          replace: true,
-          state: { returnTo: "/my-bookings" }
-        });
-
+        goToLogin();
         return;
       }
 
       setConfirming(false);
-
       setCancelError(
         err.response?.data?.message ||
-          "Unable to submit your refund request. Please check your booking status before trying again."
+        "Unable to submit your request. Please check your booking before trying again."
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const paidBookings = bookings.filter(
-    (booking) => booking.paymentStatus === "paid"
-  ).length;
-
-  const confirmedBookings = bookings.filter(
-    (booking) => booking.bookingStatus === "confirmed"
-  ).length;
-
-  const cancelledBookings = bookings.filter(
-    (booking) =>
-      booking.bookingStatus === "cancelled" ||
-      booking.bookingStatus === "partially_cancelled"
-  ).length;
-
-  if (loading && bookings.length === 0 && !error) {
-    return (
-      <>
-        <Navbar />
-
-        <div className="bookings-loading">
-          <div className="bookings-loader"></div>
-          <p>Loading your bookings...</p>
-        </div>
-
-        <DetailFooter />
-      </>
-    );
-  }
+  const closeManagerAfterSuccess = () => {
+    setActiveBooking(null);
+    setSelectedIds([]);
+    setConfirming(false);
+  };
 
   return (
     <>
       <Navbar />
 
-      <main className="my-bookings-page">
-        <section className="bookings-hero">
-          <div className="bookings-hero-circle bookings-circle-one"></div>
-          <div className="bookings-hero-circle bookings-circle-two"></div>
-
-          <div className="bookings-hero-inner">
-            <div className="bookings-hero-copy">
-              <span className="bookings-eyebrow">
-                YOUR EXPERIENCES
-              </span>
-
-              <h1>
-                My <em>Bookings.</em>
-              </h1>
-
-              <p>
-                Every event you've reserved, beautifully
-                organised in one place.
-              </p>
-            </div>
-
-            <div className="bookings-hero-card">
-              <img src={vibelyLogo} alt="Vibely" />
-
-              <div>
-                <span>VIBELY COLLECTION</span>
-
-                <strong>
-                  {bookings.length}{" "}
-                  {bookings.length === 1
-                    ? "Booking"
-                    : "Bookings"}
-                </strong>
-
-                <p>EVENTS · EXPERIENCES</p>
+      <main className="vmb-page">
+        <div className="vmb-container">
+          <header className="vmb-header">
+            <div>
+              <div className="vmb-eyebrow">
+                <span className="vmb-eyebrow-line" />
+                YOUR VIBELY ACCOUNT
               </div>
+              <h1>My <em>Bookings</em></h1>
+              <p>All your memorable experiences, beautifully organised.</p>
             </div>
-          </div>
-        </section>
 
-        <section className="bookings-container">
+            <div className="vmb-header-actions">
+              <Link to="/my-tickets" className="vmb-outline-btn">
+                <i className="bi bi-ticket-perforated" />
+                My Tickets
+              </Link>
+              <Link to="/events" className="vmb-primary-btn">
+                Explore Events
+                <i className="bi bi-arrow-up-right" />
+              </Link>
+            </div>
+          </header>
+
+          <section className="vmb-stats">
+            {[
+              ["bi-calendar2-check", "Total Bookings", stats.total],
+              ["bi-patch-check", "Confirmed", stats.confirmed],
+              ["bi-ticket-perforated", "Tickets Booked", stats.tickets],
+              ["bi-arrow-counterclockwise", "Refund Activity", stats.refunds]
+            ].map(([icon, label, value]) => (
+              <div className="vmb-stat" key={label}>
+                <span className="vmb-stat-icon"><i className={`bi ${icon}`} /></span>
+                <div>
+                  <small>{label}</small>
+                  <strong>{value}</strong>
+                </div>
+              </div>
+            ))}
+          </section>
+
           {refundNotice && (
-            <div
-              className="vb-refund-notice"
-              role="status"
-            >
-              <i
-                className={`bi ${
-                  refundNotice.needsAttention
-                    ? "bi-exclamation-circle"
-                    : "bi-clock-history"
-                }`}
-              ></i>
-
+            <div className="vmb-notice" role="status">
+              <i className="bi bi-info-circle" />
               <div>
-                <strong>
-                  {refundNotice.needsAttention
-                    ? "Refund requires attention"
-                    : "Refund request received"}
-                </strong>
-
+                <strong>Refund request received</strong>
                 <p>{refundNotice.message}</p>
-
-                <p>
-                  Requested amount:{" "}
-                  <b>{formatPrice(refundNotice.amount)}</b>
-                </p>
-
-                <p>
-                  Status:{" "}
-                  <b>{refundNotice.refundStatus}</b>
-                </p>
-
-                {refundNotice.refundId && (
-                  <small>
-                    Refund ID: {refundNotice.refundId}
-                  </small>
-                )}
+                <small>
+                  {money(refundNotice.amount)} · {pretty(refundNotice.status)}
+                </small>
               </div>
-
+              <Link to="/my-refunds">Track refund</Link>
               <button
                 type="button"
+                aria-label="Dismiss notification"
                 onClick={() => setRefundNotice(null)}
-                aria-label="Dismiss refund notice"
               >
-                ×
+                <i className="bi bi-x-lg" />
               </button>
             </div>
           )}
 
-          {error && (
-            <div className="bookings-error">
-              <div className="bookings-error-icon">
-                <i className="bi bi-exclamation-circle"></i>
-              </div>
-
+          <section className="vmb-history">
+            <div className="vmb-history-heading">
               <div>
-                <strong>
-                  We couldn't load your bookings.
-                </strong>
-                <p>{error}</p>
+                <span className="vmb-section-label">YOUR RESERVATIONS</span>
+                <h2>Booking history</h2>
+                <p>View your bookings, ticket categories and payment details.</p>
+              </div>
+              <button
+                type="button"
+                className="vmb-refresh"
+                onClick={() => fetchBookings(undefined, true)}
+                disabled={refreshing || loading}
+              >
+                <i className={`bi bi-arrow-clockwise ${refreshing ? "vmb-spinning" : ""}`} />
+                Refresh
+              </button>
+            </div>
 
-                <button
-                  type="button"
-                  className="vb-retry-button"
-                  onClick={() => fetchBookings()}
-                >
+            {!loading && bookings.length > 0 && (
+              <div className="vmb-toolbar">
+                <div className="vmb-search">
+                  <i className="bi bi-search" />
+                  <input
+                    type="search"
+                    placeholder="Search events or booking references..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <div className="vmb-filters">
+                  {[
+                    ["all", "All"],
+                    ["confirmed", "Confirmed"],
+                    ["pending", "Pending"],
+                    ["refunds", "Refunds"]
+                  ].map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      className={filter === value ? "active" : ""}
+                      onClick={() => setFilter(value)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="vmb-state">
+                <i className="bi bi-exclamation-circle" />
+                <h3>Couldn't load your bookings</h3>
+                <p>{error}</p>
+                <button type="button" onClick={() => fetchBookings()}>
                   Try Again
                 </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {!error && bookings.length === 0 && (
-            <div className="bookings-empty">
-              <div className="bookings-empty-icon">
-                <i className="bi bi-calendar2-heart"></i>
+            {loading && (
+              <div className="vmb-state">
+                <div className="vmb-loader" />
+                <p>Getting your bookings ready...</p>
               </div>
+            )}
 
-              <span>YOUR EXPERIENCES</span>
-
-              <h2>No event bookings yet.</h2>
-
-              <p>
-                Discover something you love and your Vibely
-                reservations will appear here.
-              </p>
-
-              <Link to="/events">
-                Explore Events
-                <i className="bi bi-arrow-right"></i>
-              </Link>
-            </div>
-          )}
-
-          {!error && bookings.length > 0 && (
-            <>
-              <section className="bookings-summary">
-                <div className="booking-summary-card">
-                  <div className="booking-summary-icon">
-                    <i className="bi bi-calendar2-check"></i>
-                  </div>
-
-                  <div>
-                    <span>ALL BOOKINGS</span>
-                    <strong>{bookings.length}</strong>
-                    <p>Total reservations</p>
-                  </div>
-                </div>
-
-                <div className="booking-summary-card">
-                  <div className="booking-summary-icon">
-                    <i className="bi bi-patch-check"></i>
-                  </div>
-
-                  <div>
-                    <span>CONFIRMED</span>
-                    <strong>{confirmedBookings}</strong>
-                    <p>Ready to enjoy</p>
-                  </div>
-                </div>
-
-                <div className="booking-summary-card">
-                  <div className="booking-summary-icon">
-                    <i className="bi bi-credit-card"></i>
-                  </div>
-
-                  <div>
-                    <span>PAID</span>
-                    <strong>{paidBookings}</strong>
-                    <p>Completed payments</p>
-                  </div>
-                </div>
-
-                <div className="booking-summary-card">
-                  <div className="booking-summary-icon">
-                    <i className="bi bi-x-circle"></i>
-                  </div>
-
-                  <div>
-                    <span>CANCELLED</span>
-                    <strong>{cancelledBookings}</strong>
-                    <p>Cancelled bookings</p>
-                  </div>
-                </div>
-              </section>
-
-              <div className="bookings-top">
-                <div>
-                  <span>BOOKING HISTORY</span>
-
-                  <h2>Your event experiences</h2>
-
-                  <p>
-                    Review your reservations, payment
-                    status and ticket information.
-                  </p>
-                </div>
-
-                <Link to="/events">
-                  Explore Events
-                  <i className="bi bi-arrow-right"></i>
-                </Link>
+            {!loading && !error && bookings.length === 0 && (
+              <div className="vmb-state">
+                <i className="bi bi-calendar2-heart" />
+                <h3>Your story starts here</h3>
+                <p>You haven't booked an event yet. Find something unforgettable.</p>
+                <Link to="/events">Discover Events</Link>
               </div>
+            )}
 
-              <div className="bookings-grid">
-                {bookings.map((booking, index) => {
+            {!loading && !error && bookings.length > 0 && filtered.length === 0 && (
+              <div className="vmb-state">
+                <i className="bi bi-search" />
+                <h3>No matching bookings</h3>
+                <p>Try another search or filter.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setFilter("all");
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && filtered.length > 0 && (
+              <div className="vmb-list">
+                {filtered.map((booking) => {
                   const event = booking.event || {};
-                  const selections = getSelections(booking);
-
-                  const tickets = Array.isArray(
-                    booking.tickets
-                  )
+                  const selections = selectionsOf(booking);
+                  const tickets = Array.isArray(booking.tickets)
                     ? booking.tickets
                     : [];
-
                   const validTickets = tickets.filter(
                     (ticket) => ticket.status === "valid"
                   );
-
-                  const refundPendingCount = tickets.filter(
-                    (ticket) =>
-                      ticket.status === "refund_pending"
+                  const pendingRefunds = tickets.filter(
+                    (ticket) => ticket.status === "refund_pending"
                   ).length;
-
                   const canManage =
-                    ["paid", "partially_refunded"].includes(
-                      booking.paymentStatus
-                    ) &&
+                    ["paid", "partially_refunded"].includes(booking.paymentStatus) &&
                     validTickets.length > 0;
-
-                  const categoryLabel =
-                    selections.length > 1
-                      ? `${selections.length} TICKET CATEGORIES`
-                      : selections[0]?.ticketType ||
-                        "EVENT BOOKING";
+                  const isExpanded = Boolean(expanded[booking._id]);
 
                   return (
-                    <article
-                      className="booking-card"
-                      key={booking._id}
-                    >
-                      <div className="booking-image">
-                        <img
-                          src={event.image || concertImage}
-                          alt={event.title || "Vibely event"}
-                        />
+                    <article className="vmb-booking" key={booking._id}>
+                      <div className="vmb-booking-main">
+                        <div className="vmb-event-image">
+                          <img
+                            src={event.image || concertImage}
+                            alt={event.title || "Event"}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = concertImage;
+                            }}
+                          />
+                          <span>VIBELY EXPERIENCE</span>
+                        </div>
 
-                        <div className="booking-image-overlay"></div>
+                        <div className="vmb-booking-info">
+                          <div className="vmb-booking-badges">
+                            <span className={`vmb-pill ${booking.bookingStatus || "pending"}`}>
+                              <span className="vmb-dot" />
+                              {pretty(booking.bookingStatus)}
+                            </span>
+                            <span className={`vmb-pill payment-${booking.paymentStatus || "pending"}`}>
+                              {pretty(booking.paymentStatus)}
+                            </span>
+                          </div>
 
-                        <div className="booking-image-top">
-                          <span className="booking-number">
-                            BOOKING{" "}
-                            {String(index + 1).padStart(
-                              2,
-                              "0"
-                            )}
+                          <h3>{event.title || "Vibely Event"}</h3>
+
+                          <div className="vmb-meta">
+                            <span>
+                              <i className="bi bi-calendar3" />
+                              {dateText(event.date)}
+                            </span>
+                            <span>
+                              <i className="bi bi-geo-alt" />
+                              {event.location || "Location unavailable"}
+                            </span>
+                          </div>
+
+                          <div className="vmb-category-tags">
+                            {selections.map((selection, index) => (
+                              <span key={`${selection.ticketType}-${index}`}>
+                                {selection.ticketType || "Ticket"} × {selection.quantity}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="vmb-reference">
+                            REF: {booking.bookingReference || "Unavailable"}
+                          </div>
+                        </div>
+
+                        <div className="vmb-booking-side">
+                          <small>TOTAL PAID / BOOKED</small>
+                          <strong>{money(booking.totalAmount)}</strong>
+                          <span>
+                            <i className="bi bi-ticket-perforated" />
+                            {booking.quantity || 0} tickets
                           </span>
-
-                          <span
-                            className={`booking-status ${
-                              booking.bookingStatus ||
-                              "pending"
-                            }`}
-                          >
-                            <i
-                              className={
-                                booking.bookingStatus ===
-                                "confirmed"
-                                  ? "bi bi-check-circle-fill"
-                                  : booking.bookingStatus ===
-                                      "cancelled"
-                                    ? "bi bi-x-circle-fill"
-                                    : booking.bookingStatus ===
-                                        "partially_cancelled"
-                                      ? "bi bi-exclamation-circle-fill"
-                                      : "bi bi-clock-fill"
-                              }
-                            ></i>
-
-                            {bookingStatusLabel(
-                              booking.bookingStatus
-                            )}
-                          </span>
-                        </div>
-
-                        <div className="booking-image-content">
-                          <span>{categoryLabel}</span>
-
-                          <h2>
-                            {event.title || "Vibely Event"}
-                          </h2>
-                        </div>
-                      </div>
-
-                      <div className="booking-content">
-                        <div className="booking-event-info">
-                          <div>
-                            <div className="booking-info-icon">
-                              <i className="bi bi-calendar3"></i>
-                            </div>
-
-                            <div>
-                              <span>EVENT DATE</span>
-
-                              <strong>
-                                {formatDate(event.date)}
-                              </strong>
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="booking-info-icon">
-                              <i className="bi bi-geo-alt"></i>
-                            </div>
-
-                            <div>
-                              <span>LOCATION</span>
-
-                              <strong>
-                                {event.location ||
-                                  "Location unavailable"}
-                              </strong>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="booking-details">
-                          <div className="booking-category-section">
-                            <span>Ticket Categories</span>
-
-                            {selections.length > 0 ? (
-                              <div className="booking-category-list">
-                                {selections.map(
-                                  (selection, selectionIndex) => (
-                                    <div
-                                      className="booking-category-item"
-                                      key={
-                                        selection.ticketTypeId ||
-                                        selectionIndex
-                                      }
-                                    >
-                                      <div className="booking-category-name">
-                                        <strong>
-                                          {selection.ticketType ||
-                                            "Event Ticket"}
-                                        </strong>
-
-                                        <small>
-                                          {selection.quantity || 0}{" "}
-                                          {Number(
-                                            selection.quantity
-                                          ) === 1
-                                            ? "ticket"
-                                            : "tickets"}
-                                        </small>
-                                      </div>
-
-                                      <div className="booking-category-price">
-                                        <span>
-                                          {selection.quantity || 0} ×{" "}
-                                          {formatPrice(
-                                            selection.ticketPrice
-                                          )}
-                                        </span>
-
-                                        <strong>
-                                          {formatPrice(
-                                            Number(
-                                              selection.quantity || 0
-                                            ) *
-                                              Number(
-                                                selection.ticketPrice || 0
-                                              )
-                                          )}
-                                        </strong>
-                                      </div>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            ) : (
-                              <strong>Not specified</strong>
-                            )}
-                          </div>
-
-                          <div>
-                            <span>Total Tickets</span>
-
-                            <strong>
-                              {booking.quantity || 0}
-                            </strong>
-                          </div>
-
-                          <div>
-                            <span>Total Amount</span>
-
-                            <strong>
-                              {formatPrice(
-                                booking.totalAmount
-                              )}
-                            </strong>
-                          </div>
-                        </div>
-
-                        <div className="booking-reference">
-                          <div>
-                            <span>BOOKING REFERENCE</span>
-
-                            <strong>
-                              {booking.bookingReference ||
-                                "—"}
-                            </strong>
-                          </div>
-
-                          <span
-                            className={`payment-status ${
-                              booking.paymentStatus ||
-                              "pending"
-                            }`}
-                          >
-                            <i
-                              className={
-                                booking.paymentStatus === "paid"
-                                  ? "bi bi-check-circle-fill"
-                                  : [
-                                        "refunded",
-                                        "partially_refunded"
-                                      ].includes(
-                                        booking.paymentStatus
-                                      )
-                                    ? "bi bi-arrow-counterclockwise"
-                                    : booking.paymentStatus ===
-                                        "failed"
-                                      ? "bi bi-x-circle"
-                                      : "bi bi-clock"
-                              }
-                            ></i>
-
-                            {paymentStatusLabel(
-                              booking.paymentStatus
-                            )}
-                          </span>
-                        </div>
-
-                        {refundPendingCount > 0 && (
-                          <p className="vb-pending-note">
-                            <i className="bi bi-clock-history"></i>{" "}
-                            {refundPendingCount}{" "}
-                            {refundPendingCount === 1
-                              ? "ticket has"
-                              : "tickets have"}{" "}
-                            a pending refund request.
-                          </p>
-                        )}
-
-                        {tickets.length > 0 && (
-                          <p className="vb-ticket-count">
-                            {validTickets.length} valid{" "}
-                            {validTickets.length === 1
-                              ? "ticket"
-                              : "tickets"}{" "}
-                            remaining
-                          </p>
-                        )}
-
-                        {[
-                          "paid",
-                          "partially_refunded"
-                        ].includes(
-                          booking.paymentStatus
-                        ) && (
-                          <Link
-                            to="/my-tickets"
-                            className="booking-ticket-link"
-                          >
-                            <span>View My Tickets</span>
-                            <i className="bi bi-arrow-right"></i>
-                          </Link>
-                        )}
-
-                        {canManage && (
                           <button
                             type="button"
-                            className="vb-manage-button"
-                            onClick={() => openManager(booking)}
+                            className="vmb-details-btn"
+                            onClick={() =>
+                              setExpanded((current) => ({
+                                ...current,
+                                [booking._id]: !current[booking._id]
+                              }))
+                            }
+                            aria-expanded={isExpanded}
                           >
-                            <i className="bi bi-ticket-perforated"></i>
-                            Manage / Cancel Tickets
-                            <i className="bi bi-arrow-right"></i>
+                            {isExpanded ? "Hide Details" : "View Details"}
+                            <i className={`bi bi-chevron-${isExpanded ? "up" : "down"}`} />
                           </button>
-                        )}
+                        </div>
                       </div>
 
-                      <div className="booking-card-bottom">
-                        <div>
-                          <img
-                            src={vibelyLogo}
-                            alt="Vibely"
-                          />
+                      {isExpanded && (
+                        <div className="vmb-expanded">
+                          <div className="vmb-expanded-heading">
+                            <div>
+                              <span className="vmb-section-label">BOOKING DETAILS</span>
+                              <h4>Your ticket breakdown</h4>
+                            </div>
+                            <span>{booking.quantity || 0} total tickets</span>
+                          </div>
 
-                          <div>
-                            <strong>VIBELY</strong>
-                            <span>EVENT RESERVATION</span>
+                          <div className="vmb-ticket-table">
+                            {selections.length ? selections.map((selection, index) => (
+                              <div className="vmb-ticket-row" key={index}>
+                                <div>
+                                  <i className="bi bi-ticket-perforated" />
+                                  <div>
+                                    <strong>{selection.ticketType || "Event Ticket"}</strong>
+                                    <small>{money(selection.ticketPrice)} per ticket</small>
+                                  </div>
+                                </div>
+                                <span>Qty {selection.quantity}</span>
+                                <strong>
+                                  {money(
+                                    Number(selection.ticketPrice || 0) *
+                                    Number(selection.quantity || 0)
+                                  )}
+                                </strong>
+                              </div>
+                            )) : (
+                              <p>Ticket category details are unavailable.</p>
+                            )}
+                          </div>
+
+                          <div className="vmb-expanded-bottom">
+                            <div>
+                              <span>Booking reference</span>
+                              <strong>{booking.bookingReference || "—"}</strong>
+                            </div>
+                            <div>
+                              <span>Booking date</span>
+                              <strong>{dateText(booking.createdAt)}</strong>
+                            </div>
+                            <div>
+                              <span>Ticket status</span>
+                              <strong>
+                                {validTickets.length} valid
+                                {pendingRefunds > 0 ? ` · ${pendingRefunds} refund pending` : ""}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div className="vmb-expanded-actions">
+                            {["paid", "partially_refunded"].includes(
+                              booking.paymentStatus
+                            ) && (
+                              <Link to="/my-tickets" className="vmb-primary-btn">
+                                <i className="bi bi-qr-code" />
+                                View My Tickets
+                              </Link>
+                            )}
+
+                            {canManage && (
+                              <button
+                                type="button"
+                                className="vmb-outline-btn"
+                                onClick={() => openManager(booking)}
+                              >
+                                <i className="bi bi-arrow-counterclockwise" />
+                                Manage / Cancel Tickets
+                              </button>
+                            )}
+
+                            <Link to="/my-refunds" className="vmb-text-link">
+                              Refund History
+                              <i className="bi bi-arrow-right" />
+                            </Link>
                           </div>
                         </div>
-
-                        <span>Find your vibe.</span>
-                      </div>
+                      )}
                     </article>
                   );
                 })}
               </div>
+            )}
+          </section>
 
-              <div className="bookings-help-card">
-                <div className="bookings-help-icon">
-                  <i className="bi bi-ticket-perforated"></i>
-                </div>
-
-                <div>
-                  <span>YOUR ENTRY PASS</span>
-
-                  <h3>Looking for your QR tickets?</h3>
-
-                  <p>
-                    Confirmed event bookings have individual
-                    digital tickets. Open My Tickets to access
-                    your ticket codes and QR entry passes.
-                  </p>
-                </div>
-
-                <Link to="/my-tickets">
-                  My Tickets
-                  <i className="bi bi-arrow-right"></i>
-                </Link>
-              </div>
-            </>
-          )}
-        </section>
+          <div className="vmb-help">
+            <div className="vmb-help-icon">
+              <i className="bi bi-headset" />
+            </div>
+            <div>
+              <strong>Everything you need, in one place.</strong>
+              <p>
+                Your tickets are available in My Tickets. You can also
+                check the progress of your refund requests anytime.
+              </p>
+            </div>
+            <Link to="/my-refunds">
+              View Refunds
+              <i className="bi bi-arrow-right" />
+            </Link>
+          </div>
+        </div>
       </main>
-
-      <DetailFooter />
 
       {activeBooking && (
         <div
-          className="vb-cancel-backdrop"
-          onClick={closeManager}
+          className="vmb-modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeManager();
+          }}
         >
-          <section
-            className="vb-cancel-modal"
+          <div
+            className="vmb-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="vb-cancel-title"
-            onClick={(event) => event.stopPropagation()}
+            aria-labelledby="vmb-modal-title"
           >
-            <button
-              type="button"
-              className="vb-cancel-close"
-              onClick={closeManager}
-              disabled={submitting}
-              aria-label="Close ticket manager"
-            >
-              ×
-            </button>
+            <div className="vmb-modal-header">
+              <div>
+                <span className="vmb-section-label">TICKET MANAGEMENT</span>
+                <h2 id="vmb-modal-title">Manage your tickets</h2>
+                <p>{activeBooking.event?.title || "Your event booking"}</p>
+              </div>
+              <button
+                type="button"
+                className="vmb-close"
+                onClick={closeManager}
+                disabled={submitting}
+                aria-label="Close"
+              >
+                <i className="bi bi-x-lg" />
+              </button>
+            </div>
 
-            <span className="vb-cancel-eyebrow">
-              VIBELY · TICKET MANAGEMENT
-            </span>
+            <div className="vmb-modal-body">
+              <p className="vmb-modal-instruction">
+                Select the valid tickets you want to cancel and request
+                a refund for.
+              </p>
 
-            <h2 id="vb-cancel-title">
-              {confirming
-                ? "Confirm cancellation"
-                : "Manage your tickets"}
-            </h2>
+              {activeTickets.map((ticket) => {
+                const id = String(ticket._id);
+                const eligible = ticket.status === "valid";
+                const selected = selectedIds.includes(id);
 
-            <p className="vb-cancel-intro">
-              {activeBooking.event?.title ||
-                "Your Vibely Experience"}
-            </p>
+                return (
+                  <label
+                    key={id}
+                    className={`vmb-select-ticket ${selected ? "selected" : ""} ${!eligible ? "disabled" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      disabled={!eligible || submitting}
+                      onChange={() => {
+                        setCancelError("");
+                        setConfirming(false);
+                        setSelectedIds((current) =>
+                          current.includes(id)
+                            ? current.filter((value) => value !== id)
+                            : [...current, id]
+                        );
+                      }}
+                    />
+                    <div>
+                      <strong>{ticket.ticketType || "Event Ticket"}</strong>
+                      <small>{ticket.ticketCode || id}</small>
+                    </div>
+                    <div className="vmb-select-ticket-right">
+                      <strong>
+                        {money(ticket.ticketPrice ?? activeBooking.ticketPrice)}
+                      </strong>
+                      <span>{pretty(ticket.status)}</span>
+                    </div>
+                  </label>
+                );
+              })}
 
-            {!confirming ? (
-              <>
-                <p className="vb-cancel-instruction">
-                  Select the unused tickets you would like
-                  to cancel. Tickets that are used,
-                  cancelled or awaiting a refund cannot
-                  be selected.
-                </p>
+              {activeTickets.length === 0 && (
+                <p>Individual ticket details are unavailable for this booking.</p>
+              )}
 
-                <div className="vb-cancel-ticket-list">
-                  {activeTickets.map((ticket) => {
-                    const eligible =
-                      ticket.status === "valid";
-
-                    const checked =
-                      selectedIds.includes(
-                        String(ticket._id)
-                      );
-
-                    return (
-                      <label
-                        className={`vb-cancel-ticket ${
-                          !eligible ? "vb-ticket-disabled" : ""
-                        }`}
-                        key={ticket._id}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={!eligible || submitting}
-                          onChange={() =>
-                            toggleTicket(
-                              String(ticket._id)
-                            )
-                          }
-                        />
-
-                        <div className="vb-cancel-ticket-info">
-                          <strong>
-                            {ticket.ticketType ||
-                              "Event Ticket"}
-                          </strong>
-
-                          <small>
-                            {ticket.ticketCode}
-                          </small>
-
-                          <span>
-                            {ticketStatusLabel(
-                              ticket.status
-                            )}
-                          </span>
-                        </div>
-
-                        <strong className="vb-cancel-ticket-price">
-                          {formatPrice(
-                            ticket.ticketPrice ??
-                              activeBooking.ticketPrice
-                          )}
-                        </strong>
-                      </label>
-                    );
-                  })}
+              <div className="vmb-refund-summary">
+                <div>
+                  <span>Selected tickets</span>
+                  <strong>{selectedIds.length}</strong>
                 </div>
-
-                <div className="vb-refund-total">
-                  <div>
-                    <span>Selected Tickets</span>
-                    <strong>
-                      {selectedTickets.length}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>Requested Refund</span>
-                    <strong>
-                      {formatPrice(refundAmount)}
-                    </strong>
-                  </div>
+                <div>
+                  <span>Requested refund amount</span>
+                  <strong>{money(refundAmount)}</strong>
                 </div>
+              </div>
 
-                <p className="vb-refund-disclaimer">
-                  The refund amount is calculated from the
-                  selected ticket prices. Submission does
-                  not mean the refund has been completed.
-                </p>
+              {cancelError && (
+                <div className="vmb-modal-error" role="alert">
+                  <i className="bi bi-exclamation-circle" />
+                  {cancelError}
+                </div>
+              )}
 
-                {cancelError && (
-                  <p className="vb-cancel-error" role="alert">
-                    {cancelError}
-                  </p>
-                )}
-
-                <button
-                  type="button"
-                  className="vb-cancel-primary"
-                  disabled={!canRequestRefund || submitting}
-                  onClick={() => setConfirming(true)}
-                >
-                  Continue to Cancellation
-                  <i className="bi bi-arrow-right"></i>
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="vb-confirm-summary">
-                  <i className="bi bi-exclamation-circle"></i>
-
-                  <h3>
-                    Are you sure you want to cancel
-                    these tickets?
-                  </h3>
-
+              {confirming && (
+                <div className="vmb-confirmation">
+                  <strong>Confirm ticket cancellation?</strong>
                   <p>
-                    You selected{" "}
-                    <strong>
-                      {selectedTickets.length}
-                    </strong>{" "}
-                    {selectedTickets.length === 1
-                      ? "ticket"
-                      : "tickets"}{" "}
-                    for a refund request of{" "}
-                    <strong>
-                      {formatPrice(refundAmount)}
-                    </strong>
-                    .
-                  </p>
-
-                  <p>
-                    Your other tickets will remain
-                    unchanged. Selected tickets will
-                    become unavailable for entry while
-                    their refund is being processed.
+                    You are requesting a refund of {money(refundAmount)}
+                    for {selectedIds.length} selected ticket(s).
+                    Once processed, those tickets will no longer be valid.
                   </p>
                 </div>
+              )}
+            </div>
 
-                {cancelError && (
-                  <p className="vb-cancel-error" role="alert">
-                    {cancelError}
-                  </p>
-                )}
+            <div className="vmb-modal-footer">
+              <button
+                type="button"
+                className="vmb-outline-btn"
+                onClick={confirming ? () => setConfirming(false) : closeManager}
+                disabled={submitting}
+              >
+                {confirming ? "Go Back" : "Close"}
+              </button>
 
-                <button
-                  type="button"
-                  className="vb-cancel-primary"
-                  disabled={submitting}
-                  onClick={cancelSelectedTickets}
-                >
-                  {submitting
-                    ? "Submitting Request..."
-                    : "Confirm Refund Request"}
-                </button>
-
-                <button
-                  type="button"
-                  className="vb-cancel-secondary"
-                  disabled={submitting}
-                  onClick={() => setConfirming(false)}
-                >
-                  Go Back
-                </button>
-              </>
-            )}
-          </section>
+              <button
+                type="button"
+                className="vmb-primary-btn"
+                disabled={!canRefund || submitting}
+                onClick={() => {
+                  if (!confirming) setConfirming(true);
+                  else submitCancellation();
+                }}
+              >
+                {submitting
+                  ? "Submitting..."
+                  : confirming
+                    ? "Confirm Refund Request"
+                    : "Request Refund"}
+                <i className="bi bi-arrow-right" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
+      <DetailFooter />
     </>
   );
 }
