@@ -15,118 +15,294 @@ const ApartmentBookingModel =
 const FoodOrderModel = require("../models/foodOrder.model");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
+const mongoose = require("mongoose");
 const ApartmentTicketModel =
   require("../models/apartmentTicket.model");
 
 const {
   getApartmentAvailability
 } = require("../utils/apartmentAvailability");
+const {
+  completeEventRefund
+} = require("../utils/eventRefund");
+const {
+  confirmEventPayment: confirmMultipleCategoryPayment,
+  validateBookingSelections
+} = require("../utils/eventPayment");
 
 
-const startEventRefund = async (
-  payment,
-  booking,
-  reason
-) => {
+const startEventRefund = async (payment, booking, reason) => {
+  if (!payment?._id || !booking?._id) {
+    return {
+      success: false,
+      message: "Payment or booking is missing"
+    };
+  }
+
+  let refund;
+  let createdNewRefund = false;
+
+  const session = await mongoose.startSession();
+
   try {
-    console.log(
-      `Starting event refund: ${reason}`
-    );
+    await session.withTransaction(async () => {
+      const currentPayment = await PaymentModel.findById(
+        payment._id
+      ).session(session);
 
-    // Don't start another refund
-    if (
-      payment.refundStatus === "pending" ||
-      payment.refundStatus === "refunded"
-    ) {
-      return;
+      const currentBooking = await BookingModel.findById(
+        booking._id
+      ).session(session);
+
+      if (!currentPayment || !currentBooking) {
+        throw new Error("Payment or booking not found");
+      }
+
+      if (
+        String(currentPayment.booking) !==
+          String(currentBooking._id) ||
+        String(currentPayment.user) !==
+          String(currentBooking.user)
+      ) {
+        throw new Error("Payment and booking do not match");
+      }
+
+      const existingRefund = await RefundModel.findOne({
+        payment: currentPayment._id,
+        refundKind: "automatic_full"
+      }).session(session);
+
+      if (existingRefund) {
+        refund = existingRefund;
+        return;
+      }
+
+      if (
+        currentPayment.refundStatus !== "none" ||
+        currentPayment.refundedAmount > 0 ||
+        ["refunded", "partially_refunded"].includes(
+          currentPayment.status
+        )
+      ) {
+        throw new Error(
+          "Payment already has refund activity"
+        );
+      }
+
+      const existingTickets = await TicketModel.countDocuments({
+        booking: currentBooking._id
+      }).session(session);
+
+      if (existingTickets > 0) {
+        throw new Error(
+          "Automatic full refund cannot be created for issued tickets"
+        );
+      }
+
+      const amount = Number(currentPayment.amount);
+      const amountInKobo = Math.round(amount * 100);
+
+      if (
+        !Number.isFinite(amount) ||
+        !Number.isSafeInteger(amountInKobo) ||
+        amountInKobo <= 0
+      ) {
+        throw new Error("Invalid refund amount");
+      }
+
+      const created = await RefundModel.create(
+        [
+          {
+            payment: currentPayment._id,
+            booking: currentBooking._id,
+            user: currentBooking.user,
+            tickets: [],
+            amount,
+            refundKind: "automatic_full",
+            reason:
+              reason ||
+              "Event booking could not be confirmed",
+            status: "initiating"
+          }
+        ],
+        { session }
+      );
+
+      refund = created[0];
+      createdNewRefund = true;
+
+      currentPayment.status = "paid";
+      currentPayment.refundStatus = "pending";
+
+      await currentPayment.save({ session });
+    });
+  } catch (error) {
+    console.error("PREPARE EVENT REFUND ERROR:", error);
+
+    return {
+      success: false,
+      requiresAttention: true,
+      message:
+        "Refund preparation requires reconciliation. Do not retry automatically."
+    };
+  } finally {
+    await session.endSession();
+  }
+
+  if (!refund) {
+    return {
+      success: false,
+      requiresAttention: true,
+      message: "Refund record was not found"
+    };
+  }
+
+  if (!createdNewRefund) {
+    return {
+      success: true,
+      alreadyStarted: true,
+      refundId: refund._id,
+      refundStatus: refund.status,
+      message:
+        "A refund record already exists for this payment"
+    };
+  }
+
+  const claimedRefund = await RefundModel.findOneAndUpdate(
+    {
+      _id: refund._id,
+      status: "initiating"
+    },
+    {
+      $set: {
+        status: "processing"
+      }
+    },
+    { new: true }
+  );
+
+  if (!claimedRefund) {
+    return {
+      success: false,
+      requiresAttention: true,
+      refundId: refund._id,
+      message:
+        "Refund processing state changed. Reconciliation is required."
+    };
+  }
+
+  try {
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      throw new Error("Paystack secret key is missing");
     }
 
-    // The customer paid, but the booking
-    // could not be completed.
-    booking.bookingStatus = "cancelled";
+    const amountInKobo = Math.round(
+      Number(claimedRefund.amount) * 100
+    );
 
-    await booking.save();
-
-    const refundResponse = await fetch(
+    const response = await fetch(
       "https://api.paystack.co/refund",
       {
         method: "POST",
-
         headers: {
           Authorization:
             `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-
           "Content-Type": "application/json"
         },
-
         body: JSON.stringify({
-          transaction:
-            payment.paymentReference,
-
-          // Full refund
-          amount:
-            payment.amount * 100
+          transaction: payment.paymentReference,
+          amount: amountInKobo
         })
       }
     );
 
-    const refundData =
-      await refundResponse.json();
+    const result = await response.json();
 
     if (
-      !refundResponse.ok ||
-      !refundData.status
+      !response.ok ||
+      !result.status ||
+      !result.data?.id
     ) {
-      payment.status = "paid";
-      payment.refundStatus = "failed";
-
-      await payment.save();
-
-      console.log(
-        "Automatic event refund failed:",
-        refundData.message
+      await RefundModel.findOneAndUpdate(
+        {
+          _id: claimedRefund._id,
+          status: "processing"
+        },
+        {
+          $set: {
+            status: "needs-attention"
+          }
+        }
       );
 
-      return;
+      return {
+        success: false,
+        requiresAttention: true,
+        refundId: claimedRefund._id,
+        message:
+          "Paystack refund outcome is uncertain. Reconciliation is required."
+      };
     }
 
-    // Create refund record
-    await RefundModel.create({
-      payment: payment._id,
-      booking: booking._id,
-      user: booking.user,
-
-      // No tickets were created because
-      // availability failed.
-      tickets: [],
-
-      amount: payment.amount,
-
-      paystackRefundId:
-        String(refundData.data.id),
-
-      status: "pending"
-    });
-
-    payment.status = "paid";
-    payment.refundStatus = "pending";
-
-    await payment.save();
-
-    console.log(
-      `Event refund started for ${payment.paymentReference}`
+    const updatedRefund = await RefundModel.findOneAndUpdate(
+      {
+        _id: claimedRefund._id,
+        status: "processing"
+      },
+      {
+        $set: {
+          paystackRefundId: String(result.data.id),
+          status: [
+            "pending",
+            "processing",
+            "needs-attention"
+          ].includes(result.data.status)
+            ? result.data.status
+            : "pending"
+        }
+      },
+      { new: true }
     );
 
+    if (!updatedRefund) {
+      return {
+        success: false,
+        requiresAttention: true,
+        refundId: claimedRefund._id,
+        message:
+          "Refund request may have succeeded, but saving its result requires reconciliation."
+      };
+    }
+
+    return {
+      success: true,
+      refundId: updatedRefund._id,
+      paystackRefundId: updatedRefund.paystackRefundId,
+      refundStatus: updatedRefund.status,
+      message: "Refund request submitted successfully"
+    };
   } catch (error) {
-    console.log(
-      "EVENT REFUND ERROR:",
-      error
+    console.error("EVENT REFUND REQUEST ERROR:", error);
+
+    await RefundModel.findOneAndUpdate(
+      {
+        _id: claimedRefund._id,
+        status: "processing"
+      },
+      {
+        $set: {
+          status: "needs-attention"
+        }
+      }
     );
 
-    payment.status = "paid";
-    payment.refundStatus = "failed";
-
-    await payment.save();
+    return {
+      success: false,
+      requiresAttention: true,
+      refundId: claimedRefund._id,
+      message:
+        "Refund request requires reconciliation. Do not submit another refund."
+    };
   }
 };
 
@@ -477,18 +653,18 @@ const confirmEventPayment = async (
   }
 };
 
-const initializePayment = async (
-  req,
-  res
-) => {
+const initializePayment = async (req, res) => {
   try {
     const { bookingId } = req.body;
     const userId = req.user.id;
 
-    const booking =
-      await BookingModel.findById(
-        bookingId
-      );
+    if (!mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).send({
+        message: "Invalid booking ID"
+      });
+    }
+
+    const booking = await BookingModel.findById(bookingId);
 
     if (!booking) {
       return res.status(404).send({
@@ -496,50 +672,22 @@ const initializePayment = async (
       });
     }
 
-    if (
-      booking.user.toString() !==
-      userId
-    ) {
+    if (String(booking.user) !== String(userId)) {
       return res.status(403).send({
-        message:
-          "You cannot pay for this booking"
+        message: "You cannot pay for this booking"
       });
     }
 
     if (
-      booking.bookingStatus ===
-      "cancelled"
+      booking.bookingStatus !== "pending" ||
+      booking.paymentStatus !== "pending"
     ) {
       return res.status(400).send({
-        message:
-          "Cannot pay for a cancelled booking"
+        message: "This booking is not awaiting payment"
       });
     }
 
-    if (
-      booking.paymentStatus === "paid"
-    ) {
-      return res.status(400).send({
-        message:
-          "This booking has already been paid"
-      });
-    }
-
-    if (
-      !booking.ticketType ||
-      booking.ticketPrice === null ||
-      booking.ticketPrice === undefined
-    ) {
-      return res.status(400).send({
-        message:
-          "This booking does not have a valid ticket category"
-      });
-    }
-
-    const event =
-      await EventModel.findById(
-        booking.event
-      );
+    const event = await EventModel.findById(booking.event);
 
     if (!event) {
       return res.status(404).send({
@@ -547,77 +695,68 @@ const initializePayment = async (
       });
     }
 
-    if (
-      event.isAvailable === false
-    ) {
+    if (event.isAvailable === false) {
       return res.status(400).send({
-        message:
-          "This event is currently unavailable"
+        message: "This event is currently unavailable"
       });
     }
 
-    const selectedTicketType =
-      event.ticketTypes.find(
+    let selections;
+
+    try {
+      selections = validateBookingSelections(booking, event);
+    } catch (error) {
+      return res.status(400).send({
+        message: error.message
+      });
+    }
+
+    for (const selection of selections) {
+      const category = event.ticketTypes.find(
         (type) =>
-          type.name ===
-          booking.ticketType
+          type._id &&
+          String(type._id) === String(selection.ticketTypeId)
       );
 
-    if (!selectedTicketType) {
-      return res.status(400).send({
-        message:
-          `${booking.ticketType} ticket category is no longer available`
-      });
+      if (!category) {
+        return res.status(400).send({
+          message: `${selection.ticketType} category is no longer available`
+        });
+      }
+
+      if (
+        Number(category.price) !==
+        Number(selection.ticketPrice)
+      ) {
+        return res.status(400).send({
+          message: `${category.name} ticket price has changed. Please create a new booking.`
+        });
+      }
+
+      if (
+        Number(category.availableTickets) <
+        Number(selection.quantity)
+      ) {
+        return res.status(400).send({
+          message: `Only ${category.availableTickets} ${category.name} tickets are available`
+        });
+      }
     }
+
+    const amount = Number(booking.totalAmount);
+    const amountInKobo = Math.round(amount * 100);
 
     if (
-      selectedTicketType.availableTickets <=
-      0
+      !Number.isFinite(amount) ||
+      !Number.isSafeInteger(amountInKobo) ||
+      amountInKobo <= 0
     ) {
       return res.status(400).send({
-        message:
-          `${booking.ticketType} tickets are sold out`
+        message: "Invalid payment amount"
       });
     }
 
-    if (
-      booking.quantity >
-      selectedTicketType.availableTickets
-    ) {
-      return res.status(400).send({
-        message:
-          `Only ${selectedTicketType.availableTickets} ${booking.ticketType} ticket(s) are currently available`
-      });
-    }
-
-    if (
-      Number(booking.ticketPrice) !==
-      Number(selectedTicketType.price)
-    ) {
-      return res.status(400).send({
-        message:
-          "The ticket price has changed. Please create a new booking."
-      });
-    }
-
-    const amount =
-      booking.ticketPrice *
-      booking.quantity;
-
-    if (
-      Number(booking.totalAmount) !==
-      Number(amount)
-    ) {
-      return res.status(400).send({
-        message:
-          "Booking amount does not match the selected ticket price"
-      });
-    }
-
-    const user =
-      await UserModel.findById(
-        userId
-      );
+    const user = await UserModel.findById(userId);
 
     if (!user) {
       return res.status(404).send({
@@ -625,130 +764,98 @@ const initializePayment = async (
       });
     }
 
-    const existingPayment =
-      await PaymentModel.findOne({
-        booking: booking._id,
-
-        status: {
-          $in: [
-            "pending",
-            "processing",
-            "paid"
-          ]
-        }
+    if (!user.email) {
+      return res.status(400).send({
+        message: "User email is required for payment"
       });
+    }
+
+    const existingPayment = await PaymentModel.findOne({
+      booking: booking._id,
+      status: {
+        $in: [
+          "pending",
+          "processing",
+          "paid",
+          "partially_refunded",
+          "refunded"
+        ]
+      }
+    });
 
     if (existingPayment) {
-      if (
-        existingPayment.status ===
-        "paid"
-      ) {
-        return res.status(400).send({
-          message:
-            "This booking has already been paid"
-        });
-      }
-
       return res.status(400).send({
         message:
-          "A payment has already been initialized for this booking",
-
+          "A payment already exists for this booking",
         data: {
           paymentReference:
-            existingPayment
-              .paymentReference
+            existingPayment.paymentReference,
+          paymentStatus:
+            existingPayment.status
         }
       });
     }
 
     const paymentReference =
       "PAY-" +
-      Date.now() +
-      "-" +
-      Math.floor(
-        Math.random() * 100000
-      );
+      crypto.randomBytes(16).toString("hex").toUpperCase();
 
-    const paystackResponse =
-      await fetch(
-        "https://api.paystack.co/transaction/initialize",
-        {
-          method: "POST",
+    const paystackResponse = await fetch(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: user.email,
+          amount: amountInKobo,
+          reference: paymentReference,
+          currency: "NGN",
+          callback_url:
+            "https://eventbookingsystem-gkh7.vercel.app/event-payment/callback"
+        })
+      }
+    );
 
-          headers: {
-            Authorization:
-              `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-
-            "Content-Type":
-              "application/json"
-          },
-body: JSON.stringify({
-  email: user.email,
-
-  amount:
-    amount * 100,
-
-  reference:
-    paymentReference,
-
-  callback_url:
-    "https://eventbookingsystem-gkh7.vercel.app/event-payment/callback"
-})
-        }
-      );
-
-    const paystackData =
-      await paystackResponse.json();
+    const paystackData = await paystackResponse.json();
 
     if (
       !paystackResponse.ok ||
-      !paystackData.status
+      !paystackData.status ||
+      !paystackData.data?.authorization_url
     ) {
       return res.status(400).send({
-        message:
-          "Paystack payment initialization failed",
-
-        error:
-          paystackData.message
+        message: "Paystack payment initialization failed",
+        error: paystackData.message
       });
     }
 
-    const payment =
-      await PaymentModel.create({
-        user: userId,
-        booking: booking._id,
-        amount,
-        paymentReference,
-        status: "pending"
-      });
+    const payment = await PaymentModel.create({
+      user: userId,
+      booking: booking._id,
+      amount,
+      paymentReference,
+      status: "pending"
+    });
 
     return res.status(201).send({
-      message:
-        "Payment initialized successfully",
-
+      message: "Payment initialized successfully",
       data: {
         payment,
-
         authorizationUrl:
-          paystackData.data
-            .authorization_url,
-
+          paystackData.data.authorization_url,
         accessCode:
-          paystackData.data
-            .access_code
+          paystackData.data.access_code
       }
     });
   } catch (error) {
-    console.log(
-      "INITIALIZE PAYMENT ERROR:",
-      error
-    );
+    console.log("INITIALIZE PAYMENT ERROR:", error);
 
-    return res.status(400).send({
-      message:
-        "Cannot initialize payment at this time",
-
-      error: error.message
+    return res.status(500).send({
+      message: "Cannot initialize payment at this time"
     });
   }
 };
@@ -757,10 +864,6 @@ const verifyPayment = async (req, res) => {
   try {
     const { reference } = req.params;
     const userId = req.user.id;
-
-    // ==========================================
-    // FIND PAYMENT
-    // ==========================================
 
     const payment = await PaymentModel.findOne({
       paymentReference: reference,
@@ -773,23 +876,17 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // FIND BOOKING
-    // ==========================================
-
     const booking = await BookingModel.findById(
       payment.booking
     );
 
     if (!booking) {
-      return res.status(404).send({
-        message: "Booking not found"
+      return res.status(409).send({
+        message:
+          "Payment record exists but the booking is missing. Contact support.",
+        requiresAttention: true
       });
     }
-
-    // ==========================================
-    // PAYMENT ALREADY COMPLETED
-    // ==========================================
 
     if (
       payment.status === "paid" &&
@@ -800,9 +897,17 @@ const verifyPayment = async (req, res) => {
         booking: booking._id
       });
 
+      if (tickets.length !== Number(booking.quantity)) {
+        return res.status(409).send({
+          message:
+            "Payment is confirmed, but the ticket records require reconciliation.",
+          requiresAttention: true,
+          paymentReference: reference
+        });
+      }
+
       return res.status(200).send({
         message: "Payment already verified",
-
         data: {
           payment,
           booking,
@@ -811,12 +916,8 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // REFUNDED PAYMENT
-    // ==========================================
-
     if (
-      ["partially_refunded", "refunded"].includes(
+      ["refunded", "partially_refunded"].includes(
         payment.status
       )
     ) {
@@ -827,7 +928,6 @@ const verifyPayment = async (req, res) => {
       return res.status(200).send({
         message:
           "Payment has already been refunded or partially refunded",
-
         data: {
           payment,
           booking,
@@ -836,9 +936,17 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // PROCESSING
-    // ==========================================
+    if (
+      payment.refundStatus !== "none" ||
+      Number(payment.refundedAmount || 0) > 0
+    ) {
+      return res.status(202).send({
+        message:
+          "This payment has refund activity. Check your refund status before taking further action.",
+        requiresAttention: true,
+        paymentReference: reference
+      });
+    }
 
     if (payment.status === "processing") {
       return res.status(202).send({
@@ -847,15 +955,10 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // VERIFY WITH PAYSTACK
-    // ==========================================
-
     const paystackResponse = await fetch(
-      `https://api.paystack.co/transaction/verify/${reference}`,
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
       {
         method: "GET",
-
         headers: {
           Authorization:
             `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
@@ -863,115 +966,126 @@ const verifyPayment = async (req, res) => {
       }
     );
 
-    const paystackData =
-      await paystackResponse.json();
+    const paystackData = await paystackResponse.json();
 
     if (
       !paystackResponse.ok ||
-      !paystackData.status
+      !paystackData.status ||
+      !paystackData.data
     ) {
-      return res.status(400).send({
-        message: "Payment verification failed"
+      return res.status(502).send({
+        message: "Unable to verify payment with Paystack"
       });
     }
 
-    // ==========================================
-    // CHECK PAYSTACK STATUS
-    // ==========================================
+    const transaction = paystackData.data;
 
     if (
-      paystackData.data.status !== "success"
+      String(transaction.reference) !==
+      String(payment.paymentReference)
     ) {
-      return res.status(400).send({
-        message: "Payment was not successful"
+      return res.status(409).send({
+        message: "Payment reference does not match"
       });
     }
 
-    // ==========================================
-    // CHECK AMOUNT
-    // ==========================================
+    if (transaction.status !== "success") {
+      return res.status(400).send({
+        message: "Payment has not been successful",
+        paymentStatus: transaction.status
+      });
+    }
+
+    const expectedAmount = Math.round(
+      Number(payment.amount) * 100
+    );
 
     if (
-      paystackData.data.amount !==
-      payment.amount * 100
+      !Number.isSafeInteger(expectedAmount) ||
+      expectedAmount <= 0 ||
+      Number(transaction.amount) !== expectedAmount ||
+      transaction.currency !== "NGN"
     ) {
-      return res.status(400).send({
+      return res.status(409).send({
         message:
-          "Payment amount does not match"
+          "Payment was received, but the amount or currency does not match. Contact support.",
+        paymentReceived: true,
+        requiresAttention: true,
+        paymentReference: reference
       });
     }
 
-    // ==========================================
-    // CONFIRM EVENT PAYMENT
-    // ==========================================
+    if (
+      Math.round(Number(booking.totalAmount) * 100) !==
+      expectedAmount
+    ) {
+      return res.status(409).send({
+        message:
+          "Payment was received, but the booking amount does not match. Contact support.",
+        paymentReceived: true,
+        requiresAttention: true,
+        paymentReference: reference
+      });
+    }
 
-    const result =
-      await confirmEventPayment(
+    let result;
+
+    try {
+      result = await confirmMultipleCategoryPayment(
         payment,
-        paystackData.data.channel
+        transaction.channel
+      );
+    } catch (error) {
+      console.error(
+        "EVENT PAYMENT CONFIRMATION ERROR:",
+        error
       );
 
-    // ==========================================
-    // SUCCESS
-    // ==========================================
+      return res.status(409).send({
+        message:
+          "Payment was successful, but ticket confirmation requires reconciliation. Do not pay again.",
+        paymentReceived: true,
+        requiresAttention: true,
+        paymentReference: reference
+      });
+    }
 
     if (result.success) {
       return res.status(200).send({
-        message:
-          result.alreadyConfirmed
-            ? "Payment already verified"
-            : "Payment verified successfully",
-
+        message: result.alreadyConfirmed
+          ? "Payment already verified"
+          : "Payment verified successfully",
         data: {
           payment: result.payment,
           booking: result.booking,
           tickets: result.tickets,
-
-          availableTickets:
-            result.availableTickets
-      }
+          availableTickets: result.availableTickets
+        }
       });
     }
-
-    // ==========================================
-    // REFUND STARTED
-    // ==========================================
-
-    if (result.refundStarted) {
-      return res.status(409).send({
-        message: result.message,
-
-        refundStarted: true
-      });
-    }
-
-    // ==========================================
-    // ANOTHER REQUEST IS PROCESSING
-    // ==========================================
 
     if (result.processing) {
       return res.status(202).send({
-        message: result.message
+        message:
+          result.message ||
+          "Payment confirmation is being processed"
       });
     }
 
-    return res.status(400).send({
+    return res.status(409).send({
       message:
         result.message ||
-        "Cannot confirm payment"
+        "Payment was received, but ticket confirmation requires attention. Do not pay again.",
+      paymentReceived: true,
+      requiresAttention: true,
+      paymentReference: reference
     });
-
   } catch (error) {
-    console.log(
-      "VERIFY PAYMENT ERROR:",
-      error
-    );
+    console.error("VERIFY PAYMENT ERROR:", error);
 
-    return res.status(400).send({
+    return res.status(500).send({
       message:
-        "Cannot verify payment at this time",
-
-      error: error.message
+        "Cannot complete payment verification right now. Check your payment status before trying again."
     });
   }
 };
@@ -981,8 +1095,13 @@ const verifyRefund = async (req, res) => {
     const { refundId } = req.params;
     const userId = req.user.id;
 
-    const refund =
-      await RefundModel.findById(refundId);
+    if (!mongoose.isValidObjectId(refundId)) {
+      return res.status(400).send({
+        message: "Invalid refund ID"
+      });
+    }
+
+    const refund = await RefundModel.findById(refundId);
 
     if (!refund) {
       return res.status(404).send({
@@ -990,378 +1109,189 @@ const verifyRefund = async (req, res) => {
       });
     }
 
-    if (
-      refund.user.toString() !== userId
-    ) {
+    if (String(refund.user) !== String(userId)) {
       return res.status(403).send({
-        message:
-          "You cannot verify this refund"
+        message: "You cannot verify this refund"
       });
     }
 
-    const payment =
-      await PaymentModel.findById(
-        refund.payment
-      );
-
-    if (!payment) {
-      return res.status(404).send({
-        message: "Payment not found"
-      });
-    }
-
-    const booking =
-      await BookingModel.findById(
-        refund.booking
-      );
-
-    if (!booking) {
-      return res.status(404).send({
-        message: "Booking not found"
-      });
-    }
-
-    const paystackResponse =
-      await fetch(
-        `https://api.paystack.co/refund/${refund.paystackRefundId}`,
-        {
-          method: "GET",
-
-          headers: {
-            Authorization:
-              `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-          }
+    if (refund.status === "processed") {
+      return res.status(200).send({
+        message: "Refund has already been processed",
+        data: {
+          refundId: refund._id,
+          refundAmount: refund.amount,
+          refundStatus: refund.status
         }
-      );
+      });
+    }
 
-    const refundData =
-      await paystackResponse.json();
+    const payment = await PaymentModel.findById(
+      refund.payment
+    );
+
+    const booking = await BookingModel.findById(
+      refund.booking
+    );
+
+    if (!payment || !booking) {
+      return res.status(404).send({
+        message: "Payment or booking not found"
+      });
+    }
+
+    if (
+      String(payment.booking) !== String(booking._id) ||
+      String(refund.user) !== String(booking.user)
+    ) {
+      return res.status(409).send({
+        message: "Refund records do not match. Manual review is required."
+      });
+    }
+
+    if (!refund.paystackRefundId) {
+      return res.status(202).send({
+        message:
+          "Refund request requires reconciliation. Do not submit another refund.",
+        data: {
+          refundId: refund._id,
+          refundStatus: refund.status,
+          requiresAttention: true
+        }
+      });
+    }
+
+    const paystackResponse = await fetch(
+      `https://api.paystack.co/refund/${encodeURIComponent(refund.paystackRefundId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization:
+            `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+        }
+      }
+    );
+
+    const refundData = await paystackResponse.json();
 
     if (
       !paystackResponse.ok ||
-      !refundData.status
+      !refundData.status ||
+      !refundData.data
     ) {
-      return res.status(400).send({
-        message:
-          "Could not verify refund",
-
-        error:
-          refundData.message
+      return res.status(502).send({
+        message: "Could not verify refund with Paystack"
       });
     }
 
-    const paystackRefundStatus =
-      refundData.data.status;
+    const paystackRefund = refundData.data;
 
     if (
-      paystackRefundStatus ===
-        "pending" ||
-      paystackRefundStatus ===
-        "processing"
+      String(paystackRefund.id) !==
+      String(refund.paystackRefundId)
     ) {
-      refund.status =
-        paystackRefundStatus;
+      return res.status(409).send({
+        message: "Paystack refund ID mismatch"
+      });
+    }
 
-      await refund.save();
+    const expectedAmount = Math.round(
+      Number(refund.amount) * 100
+    );
+
+    if (
+      !Number.isSafeInteger(expectedAmount) ||
+      expectedAmount <= 0 ||
+      Number(paystackRefund.amount) !== expectedAmount
+    ) {
+      return res.status(409).send({
+        message:
+          "Refund amount mismatch. Manual reconciliation is required."
+      });
+    }
+
+    const paystackStatus = paystackRefund.status;
+
+    if (
+      paystackStatus === "pending" ||
+      paystackStatus === "processing" ||
+      paystackStatus === "needs-attention"
+    ) {
+      if (
+        refund.status !== "failed" &&
+        refund.status !== "processed"
+      ) {
+        refund.status = paystackStatus;
+        await refund.save();
+      }
 
       return res.status(200).send({
         message:
-          "Refund is still being processed",
-
+          paystackStatus === "needs-attention"
+            ? "Refund needs additional attention"
+            : "Refund is still being processed",
         data: {
           refundId: refund._id,
-          refundStatus:
-            refund.status
+          refundStatus: refund.status
         }
       });
     }
 
-    if (
-      paystackRefundStatus ===
-      "needs-attention"
-    ) {
-      refund.status =
-        "needs-attention";
-
-      await refund.save();
-
-      return res.status(200).send({
+    if (paystackStatus === "failed") {
+      return res.status(409).send({
         message:
-          "Refund needs additional customer details",
-
+          "Paystack reports that this refund failed. Payment and ticket records require reconciliation.",
         data: {
           refundId: refund._id,
-          refundStatus:
-            refund.status
+          refundStatus: refund.status,
+          paystackRefundStatus: paystackStatus
         }
       });
     }
 
-    if (
-      paystackRefundStatus ===
-      "failed"
-    ) {
-      refund.status = "failed";
+    if (paystackStatus === "processed") {
+      if (refund.status === "failed") {
+        return res.status(409).send({
+          message:
+            "Paystack processed this refund, but the local record is marked failed. Manual reconciliation is required."
+        });
+      }
 
-      await refund.save();
-
-      await TicketModel.updateMany(
-        {
-          _id: {
-            $in: refund.tickets
-          },
-
-          status:
-            "refund_pending"
-        },
-        {
-          $set: {
-            status: "valid"
-          }
-        }
+      const result = await completeEventRefund(
+        refund._id
       );
 
-      return res.status(400).send({
-        message:
-          "Refund failed. Tickets have been restored.",
-
-        data: {
-          refundId: refund._id,
-          refundStatus:
-            refund.status
-        }
-      });
-    }
-
-    if (
-      paystackRefundStatus ===
-      "processed"
-    ) {
-      if (
-        refund.status ===
-        "processed"
-      ) {
-        return res.status(200).send({
-          message:
-            "Refund has already been processed",
-
-          data: {
-            refundId: refund._id,
-
-            refundAmount:
-              refund.amount,
-
-            refundStatus:
-              refund.status
-          }
-        });
-      }
-
-      const pendingTickets =
-        await TicketModel.find({
-          _id: {
-            $in: refund.tickets
-          },
-
-          status:
-            "refund_pending"
-        });
-
-      if (
-        pendingTickets.length === 0
-      ) {
-        return res.status(400).send({
-          message:
-            "No refundable tickets were found"
-        });
-      }
-
-      const ticketsByType = {};
-
-      for (
-        const ticket of pendingTickets
-      ) {
-        const ticketType =
-          ticket.ticketType ||
-          booking.ticketType;
-
-        if (!ticketType) {
-          return res.status(400).send({
-            message:
-              "Ticket category could not be determined"
-          });
-        }
-
-        ticketsByType[ticketType] =
-          (ticketsByType[
-            ticketType
-          ] || 0) + 1;
-      }
-
-      await TicketModel.updateMany(
-        {
-          _id: {
-            $in: refund.tickets
-          },
-
-          status:
-            "refund_pending"
-        },
-        {
-          $set: {
-            status: "cancelled",
-            qrCode: null
-          }
-        }
-      );
-
-      for (
-        const [
-          ticketType,
-          quantity
-        ] of Object.entries(
-          ticketsByType
-        )
-      ) {
-        await EventModel.findOneAndUpdate(
-          {
-            _id: booking.event,
-
-            "ticketTypes.name":
-              ticketType
-          },
-          {
-            $inc: {
-              "ticketTypes.$.availableTickets":
-                quantity
-            }
-          }
-        );
-      }
-
-      payment.refundedAmount =
-        (payment.refundedAmount ||
-          0) + refund.amount;
-
-      refund.status =
-        "processed";
-
-      if (
-        payment.refundedAmount >=
-        payment.amount
-      ) {
-        payment.status =
-          "refunded";
-
-        payment.refundStatus =
-          "refunded";
-
-        booking.paymentStatus =
-          "refunded";
-      } else {
-        payment.status =
-          "partially_refunded";
-
-        payment.refundStatus =
-          "partially_refunded";
-
-        booking.paymentStatus =
-          "partially_refunded";
-      }
-
-      const cancelledTickets =
-        await TicketModel.countDocuments(
-          {
-            booking: booking._id,
-
-            status:
-              "cancelled"
-          }
-        );
-
-      const nonCancelledTickets =
-        await TicketModel.countDocuments(
-          {
-            booking: booking._id,
-
-            status: {
-              $in: [
-                "valid",
-                "used",
-                "refund_pending"
-              ]
-            }
-          }
-        );
-
-      if (
-        nonCancelledTickets === 0
-      ) {
-        booking.bookingStatus =
-          "cancelled";
-      } else if (
-        cancelledTickets > 0
-      ) {
-        booking.bookingStatus =
-          "partially_cancelled";
-      } else {
-        booking.bookingStatus =
-          "confirmed";
-      }
-
-      await refund.save();
-      await payment.save();
-      await booking.save();
-
       return res.status(200).send({
-        message:
-          "Refund completed successfully",
-
+        message: result.alreadyProcessed
+          ? "Refund has already been processed"
+          : "Refund completed successfully",
         data: {
-          refundId:
-            refund._id,
-
-          refundAmount:
-            refund.amount,
-
-          totalRefundedAmount:
-            payment.refundedAmount,
-
-          refundStatus:
-            refund.status,
-
-          paymentStatus:
-            payment.status,
-
-          bookingStatus:
-            booking.bookingStatus
+          refundId: result.refund._id,
+          refundAmount: result.refund.amount,
+          refundStatus: result.refund.status,
+          paymentStatus: result.payment?.status,
+          bookingStatus: result.booking?.bookingStatus
         }
       });
     }
 
     return res.status(200).send({
-      message:
-        "Refund status received",
-
+      message: "Refund status received",
       data: {
-        refundStatus:
-          paystackRefundStatus
+        refundId: refund._id,
+        refundStatus: paystackStatus
       }
     });
   } catch (error) {
-    console.log(
-      "VERIFY REFUND ERROR:",
-      error
-    );
+    console.log("VERIFY REFUND ERROR:", error);
 
     return res.status(500).send({
       message:
-        "Cannot verify refund at this time",
-
-      error: error.message
+        "Cannot verify refund at this time. Please contact support if money has already been refunded."
     });
   }
 };
+
 
 const getMyRefunds = async (req, res) => {
   const { id } = req.user;
@@ -1370,17 +1300,25 @@ const getMyRefunds = async (req, res) => {
     const refunds = await RefundModel.find({
       user: id
     })
-      .populate("booking")
-      .populate("tickets")
+      .populate({
+        path: "booking",
+        populate: {
+          path: "event",
+          select: "title location date"
+        }
+      })
+      .populate({
+        path: "tickets",
+        select: "ticketType ticketPrice ticketCode status"
+      })
       .sort({ createdAt: -1 });
 
     return res.status(200).send({
       message: "Refunds fetched successfully",
       data: refunds
     });
-
   } catch (error) {
-    console.log(error);
+    console.error("GET MY REFUNDS ERROR:", error);
 
     return res.status(500).send({
       message: "Cannot fetch refunds at this time"
@@ -1393,12 +1331,27 @@ const getRefundById = async (req, res) => {
   const { refundId } = req.params;
 
   try {
+    if (!mongoose.isValidObjectId(refundId)) {
+      return res.status(400).send({
+        message: "Invalid refund ID"
+      });
+    }
+
     const refund = await RefundModel.findOne({
       _id: refundId,
       user: id
     })
-      .populate("booking")
-      .populate("tickets");
+      .populate({
+        path: "booking",
+        populate: {
+          path: "event",
+          select: "title location date"
+        }
+      })
+      .populate({
+        path: "tickets",
+        select: "ticketType ticketPrice ticketCode status"
+      });
 
     if (!refund) {
       return res.status(404).send({
@@ -1410,9 +1363,8 @@ const getRefundById = async (req, res) => {
       message: "Refund fetched successfully",
       data: refund
     });
-
   } catch (error) {
-    console.log(error);
+    console.error("GET REFUND ERROR:", error);
 
     return res.status(500).send({
       message: "Cannot fetch refund at this time"
@@ -1459,1115 +1411,408 @@ const createApartmentTicket = async (
   return apartmentTicket;
 };
 
+
+
+
 const paystackWebhook = async (req, res) => {
   try {
-    const paystackSignature =
-      req.headers["x-paystack-signature"];
+    const signature = req.headers["x-paystack-signature"];
 
-    // ==========================================
-    // CONFIRM REQUEST CAME FROM PAYSTACK
-    // ==========================================
+    if (!process.env.PAYSTACK_SECRET_KEY || !req.rawBody) {
+      return res.sendStatus(500);
+    }
 
-    const hash = crypto
-      .createHmac(
-        "sha512",
-        process.env.PAYSTACK_SECRET_KEY
-      )
+    const expectedSignature = crypto
+      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
       .update(req.rawBody)
       .digest("hex");
 
-    if (hash !== paystackSignature) {
+    if (
+      !signature ||
+      !/^[a-f0-9]{128}$/i.test(signature) ||
+      !crypto.timingSafeEqual(
+        Buffer.from(signature, "hex"),
+        Buffer.from(expectedSignature, "hex")
+      )
+    ) {
       return res.status(401).send({
         message: "Invalid Paystack signature"
       });
     }
 
-    const event = req.body;
+    const webhookEvent = req.body;
+    const data = webhookEvent.data || {};
 
-    console.log(
-      "PAYSTACK WEBHOOK EVENT:",
-      event.event
-    );
-
-    console.log(
-      "PAYSTACK WEBHOOK DATA:",
-      event.data
-    );
-
-    // Paystack uses this for refund events
     const refundId =
-      event.data?.id !== undefined
-        ? String(event.data.id)
+      data.id !== undefined && data.id !== null
+        ? String(data.id)
         : null;
 
-    // Food refund events give us the original
-    // transaction reference here.
     const transactionReference =
-      event.data?.transaction_reference ||
-      event.data?.transaction?.reference ||
+      data.transaction_reference ||
+      data.transaction?.reference ||
       null;
 
-    switch (event.event) {
+    console.log("PAYSTACK WEBHOOK:", webhookEvent.event);
 
-      // ==========================================
-      // 1. PAYMENT SUCCESSFUL
-      // ==========================================
-
+    switch (webhookEvent.event) {
       case "charge.success": {
-        console.log("Payment successful");
+        const reference = data.reference;
 
-        const reference =
-          event.data.reference;
+        if (!reference) {
+          break;
+        }
 
-        // ========================================
-        // FIRST CHECK EVENT PAYMENT
-        // ========================================
+        const payment = await PaymentModel.findOne({
+          paymentReference: reference
+        });
 
-        const payment =
-          await PaymentModel.findOne({
+        if (payment) {
+          const booking = await BookingModel.findById(
+            payment.booking
+          );
+
+          if (!booking) {
+            console.error(
+              "EVENT BOOKING NOT FOUND:",
+              reference
+            );
+            break;
+          }
+
+          if (
+            String(payment.user) !== String(booking.user)
+          ) {
+            console.error(
+              "EVENT PAYMENT OWNER MISMATCH:",
+              reference
+            );
+            break;
+          }
+
+          if (
+            payment.status === "refunded" ||
+            payment.status === "partially_refunded" ||
+            payment.refundStatus !== "none" ||
+            Number(payment.refundedAmount || 0) > 0
+          ) {
+            console.log(
+              "Event payment has refund activity:",
+              reference
+            );
+            break;
+          }
+
+          if (
+            payment.status === "paid" &&
+            booking.paymentStatus === "paid" &&
+            booking.bookingStatus === "confirmed"
+          ) {
+            const ticketCount =
+              await TicketModel.countDocuments({
+                booking: booking._id
+              });
+
+            if (
+              ticketCount !== Number(booking.quantity)
+            ) {
+              console.error(
+                "EVENT TICKET COUNT MISMATCH:",
+                reference
+              );
+            } else {
+              console.log(
+                "Event payment already confirmed:",
+                reference
+              );
+            }
+
+            break;
+          }
+
+          if (payment.status === "processing") {
+            console.log(
+              "Event payment confirmation in progress:",
+              reference
+            );
+            break;
+          }
+
+          const expectedAmount = Math.round(
+            Number(payment.amount) * 100
+          );
+
+          if (
+            !Number.isSafeInteger(expectedAmount) ||
+            expectedAmount <= 0 ||
+            Number(data.amount) !== expectedAmount ||
+            data.currency !== "NGN"
+          ) {
+            console.error(
+              "EVENT PAYMENT AMOUNT OR CURRENCY MISMATCH:",
+              reference
+            );
+            break;
+          }
+
+          if (
+            Math.round(
+              Number(booking.totalAmount) * 100
+            ) !== expectedAmount
+          ) {
+            console.error(
+              "EVENT BOOKING AMOUNT MISMATCH:",
+              reference
+            );
+            break;
+          }
+
+          try {
+            const result =
+              await confirmMultipleCategoryPayment(
+                payment,
+                data.channel
+              );
+
+            if (result.success) {
+              console.log(
+                result.alreadyConfirmed
+                  ? "Event payment already confirmed"
+                  : "Event payment confirmed",
+                reference
+              );
+            } else if (result.processing) {
+              console.log(
+                "Event payment confirmation in progress:",
+                reference
+              );
+            } else {
+              console.error(
+                "EVENT PAYMENT REQUIRES RECONCILIATION:",
+                reference,
+                result.message
+              );
+            }
+          } catch (error) {
+            console.error(
+              "EVENT PAYMENT CONFIRMATION ERROR:",
+              reference,
+              error
+            );
+
+            throw error;
+          }
+
+          break;
+        }
+
+        const apartmentPayment =
+          await ApartmentPaymentModel.findOne({
             paymentReference: reference
           });
 
-        // ========================================
-        // IF NOT EVENT PAYMENT,
-        // CHECK APARTMENT PAYMENT
-        // ========================================
-
-        if (!payment) {
-          const apartmentPayment =
-            await ApartmentPaymentModel.findOne({
-              paymentReference: reference
-            });
-
-          if (!apartmentPayment) {
-            /*
-              Food payment is handled by the
-              food-payment flow.
-
-              Do not treat a FOOD reference as
-              an event/apartment payment error.
-            */
-
-            if (
-              reference &&
-              reference.startsWith(
-                "FOOD-PAY-"
-              )
-            ) {
-              console.log(
-                "Food payment webhook received"
-              );
-
-              break;
-            }
-
-            console.log(
-              "Payment not found"
-            );
-
-            break;
-          }
-
-          // ========================================
-          // APARTMENT ALREADY REFUNDED
-          // ========================================
-
-          if (
-            apartmentPayment.status ===
-              "refunded" ||
-            apartmentPayment.refundStatus ===
-              "refunded"
-          ) {
-            console.log(
-              "Apartment payment already refunded"
-            );
-
-            break;
-          }
-
-          // ========================================
-          // FIND APARTMENT BOOKING
-          // ========================================
-
+        if (apartmentPayment) {
           const apartmentBooking =
             await ApartmentBookingModel.findById(
               apartmentPayment.booking
             );
 
           if (!apartmentBooking) {
-            console.log(
-              "Apartment booking not found"
-            );
-
+            console.log("Apartment booking not found");
             break;
           }
-
-          // ========================================
-          // ALREADY CONFIRMED
-          // ========================================
 
           if (
-            apartmentPayment.status ===
-              "paid" &&
-            apartmentBooking.paymentStatus ===
-              "paid" &&
-            apartmentBooking.bookingStatus ===
-              "confirmed"
+            apartmentPayment.status === "refunded" ||
+            apartmentPayment.refundStatus === "refunded"
           ) {
-            console.log(
-              "Apartment payment already confirmed"
-            );
-
             break;
           }
-
-          // ========================================
-          // REFUND ALREADY RUNNING
-          // ========================================
 
           if (
-            apartmentPayment.refundStatus ===
-            "pending"
+            apartmentPayment.status === "paid" &&
+            apartmentBooking.paymentStatus === "paid" &&
+            apartmentBooking.bookingStatus === "confirmed"
           ) {
-            console.log(
-              "Apartment refund already pending"
-            );
-
+            await createApartmentTicket(apartmentBooking);
             break;
           }
 
-          // Customer really paid
+          if (apartmentPayment.refundStatus === "pending") {
+            break;
+          }
+
           apartmentPayment.status = "paid";
-
-          apartmentPayment.paymentMethod =
-            event.data.channel;
+          apartmentPayment.paymentMethod = data.channel;
 
           await apartmentPayment.save();
 
-          // ========================================
-          // AUTOMATIC APARTMENT REFUND HELPER
-          // ========================================
+          const startApartmentRefund = async (reason) => {
+            if (
+              apartmentPayment.refundStatus === "pending" ||
+              apartmentPayment.refundStatus === "refunded"
+            ) {
+              return;
+            }
 
-          const startApartmentRefund =
-            async (reason) => {
-              console.log(
-                `Starting apartment refund: ${reason}`
+            apartmentBooking.bookingStatus = "cancelled";
+            await apartmentBooking.save();
+
+            try {
+              const response = await fetch(
+                "https://api.paystack.co/refund",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization:
+                      `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({
+                    transaction:
+                      apartmentPayment.paymentReference
+                  })
+                }
               );
 
-              apartmentBooking.bookingStatus =
-                "cancelled";
+              const result = await response.json();
 
-              await apartmentBooking.save();
-
-              if (
-                apartmentPayment.refundStatus ===
-                  "pending" ||
-                apartmentPayment.refundStatus ===
-                  "refunded"
-              ) {
-                console.log(
-                  "Apartment refund already started"
+              if (!response.ok || !result.status) {
+                throw new Error(
+                  result.message ||
+                  "Apartment refund request failed"
                 );
-
-                return;
               }
 
-              try {
-                const refundResponse =
-                  await fetch(
-                    "https://api.paystack.co/refund",
-                    {
-                      method: "POST",
+              apartmentPayment.refundStatus = "pending";
 
-                      headers: {
-                        Authorization:
-                          `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-
-                        "Content-Type":
-                          "application/json"
-                      },
-
-                      body: JSON.stringify({
-                        transaction:
-                          apartmentPayment
-                            .paymentReference
-                      })
-                    }
-                  );
-
-                const refundData =
-                  await refundResponse.json();
-
-                if (
-                  !refundResponse.ok ||
-                  !refundData.status
-                ) {
-                  apartmentPayment.refundStatus =
-                    "failed";
-
-                  await apartmentPayment.save();
-
-                  console.log(
-                    "Automatic apartment refund request failed"
-                  );
-
-                  return;
-                }
-
-                apartmentPayment.refundStatus =
-                  "pending";
-
-                if (
-                  refundData.data &&
-                  refundData.data.id
-                ) {
-                  apartmentPayment.paystackRefundId =
-                    String(
-                      refundData.data.id
-                    );
-                }
-
-                await apartmentPayment.save();
-
-                console.log(
-                  `Apartment refund started for ${apartmentPayment.paymentReference}`
-                );
-
-              } catch (refundError) {
-                console.log(
-                  "APARTMENT REFUND ERROR:",
-                  refundError
-                );
-
-                apartmentPayment.refundStatus =
-                  "failed";
-
-                await apartmentPayment.save();
+              if (result.data?.id !== undefined) {
+                apartmentPayment.paystackRefundId =
+                  String(result.data.id);
               }
-            };
 
-          // ========================================
-          // CHECK APARTMENT PAYMENT AMOUNT
-          // ========================================
+              await apartmentPayment.save();
 
-          if (
-            event.data.amount !==
-            apartmentPayment.amount * 100
-          ) {
-            console.log(
-              "Apartment payment amount does not match"
-            );
+              console.log(
+                "Apartment refund requested:",
+                reason
+              );
+            } catch (error) {
+              console.error(
+                "APARTMENT REFUND ERROR:",
+                error
+              );
 
-            await startApartmentRefund(
-              "Apartment payment amount does not match"
-            );
-
-            break;
-          }
-
-          // ========================================
-          // BOOKING ALREADY CANCELLED
-          // ========================================
+              apartmentPayment.refundStatus = "failed";
+              await apartmentPayment.save();
+            }
+          };
 
           if (
-            apartmentBooking.bookingStatus ===
-            "cancelled"
+            Number(data.amount) !==
+            Math.round(
+              Number(apartmentPayment.amount) * 100
+            )
           ) {
             await startApartmentRefund(
-              "Payment received for cancelled apartment booking"
+              "Apartment payment amount mismatch"
             );
-
             break;
           }
 
-          // ========================================
-          // FIND APARTMENT
-          // ========================================
-
-          const apartment =
-            await ApartmentModel.findById(
-              apartmentBooking.apartment
-            );
-
-          if (!apartment) {
+          if (
+            apartmentBooking.bookingStatus === "cancelled"
+          ) {
             await startApartmentRefund(
-              "Apartment no longer exists"
+              "Apartment booking was cancelled"
             );
-
             break;
           }
 
-          if (!apartment.isAvailable) {
-            await startApartmentRefund(
-              "Apartment is currently unavailable"
-            );
-
-            break;
-          }
-
-          // ========================================
-          // FINAL APARTMENT AVAILABILITY CHECK
-          // ========================================
-
-          const { availableUnits } =
-            await getApartmentAvailability({
-              apartmentId:
-                apartment._id,
-
-              totalUnits:
-                apartment.totalUnits,
-
-              stayType:
-                apartmentBooking.stayType,
-
-              checkInDate:
-                apartmentBooking.checkInDate,
-
-              checkOutDate:
-                apartmentBooking.checkOutDate,
-
-              expectedCheckInTime:
-                apartmentBooking
-                  .expectedCheckInTime,
-
-              excludeBookingId:
-                apartmentBooking._id
-            });
-
-          console.log(
-            "Apartment available units:",
-            availableUnits
+          const apartment = await ApartmentModel.findById(
+            apartmentBooking.apartment
           );
+
+          if (
+            !apartment ||
+            apartment.isAvailable === false
+          ) {
+            await startApartmentRefund(
+              "Apartment is unavailable"
+            );
+            break;
+          }
+
+          const availability =
+            await getApartmentAvailability({
+              apartmentId: apartment._id,
+              totalUnits: apartment.totalUnits,
+              stayType: apartmentBooking.stayType,
+              checkInDate: apartmentBooking.checkInDate,
+              checkOutDate: apartmentBooking.checkOutDate,
+              expectedCheckInTime:
+                apartmentBooking.expectedCheckInTime,
+              excludeBookingId: apartmentBooking._id
+            });
 
           if (
             apartmentBooking.numberOfUnits >
-            availableUnits
+            availability.availableUnits
           ) {
             await startApartmentRefund(
-              `Only ${availableUnits} apartment unit(s) are available`
+              "Not enough apartment units available"
             );
-
             break;
           }
 
-          // Rooms are still available
-          apartmentPayment.status = "paid";
-
-          apartmentPayment.paymentMethod =
-            event.data.channel;
-
-          await apartmentPayment.save();
-
-          apartmentBooking.paymentStatus =
-            "paid";
-
-          apartmentBooking.bookingStatus =
-            "confirmed";
+          apartmentBooking.paymentStatus = "paid";
+          apartmentBooking.bookingStatus = "confirmed";
 
           await apartmentBooking.save();
 
-          console.log(
-            `Apartment payment ${apartmentPayment.paymentReference} confirmed successfully`
-          );
+          await createApartmentTicket(apartmentBooking);
 
+          console.log("Apartment payment confirmed");
           break;
         }
 
-        // ========================================
-        // EVENT TICKET PAYMENT
-        // ========================================
-
-        if (
-          payment.status === "refunded" ||
-          payment.status ===
-            "partially_refunded"
-        ) {
+        if (reference.startsWith("FOOD-PAY-")) {
           console.log(
-            "Event payment has already been refunded or partially refunded"
+            "Food payment received by shared webhook"
           );
-
-          break;
-        }
-
-        // ========================================
-        // FIND EVENT BOOKING
-        // ========================================
-
-        const eventBooking =
-          await BookingModel.findById(
-            payment.booking
-          );
-
-        if (!eventBooking) {
-          console.log(
-            "Event booking not found"
-          );
-
-          break;
-        }
-
-        // ========================================
-        // ALREADY CONFIRMED
-        // ========================================
-
-        if (
-          payment.status === "paid" &&
-          eventBooking.paymentStatus ===
-            "paid" &&
-          eventBooking.bookingStatus ===
-            "confirmed"
-        ) {
-          console.log(
-            "Event payment already confirmed"
-          );
-
-          break;
-        }
-
-        // ========================================
-        // CHECK PAYSTACK AMOUNT
-        // ========================================
-
-        if (
-          event.data.amount !==
-          payment.amount * 100
-        ) {
-          console.log(
-            "Event payment amount does not match"
-          );
-
-          break;
-        }
-
-        // ========================================
-        // CONFIRM EVENT PAYMENT
-        // ========================================
-
-        const eventPaymentResult =
-          await confirmEventPayment(
-            payment,
-            event.data.channel
-          );
-
-        if (eventPaymentResult.success) {
-          console.log(
-            eventPaymentResult.alreadyConfirmed
-              ? "Event payment was already confirmed"
-              : `Event payment ${payment.paymentReference} confirmed successfully`
-          );
-
-          break;
-        }
-
-        if (
-          eventPaymentResult.refundStarted
-        ) {
-          console.log(
-            eventPaymentResult.message
-          );
-
-          break;
-        }
-
-        if (
-          eventPaymentResult.processing
-        ) {
-          console.log(
-            "Event payment confirmation is already being processed"
-          );
-
           break;
         }
 
         console.log(
-          "Event payment could not be confirmed:",
-          eventPaymentResult.message
+          "Unknown payment reference:",
+          reference
         );
 
         break;
       }
-
-            // ==========================================
-      // 2. REFUND PENDING
-      // ==========================================
-          if (
-            apartmentPayment.status ===
-              "paid" &&
-            apartmentBooking.paymentStatus ===
-              "paid" &&
-            apartmentBooking.bookingStatus ===
-              "confirmed"
-          ) {
-            const apartmentTicket =
-              await createApartmentTicket(
-                apartmentBooking
-              );
-
-            console.log(
-              "Apartment payment already confirmed"
-            );
-
-            console.log(
-              `Apartment ticket ${apartmentTicket.ticketCode} is available`
-            );
-
-            break;
-          }
-     
-
-      // ==========================================
-      // 4. REFUND PROCESSED
-      // ==========================================
 
       case "refund.processed": {
-        console.log("Refund processed");
-
-        // ========================================
-        // EVENT REFUND
-        // ========================================
-
-        const refund =
-          await RefundModel.findOne({
-            paystackRefundId: refundId
-          });
-
-        if (!refund) {
-
-          // ======================================
-          // APARTMENT REFUND
-          // ======================================
-
-          const apartmentPayment =
-            await ApartmentPaymentModel.findOne({
-              paystackRefundId: refundId
-            });
-
-          if (apartmentPayment) {
-            if (
-              apartmentPayment.refundStatus ===
-              "refunded"
-            ) {
-              console.log(
-                "Apartment refund was already completed"
-              );
-
-              break;
-            }
-
-            apartmentPayment.status =
-              "refunded";
-
-            apartmentPayment.refundStatus =
-              "refunded";
-
-            apartmentPayment.refundedAmount =
-              apartmentPayment.amount;
-
-            await apartmentPayment.save();
-
-            const apartmentBooking =
-              await ApartmentBookingModel.findById(
-                apartmentPayment.booking
-              );
-
-            if (apartmentBooking) {
-              apartmentBooking.paymentStatus =
-                "refunded";
-
-              apartmentBooking.bookingStatus =
-                "cancelled";
-
-              await apartmentBooking.save();
-            }
-
-            console.log(
-              `Apartment refund completed successfully for ${apartmentPayment.paymentReference}`
-            );
-
-            break;
-          }
-
-          // ======================================
-          // FOOD REFUND
-          // ======================================
-
-          const foodPayment =
-            await FoodPaymentModel.findOne({
-              reference:
-                transactionReference
-            });
-
-          if (!foodPayment) {
-            console.log(
-              "Refund not found"
-            );
-
-            break;
-          }
-
-          if (
-            foodPayment.status ===
-            "refunded"
-          ) {
-            console.log(
-              "Food refund was already completed"
-            );
-
-            break;
-          }
-
-          foodPayment.status =
-            "refunded";
-
-          foodPayment.refundAmount =
-            event.data.amount
-              ? event.data.amount / 100
-              : foodPayment.amount;
-
-          foodPayment.refundReference =
-            event.data.refund_reference ||
-            refundId;
-
-          foodPayment.refundedAt =
-            new Date();
-
-          await foodPayment.save();
-
-          const foodOrder =
-            await FoodOrderModel.findById(
-              foodPayment.order
-            );
-
-          if (foodOrder) {
-            foodOrder.paymentStatus =
-              "refunded";
-
-            foodOrder.orderStatus =
-              "cancelled";
-
-            await foodOrder.save();
-          }
-
-          console.log(
-            `Food refund completed successfully for ${foodPayment.reference}`
-          );
-
+        if (!refundId) {
           break;
         }
 
-        // ========================================
-        // EVENT REFUND PROCESSED
-        // ========================================
-
-        if (
-          refund.status === "processed"
-        ) {
-          console.log(
-            "Refund already processed"
-          );
-
-          break;
-        }
-
-        const payment =
-          await PaymentModel.findById(
-            refund.payment
-          );
-
-        if (!payment) {
-          console.log(
-            "Payment not found"
-          );
-
-          break;
-        }
-
-        const booking =
-          await BookingModel.findById(
-            refund.booking
-          );
-
-        if (!booking) {
-          console.log(
-            "Booking not found"
-          );
-
-          break;
-        }
-
-        const tickets =
-          await TicketModel.find({
-            _id: {
-              $in: refund.tickets
-            },
-
-            status: "refund_pending"
-          });
-
-        // Cancel refunded tickets
-        for (const ticket of tickets) {
-          ticket.status = "cancelled";
-          ticket.qrCode = null;
-
-          await ticket.save();
-        }
-
-      if (tickets.length > 0) {
-  const ticketsByType = {};
-
-  for (const ticket of tickets) {
-    const ticketType =
-      ticket.ticketType ||
-      booking.ticketType;
-
-    if (!ticketType) {
-      console.log(
-        "Ticket category could not be determined"
-      );
-
-      continue;
-    }
-
-    ticketsByType[ticketType] =
-      (ticketsByType[ticketType] ||
-        0) + 1;
-  }
-
-  for (
-    const [
-      ticketType,
-      quantity
-    ] of Object.entries(
-      ticketsByType
-    )
-  ) {
-    await EventModel.findOneAndUpdate(
-      {
-        _id: booking.event,
-        "ticketTypes.name":
-          ticketType
-      },
-      {
-        $inc: {
-          "ticketTypes.$.availableTickets":
-            quantity
-        }
-      }
-    );
-  }
-}
-
-        refund.status = "processed";
-
-        await refund.save();
-
-        payment.refundedAmount =
-          (payment.refundedAmount || 0) +
-          refund.amount;
-
-        if (
-          payment.refundedAmount >=
-          payment.amount
-        ) {
-          payment.status =
-            "refunded";
-
-          payment.refundStatus =
-            "refunded";
-
-          booking.paymentStatus =
-            "refunded";
-        } else {
-          payment.status =
-            "partially_refunded";
-
-          payment.refundStatus =
-            "partially_refunded";
-
-          booking.paymentStatus =
-            "partially_refunded";
-        }
-
-        const cancelledTickets =
-          await TicketModel.countDocuments({
-            booking: booking._id,
-            status: "cancelled"
-          });
-
-        const nonCancelledTickets =
-          await TicketModel.countDocuments({
-            booking: booking._id,
-
-            status: {
-              $in: ["valid", "used"]
-            }
-          });
-
-        if (nonCancelledTickets === 0) {
-          booking.bookingStatus =
-            "cancelled";
-        } else if (cancelledTickets > 0) {
-          booking.bookingStatus =
-            "partially_cancelled";
-        } else {
-          booking.bookingStatus =
-            "confirmed";
-        }
-
-        await payment.save();
-        await booking.save();
-
-        console.log(
-          `Refund ${refund._id} completed successfully`
-        );
-
-        break;
-      }
-
-            // ==========================================
-      // 5. REFUND FAILED
-      // ==========================================
-
-      case "refund.failed": {
-        console.log("Refund failed");
-
-        const refund =
-          await RefundModel.findOne({
-            paystackRefundId: refundId
-          });
-
-        if (!refund) {
-
-          // ======================================
-          // APARTMENT REFUND
-          // ======================================
-
-          const apartmentPayment =
-            await ApartmentPaymentModel.findOne({
-              paystackRefundId: refundId
-            });
-
-          if (apartmentPayment) {
-            if (
-              apartmentPayment.refundStatus ===
-              "refunded"
-            ) {
-              console.log(
-                "Apartment refund already completed"
-              );
-
-              break;
-            }
-
-            apartmentPayment.status =
-              "paid";
-
-            apartmentPayment.refundStatus =
-              "failed";
-
-            await apartmentPayment.save();
-
-            const apartmentBooking =
-              await ApartmentBookingModel.findById(
-                apartmentPayment.booking
-              );
-
-            if (apartmentBooking) {
-              apartmentBooking.paymentStatus =
-                "paid";
-
-              apartmentBooking.bookingStatus =
-                "cancelled";
-
-              await apartmentBooking.save();
-            }
-
-            console.log(
-              `Apartment refund failed for ${apartmentPayment.paymentReference}`
-            );
-
-            break;
-          }
-
-          // ======================================
-          // FOOD REFUND
-          // ======================================
-
-          const foodPayment =
-            await FoodPaymentModel.findOne({
-              reference:
-                transactionReference
-            });
-
-          if (!foodPayment) {
-            console.log(
-              "Refund not found"
-            );
-
-            break;
-          }
-
-          // Never reverse an already completed refund
-          if (
-            foodPayment.status ===
-            "refunded"
-          ) {
-            console.log(
-              "Food refund already completed"
-            );
-
-            break;
-          }
-
-          foodPayment.status = "paid";
-
-          await foodPayment.save();
-
-          const foodOrder =
-            await FoodOrderModel.findById(
-              foodPayment.order
-            );
-
-          if (foodOrder) {
-            /*
-              Keep the cancelled order cancelled.
-
-              The payment returned to paid because
-              the refund failed.
-            */
-
-            foodOrder.paymentStatus =
-              "paid";
-
-            await foodOrder.save();
-          }
-
-          console.log(
-            `Food refund failed for ${foodPayment.reference}`
-          );
-
-          break;
-        }
-
-        // ========================================
-        // EVENT REFUND FAILED
-        // ========================================
-
-        if (
-          refund.status === "processed"
-        ) {
-          console.log(
-            "Refund already processed, cannot mark as failed"
-          );
-
-          break;
-        }
-
-        if (
-          refund.status === "failed"
-        ) {
-          console.log(
-            "Refund already marked as failed"
-          );
-
-          break;
-        }
-
-        // Make tickets usable again
-        await TicketModel.updateMany(
-          {
-            _id: {
-              $in: refund.tickets
-            },
-
-            status: "refund_pending"
-          },
-
-          {
-            $set: {
-              status: "valid"
-            }
-          }
-        );
-
-        refund.status = "failed";
-
-        await refund.save();
-
-        const payment =
-          await PaymentModel.findById(
-            refund.payment
-          );
-
-        if (payment) {
-          if (
-            (payment.refundedAmount || 0) >
-            0
-          ) {
-            payment.status =
-              "partially_refunded";
-
-            payment.refundStatus =
-              "partially_refunded";
-          } else {
-            payment.status = "paid";
-
-            payment.refundStatus =
-              "failed";
-          }
-
-          await payment.save();
-        }
-
-        console.log(
-          `Refund ${refund._id} failed. Tickets restored.`
-        );
-
-        break;
-      }
-
-      // ==========================================
-      // 6. REFUND NEEDS ATTENTION
-      // ==========================================
-
-      case "refund.needs-attention": {
-        console.log(
-          "Refund needs attention"
-        );
-
-        const refund =
-          await RefundModel.findOneAndUpdate(
-            {
-              paystackRefundId: refundId,
-
-              status: {
-                $nin: [
-                  "processed",
-                  "failed"
-                ]
-              }
-            },
-
-            {
-              status: "needs-attention"
-            },
-
-            {
-              returnDocument: "after"
-            }
-          );
+        const refund = await RefundModel.findOne({
+          paystackRefundId: refundId
+        });
 
         if (refund) {
+          const result = await completeEventRefund(
+            refund._id
+          );
+
           console.log(
-            `Refund ${refund._id} needs attention`
+            result.alreadyProcessed
+              ? "Event refund already processed"
+              : "Event refund processed"
           );
 
           break;
         }
-
-        // ========================================
-        // APARTMENT REFUND
-        // ========================================
 
         const apartmentPayment =
           await ApartmentPaymentModel.findOne({
@@ -2576,78 +1821,289 @@ const paystackWebhook = async (req, res) => {
 
         if (apartmentPayment) {
           if (
-            apartmentPayment.refundStatus ===
-            "refunded"
+            apartmentPayment.refundStatus === "refunded"
           ) {
-            console.log(
-              "Apartment refund already completed"
-            );
-
             break;
           }
 
-          apartmentPayment.refundStatus =
-            "pending";
+          apartmentPayment.status = "refunded";
+          apartmentPayment.refundStatus = "refunded";
+          apartmentPayment.refundedAmount =
+            apartmentPayment.amount;
 
           await apartmentPayment.save();
 
-          console.log(
-            `Apartment refund for ${apartmentPayment.paymentReference} needs attention`
-          );
+          const apartmentBooking =
+            await ApartmentBookingModel.findById(
+              apartmentPayment.booking
+            );
 
+          if (apartmentBooking) {
+            apartmentBooking.paymentStatus = "refunded";
+            apartmentBooking.bookingStatus = "cancelled";
+
+            await apartmentBooking.save();
+          }
+
+          console.log("Apartment refund processed");
           break;
         }
-
-        // ========================================
-        // FOOD REFUND
-        // ========================================
 
         const foodPayment =
           await FoodPaymentModel.findOne({
-            reference:
-              transactionReference
+            reference: transactionReference
           });
 
-        if (!foodPayment) {
-          console.log(
-            "Refund not found or already completed"
+        if (foodPayment) {
+          if (foodPayment.status === "refunded") {
+            break;
+          }
+
+          foodPayment.status = "refunded";
+
+          foodPayment.refundAmount =
+            data.amount !== undefined
+              ? Number(data.amount) / 100
+              : foodPayment.amount;
+
+          foodPayment.refundReference =
+            data.refund_reference || refundId;
+
+          foodPayment.refundedAt = new Date();
+
+          await foodPayment.save();
+
+          const foodOrder = await FoodOrderModel.findById(
+            foodPayment.order
           );
 
+          if (foodOrder) {
+            foodOrder.paymentStatus = "refunded";
+            foodOrder.orderStatus = "cancelled";
+
+            await foodOrder.save();
+          }
+
+          console.log("Food refund processed");
           break;
         }
 
-        if (
-          foodPayment.status ===
-          "refunded"
-        ) {
-          console.log(
-            "Food refund already completed"
-          );
+        console.log("Refund record not found");
+        break;
+      }
 
+      case "refund.failed": {
+        if (!refundId) {
           break;
         }
 
-        // Keep waiting for final Paystack result
-        foodPayment.status =
-          "refund_pending";
+        const refund = await RefundModel.findOne({
+          paystackRefundId: refundId
+        });
 
-        await foodPayment.save();
+        if (refund) {
+          if (
+            refund.status === "processed" ||
+            refund.status === "failed"
+          ) {
+            break;
+          }
 
-        console.log(
-          `Food refund ${foodPayment.reference} needs attention`
-        );
+          const session = await mongoose.startSession();
+
+          try {
+            await session.withTransaction(async () => {
+              const currentRefund =
+                await RefundModel.findById(
+                  refund._id
+                ).session(session);
+
+              if (
+                !currentRefund ||
+                currentRefund.status === "processed" ||
+                currentRefund.status === "failed"
+              ) {
+                return;
+              }
+
+              await TicketModel.updateMany(
+                {
+                  _id: {
+                    $in: currentRefund.tickets
+                  },
+                  booking: currentRefund.booking,
+                  status: "refund_pending"
+                },
+                {
+                  $set: {
+                    status: "valid"
+                  }
+                },
+                { session }
+              );
+
+              currentRefund.status = "failed";
+              await currentRefund.save({ session });
+
+              const currentPayment =
+                await PaymentModel.findById(
+                  currentRefund.payment
+                ).session(session);
+
+              if (currentPayment) {
+                if (
+                  Number(
+                    currentPayment.refundedAmount || 0
+                  ) > 0
+                ) {
+                  currentPayment.status =
+                    "partially_refunded";
+
+                  currentPayment.refundStatus =
+                    "partially_refunded";
+                } else {
+                  currentPayment.status = "paid";
+                  currentPayment.refundStatus = "failed";
+                }
+
+                await currentPayment.save({ session });
+              }
+            });
+          } finally {
+            await session.endSession();
+          }
+
+          console.log("Event refund failed");
+          break;
+        }
+
+        const apartmentPayment =
+          await ApartmentPaymentModel.findOne({
+            paystackRefundId: refundId
+          });
+
+        if (apartmentPayment) {
+          if (
+            apartmentPayment.refundStatus === "refunded"
+          ) {
+            break;
+          }
+
+          apartmentPayment.status = "paid";
+          apartmentPayment.refundStatus = "failed";
+
+          await apartmentPayment.save();
+
+          const apartmentBooking =
+            await ApartmentBookingModel.findById(
+              apartmentPayment.booking
+            );
+
+          if (apartmentBooking) {
+            apartmentBooking.paymentStatus = "paid";
+            apartmentBooking.bookingStatus = "cancelled";
+
+            await apartmentBooking.save();
+          }
+
+          console.log("Apartment refund failed");
+          break;
+        }
+
+        const foodPayment =
+          await FoodPaymentModel.findOne({
+            reference: transactionReference
+          });
+
+        if (foodPayment) {
+          if (foodPayment.status === "refunded") {
+            break;
+          }
+
+          foodPayment.status = "paid";
+          await foodPayment.save();
+
+          const foodOrder = await FoodOrderModel.findById(
+            foodPayment.order
+          );
+
+          if (foodOrder) {
+            foodOrder.paymentStatus = "paid";
+            await foodOrder.save();
+          }
+
+          console.log("Food refund failed");
+        }
 
         break;
       }
 
-      // ==========================================
-      // OTHER PAYSTACK EVENTS
-      // ==========================================
+      case "refund.needs-attention": {
+        if (!refundId) {
+          break;
+        }
+
+        const refund =
+          await RefundModel.findOneAndUpdate(
+            {
+              paystackRefundId: refundId,
+              status: {
+                $nin: ["processed", "failed"]
+              }
+            },
+            {
+              $set: {
+                status: "needs-attention"
+              }
+            },
+            {
+              new: true
+            }
+          );
+
+        if (refund) {
+          console.log(
+            "Event refund needs attention"
+          );
+          break;
+        }
+
+        const apartmentPayment =
+          await ApartmentPaymentModel.findOne({
+            paystackRefundId: refundId
+          });
+
+        if (apartmentPayment) {
+          if (
+            apartmentPayment.refundStatus !== "refunded"
+          ) {
+            apartmentPayment.refundStatus = "pending";
+            await apartmentPayment.save();
+          }
+
+          break;
+        }
+
+        const foodPayment =
+          await FoodPaymentModel.findOne({
+            reference: transactionReference
+          });
+
+        if (
+          foodPayment &&
+          foodPayment.status !== "refunded"
+        ) {
+          foodPayment.status = "refund_pending";
+          await foodPayment.save();
+        }
+
+        break;
+      }
 
       default: {
         console.log(
           "Unhandled Paystack event:",
-          event.event
+          webhookEvent.event
         );
 
         break;
@@ -2655,16 +2111,14 @@ const paystackWebhook = async (req, res) => {
     }
 
     return res.sendStatus(200);
-
   } catch (error) {
-    console.log(
-      "PAYSTACK WEBHOOK ERROR:",
-      error
-    );
-
+    console.error("PAYSTACK WEBHOOK ERROR:", error);
     return res.sendStatus(500);
   }
 };
+
+
+
 
 const getMyPayments = async (req, res) => {
   const { id } = req.user;

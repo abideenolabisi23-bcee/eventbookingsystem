@@ -1,129 +1,247 @@
-import { useEffect, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-import axios from "axios";
 
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 import Navbar from "../component/Navbar";
 import DetailFooter from "../component/DetailFooter";
-
-import "../styles/eventDetails.css";
-
 import vibelyLogo from "../assets/vibely-logo.png";
 import concertImage from "../assets/concert.jpg";
+import "../styles/eventDetails.css";
+
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
+const money = (value) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0);
+
+const dateLabel = (value) => {
+  if (!value) return "Date to be announced";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date to be announced";
+  }
+
+  return new Intl.DateTimeFormat("en-NG", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
+};
+
+const getCategoryKey = (category) =>
+  String(category._id || category.name);
+
+const getCategoryDescription = (name) => {
+  const category = String(name).toLowerCase();
+
+  if (category === "regular") {
+    return "Your invitation to the energy, music and unforgettable moments.";
+  }
+
+  if (category === "vip") {
+    return "A little more luxury, a little more exclusivity, a lot more memories.";
+  }
+
+  if (category === "vvip") {
+    return "The elevated experience for those who love the extraordinary.";
+  }
+
+  return "A beautiful experience, thoughtfully chosen by you.";
+};
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [event, setEvent] = useState(null);
-  const [selectedTicketType, setSelectedTicketType] =
-    useState(null);
-  const [quantity, setQuantity] = useState(1);
-
+  const [quantities, setQuantities] = useState({});
   const [loading, setLoading] = useState(true);
-  const [bookingLoading, setBookingLoading] =
-    useState(false);
-
+  const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState("");
-  const [bookingError, setBookingError] =
-    useState("");
-  const [bookingSuccess, setBookingSuccess] =
-    useState("");
-
-  const [showAuthPrompt, setShowAuthPrompt] =
-    useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    let active = true;
+
+    const loadEvent = async () => {
       try {
-        const response = await axios.get(
-          `https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`
-        );
+        setLoading(true);
+        setError("");
+        setEvent(null);
+        setQuantities({});
 
-        setEvent(response.data.data);
-      } catch (error) {
-        console.log(error);
+        const response = await axios.get(`${API}/events/${id}`);
 
-        setError(
-          error.response?.data?.message ||
-          "We couldn't load this event right now."
-        );
+        if (active) {
+          setEvent(response.data.data);
+        }
+      } catch (err) {
+        if (active) {
+          setError(
+            err.response?.data?.message ||
+              "We couldn't load this experience right now."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchEvent();
+    loadEvent();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      maximumFractionDigits: 0,
-    }).format(price || 0);
-  };
+  const ticketTypes = useMemo(
+    () =>
+      Array.isArray(event?.ticketTypes)
+        ? event.ticketTypes
+        : [],
+    [event]
+  );
 
-  const formatFullDate = (date) => {
-    if (!date) return "";
+  const selections = useMemo(() => {
+    return ticketTypes
+      .map((type) => ({
+        ...type,
+        selectedQuantity: Number(
+          quantities[getCategoryKey(type)] || 0
+        )
+      }))
+      .filter(
+        (type) =>
+          Number.isInteger(type.selectedQuantity) &&
+          type.selectedQuantity >= 1
+      );
+  }, [ticketTypes, quantities]);
 
-    return new Intl.DateTimeFormat("en-NG", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(date));
-  };
+  const ticketCount = selections.reduce(
+    (total, type) => total + type.selectedQuantity,
+    0
+  );
 
-  const selectTicketType = (type) => {
-    if (type.availableTickets <= 0) {
-      return;
-    }
+  const totalAmount = selections.reduce(
+    (total, type) =>
+      total + Number(type.price || 0) * type.selectedQuantity,
+    0
+  );
 
-    setSelectedTicketType(type);
-    setQuantity(1);
+  const soldOut =
+    ticketTypes.length > 0 &&
+    ticketTypes.every(
+      (type) => Number(type.availableTickets) <= 0
+    );
+
+  const unavailable = event?.isAvailable === false;
+
+  const organizerName =
+    event?.createdBy &&
+    typeof event.createdBy === "object"
+      ? [
+          event.createdBy.firstname,
+          event.createdBy.lastname
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : "";
+
+  const changeQuantity = (type, difference) => {
+    if (bookingLoading || unavailable) return;
+
+    const key = getCategoryKey(type);
+    const available = Math.max(
+      0,
+      Math.floor(Number(type.availableTickets) || 0)
+    );
+
+    setQuantities((previous) => {
+      const current = Number(previous[key] || 0);
+
+      const next = Math.min(
+        available,
+        Math.max(0, current + difference)
+      );
+
+      return {
+        ...previous,
+        [key]: next
+      };
+    });
+
     setBookingError("");
-    setBookingSuccess("");
   };
 
-  const increaseQuantity = () => {
-    if (!selectedTicketType) return;
+  const handleBooking = async () => {
+    if (bookingLoading) return;
 
-    if (
-      quantity <
-      selectedTicketType.availableTickets
-    ) {
-      setQuantity(
-        (currentQuantity) =>
-          currentQuantity + 1
-      );
-    }
-  };
+    setBookingError("");
 
-  const decreaseQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(
-        (currentQuantity) =>
-          currentQuantity - 1
-      );
-    }
-  };
-
-  const handleBookTicket = async () => {
-    if (!selectedTicketType) {
+    if (unavailable || soldOut) {
       setBookingError(
-        "Please select a ticket category before booking."
+        "This event is currently unavailable for booking."
       );
       return;
     }
 
-    const accessToken =
-      localStorage.getItem("accessToken");
+    const validSelections = selections
+      .map((type) => ({
+        ticketTypeId: type._id,
+        ticketType: type.name,
+        quantity: Number(type.selectedQuantity)
+      }))
+      .filter(
+        (type) =>
+          Number.isInteger(type.quantity) &&
+          type.quantity >= 1
+      );
+
+    const totalQuantity = validSelections.reduce(
+      (total, type) => total + type.quantity,
+      0
+    );
+
+    if (validSelections.length === 0 || totalQuantity < 1) {
+      setBookingError(
+        "Please choose at least one ticket to continue."
+      );
+      return;
+    }
+
+    const invalidSelection = selections.some((type) => {
+      const quantity = Number(type.selectedQuantity);
+      const available = Number(type.availableTickets);
+
+      return (
+        !type._id ||
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        quantity > available
+      );
+    });
+
+    if (invalidSelection) {
+      setBookingError(
+        "One of your selected ticket quantities is invalid or exceeds availability."
+      );
+      return;
+    }
+
+    const accessToken = localStorage.getItem("accessToken");
 
     if (!accessToken) {
       setShowAuthPrompt(true);
@@ -132,760 +250,583 @@ const EventDetails = () => {
 
     try {
       setBookingLoading(true);
-      setBookingError("");
-      setBookingSuccess("");
 
       const bookingResponse = await axios.post(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/bookings",
+        `${API}/bookings`,
         {
-          eventId: event._id,
-          ticketType: selectedTicketType.name,
-          quantity,
-        },
+  eventId: event._id,
+  ticketType: validSelections[0].ticketType,
+  quantity: totalQuantity,
+  ticketSelections: validSelections
+},
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+            Authorization: `Bearer ${accessToken}`
+          }
         }
       );
 
-      const booking =
-        bookingResponse.data.data.booking;
+      const bookingData = bookingResponse.data.data;
 
-      const paymentResponse = await axios.post(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/payments/initialize",
-        {
+      const booking = bookingData?.booking || bookingData;
+
+      if (!booking?._id) {
+        throw new Error(
+          "Booking was created but its ID was not returned. Check My Bookings before trying again."
+        );
+      }
+
+      sessionStorage.setItem(
+        "vibelyPendingBooking",
+        JSON.stringify({
           bookingId: booking._id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
+          eventId: event._id,
+          eventTitle: event.title,
+          ticketCount: totalQuantity,
+          totalAmount
+        })
       );
+
+      let paymentResponse;
+
+      try {
+        paymentResponse = await axios.post(
+          `${API}/payments/initialize`,
+          {
+            bookingId: booking._id
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+      } catch (paymentError) {
+        throw new Error(
+          paymentError.response?.data?.message ||
+            "Your booking was created, but payment could not start. Check My Bookings before trying again."
+        );
+      }
 
       const authorizationUrl =
-        paymentResponse.data.data.authorizationUrl;
+        paymentResponse.data.data?.authorizationUrl;
 
       if (!authorizationUrl) {
-        setBookingError(
-          "Payment checkout could not be opened."
+        throw new Error(
+          "Payment link was not returned. Check your booking before trying again."
         );
-        return;
       }
 
-      window.location.href = authorizationUrl;
-    } catch (error) {
-      console.log(
-        "BOOKING/PAYMENT ERROR:",
-        error
-      );
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-
+      window.location.assign(authorizationUrl);
+    } catch (err) {
+      if (err.response?.status === 401) {
         setShowAuthPrompt(true);
-        return;
+        setBookingError(
+          "Your session has expired. Please log in again."
+        );
+      } else {
+        setBookingError(
+          err.response?.data?.message ||
+            err.message ||
+            "We couldn't complete your request."
+        );
       }
-
-      setBookingError(
-        error.response?.data?.message ||
-        "Unable to continue with your booking. Please try again."
-      );
     } finally {
       setBookingLoading(false);
     }
   };
 
-  const goToLogin = () => {
-    navigate("/login", {
+  const goToAuth = (path) => {
+    navigate(path, {
       state: {
-        returnTo: `/events/${id}`,
-      },
-    });
-  };
-
-  const goToSignup = () => {
-    navigate("/signup", {
-      state: {
-        returnTo: `/events/${id}`,
-      },
+        returnTo: `/events/${id}`
+      }
     });
   };
 
   if (loading) {
     return (
-      <div className="event-details-status">
-        <div className="event-details-loader"></div>
-
-        <p>Loading event...</p>
-      </div>
+      <>
+        <Navbar />
+        <main className="vibely-loading">
+          <div className="vibely-spinner" />
+          <h2>Preparing your experience...</h2>
+          <p>Something beautiful is coming.</p>
+        </main>
+        <DetailFooter />
+      </>
     );
   }
 
   if (error || !event) {
     return (
-      <div className="event-details-status">
-        <h2>Event unavailable</h2>
-
-        <p>
-          {error ||
-            "This event could not be found."}
-        </p>
-
-        <Link to="/events">
-          Back to events
-        </Link>
-      </div>
+      <>
+        <Navbar />
+        <main className="vibely-loading">
+          <span className="vibely-eyebrow">VIBELY EVENTS</span>
+          <h2>Experience unavailable</h2>
+          <p>{error || "This event could not be found."}</p>
+          <Link to="/events" className="vibely-primary-link">
+            Explore events →
+          </Link>
+        </main>
+        <DetailFooter />
+      </>
     );
   }
-
-  const ticketTypes =
-    event.ticketTypes || [];
-
-  const allTicketTypesSoldOut =
-    ticketTypes.length > 0 &&
-    ticketTypes.every(
-      (type) =>
-        type.availableTickets <= 0
-    );
-
-  const unavailable =
-    event.isAvailable === false;
-
-  const selectedPrice =
-    selectedTicketType?.price || 0;
-
-  const totalPrice =
-    selectedPrice * quantity;
-
-  const organizerName =
-    event.createdBy &&
-      typeof event.createdBy === "object"
-      ? `${event.createdBy.firstname || ""} ${event.createdBy.lastname || ""
-        }`.trim()
-      : "";
-
-  const getTicketDescription = (name) => {
-    if (name === "Regular") {
-      return "Essential access to enjoy the full live experience.";
-    }
-
-    if (name === "VIP") {
-      return "A premium experience with a little more exclusivity.";
-    }
-
-    if (name === "VVIP") {
-      return "The ultimate way to experience the event in style.";
-    }
-
-    return "Enjoy an unforgettable event experience.";
-  };
-
-  const getTicketExperience = (name) => {
-    if (name === "Regular") {
-      return "Essential Experience";
-    }
-
-    if (name === "VIP") {
-      return "Premium Experience";
-    }
-
-    if (name === "VVIP") {
-      return "Ultimate Experience";
-    }
-
-    return "Event Experience";
-  };
 
   return (
     <>
       <Navbar />
 
-      <main className="event-details-page">
-        <section className="event-details-breadcrumb">
-          <Link to="/events">
-            Events
-          </Link>
+      <main className="vibely-event-page">
+        <div className="vibely-page-container">
+          <nav className="vibely-breadcrumb">
+            <Link to="/">Home</Link>
+            <span>/</span>
+            <Link to="/events">Events</Link>
+            <span>/</span>
+            <strong>{event.title}</strong>
+          </nav>
 
-          <span>›</span>
+          <section className="vibely-hero">
+            <div className="vibely-hero-image">
+              <img
+                src={event.image || concertImage}
+                alt={event.title}
+              />
 
-          <p>{event.title}</p>
-        </section>
+              <div className="vibely-image-shade" />
 
-        <section className="event-details-hero">
-          <div className="event-details-image">
-            <img
-              src={
-                event.image ||
-                concertImage
-              }
-              alt={event.title}
-            />
-
-            {allTicketTypesSoldOut && (
-              <div className="details-status-badge">
-                SOLD OUT
-              </div>
-            )}
-
-            {!allTicketTypesSoldOut &&
-              unavailable && (
-                <div className="details-status-badge">
-                  UNAVAILABLE
-                </div>
-              )}
-          </div>
-
-          <div className="event-details-content">
-            <p className="details-label">
-              VIBELY EVENTS
-            </p>
-
-            <h1>{event.title}</h1>
-
-            <p className="details-description">
-              {event.description}
-            </p>
-
-            <div className="event-information">
-              <div className="information-item">
-                <div className="information-icon">
-                  ◷
-                </div>
-
-                <div>
-                  <span>
-                    Date & Time
-                  </span>
-
-                  <strong>
-                    {formatFullDate(
-                      event.date
-                    )}
-                  </strong>
-                </div>
+              <div className="vibely-image-top">
+                <span>THE VIBELY EXPERIENCE</span>
+                <span>✦ CURATED MOMENTS</span>
               </div>
 
-              <div className="information-item">
-                <div className="information-icon">
-                  ⌖
-                </div>
+              <div className="vibely-image-bottom">
+                <span className="vibely-hero-tag">
+                  ✦ EVENTS & EXPERIENCES
+                </span>
+                <h1>{event.title}</h1>
+                <p>
+                  Beautiful moments. Unforgettable memories.
+                </p>
+              </div>
+            </div>
 
-                <div>
-                  <span>
-                    Location
-                  </span>
+            <div className="vibely-hero-details">
+              <div>
+                <span className="vibely-eyebrow">
+                  YOU'RE INVITED
+                </span>
 
-                  <strong>
-                    {event.location}
-                  </strong>
-                </div>
+                <h2>
+                  Some nights
+                  <em> stay with you.</em>
+                </h2>
+
+                <p className="vibely-hero-description">
+                  {event.description}
+                </p>
               </div>
 
-              {organizerName && (
-                <div className="information-item">
-                  <div className="information-icon">
-                    ◉
-                  </div>
-
+              <div className="vibely-info-list">
+                <div className="vibely-info-item">
+                  <span className="vibely-info-symbol">◷</span>
                   <div>
-                    <span>
-                      Organized by
-                    </span>
-
-                    <strong>
-                      {organizerName}
-                    </strong>
+                    <small>DATE & TIME</small>
+                    <strong>{dateLabel(event.date)}</strong>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </section>
 
-        <section className="event-details-main">
-          <div className="event-experience">
-            <div className="about-event">
-              <p className="about-small-title">
-                ABOUT THIS EVENT
-              </p>
-
-              <h2>
-                About the experience
-              </h2>
-
-              <p className="about-description">
-                {event.description}
-              </p>
-            </div>
-
-            <div className="experience-highlights">
-              <div className="highlight-card">
-                <div className="highlight-icon">
-                  ♫
+                <div className="vibely-info-item">
+                  <span className="vibely-info-symbol">⌖</span>
+                  <div>
+                    <small>LOCATION</small>
+                    <strong>{event.location}</strong>
+                  </div>
                 </div>
 
-                <div>
-                  <h3>
-                    Live experience
-                  </h3>
-
-                  <p>
-                    Come ready to enjoy
-                    the atmosphere, connect
-                    and create unforgettable
-                    memories.
-                  </p>
-                </div>
+                {organizerName && (
+                  <div className="vibely-info-item">
+                    <span className="vibely-info-symbol">✧</span>
+                    <div>
+                      <small>HOSTED BY</small>
+                      <strong>{organizerName}</strong>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="highlight-card">
-                <div className="highlight-icon">
-                  ◷
-                </div>
-
-                <div>
-                  <h3>
-                    Plan ahead
-                  </h3>
-
-                  <p>
-                    Arrive early so you have
-                    enough time to settle in
-                    before the experience
-                    begins.
-                  </p>
-                </div>
-              </div>
-
-              <div className="highlight-card">
-                <div className="highlight-icon">
-                  ◇
-                </div>
-
-                <div>
-                  <h3>
-                    Digital ticket
-                  </h3>
-
-                  <p>
-                    Your ticket will be
-                    connected to your booking
-                    after successful payment.
-                  </p>
-                </div>
-              </div>
+              <a
+                href="#vibely-tickets"
+                className="vibely-hero-button"
+              >
+                Explore tickets
+                <span>↗</span>
+              </a>
             </div>
+          </section>
 
-            <div className="ticket-categories-showcase">
-              <div className="ticket-categories-heading">
+          <section className="vibely-intro">
+            <span className="vibely-eyebrow">
+              THE ART OF SHOWING UP
+            </span>
+
+            <h2>
+              More than an event.
+              <em> A feeling.</em>
+            </h2>
+
+            <p>
+              The music, the people, the atmosphere, the
+              memories. Choose the experience that feels
+              right for you.
+            </p>
+          </section>
+
+          <section
+            className="vibely-booking-layout"
+            id="vibely-tickets"
+          >
+            <div className="vibely-ticket-area">
+              <div className="vibely-section-heading">
                 <div>
-                  <p>
-                    TICKET CATEGORIES
-                  </p>
+                  <span className="vibely-eyebrow">
+                    MAKE IT YOUR MOMENT
+                  </span>
 
                   <h2>
-                    Choose your experience
+                    Choose your
+                    <em> experience.</em>
                   </h2>
+
+                  <p>
+                    Mix and match ticket categories.
+                    One booking, one beautiful experience.
+                  </p>
                 </div>
 
-                <span>
-                  Pick the ticket that
-                  fits your night.
+                <span className="vibely-heading-decoration">
+                  ✳
                 </span>
               </div>
 
-              {ticketTypes.length > 0 ? (
-                <div className="ticket-category-grid">
-                  {ticketTypes.map(
-                    (type) => {
-                      const soldOut =
-                        type.availableTickets <=
-                        0;
+              <div className="vibely-ticket-grid">
+                {ticketTypes.length === 0 ? (
+                  <div className="vibely-empty">
+                    Ticket categories are not available yet.
+                  </div>
+                ) : (
+                  ticketTypes.map((type, index) => {
+                    const key = getCategoryKey(type);
+                    const quantity = Number(
+                      quantities[key] || 0
+                    );
+                    const available =
+                      Number(type.availableTickets) || 0;
+                    const isSoldOut = available <= 0;
+                    const selected = quantity > 0;
 
-                      const selected =
-                        selectedTicketType?.name ===
-                        type.name;
+                    return (
+                      <article
+                        key={key}
+                        className={`vibely-ticket-card ${
+                          selected ? "is-selected" : ""
+                        }`}
+                      >
+                        <div className="vibely-ticket-top">
+                          <span className="vibely-ticket-number">
+                            0{index + 1}
+                          </span>
 
-                      return (
-                        <button
-                          key={type.name}
-                          type="button"
-                          className={`ticket-category-card ${selected
-                            ? "selected"
-                            : ""
-                            } ${soldOut
-                              ? "sold-out"
-                              : ""
-                            }`}
-                          disabled={
-                            soldOut ||
-                            unavailable
-                          }
-                          onClick={() =>
-                            selectTicketType(
-                              type
-                            )
-                          }
-                        >
-                          <div className="ticket-category-top">
-                            <span className="ticket-category-name">
-                              {type.name}
+                          {isSoldOut ? (
+                            <span className="vibely-ticket-state">
+                              SOLD OUT
                             </span>
-
-                            {selected && (
-                              <span className="ticket-selected-icon">
-                                ✓
-                              </span>
-                            )}
-
-                            {soldOut && (
-                              <span className="sold-out-category-badge">
-                                SOLD OUT
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="ticket-category-price">
-                            {formatPrice(
-                              type.price
-                            )}
-                          </div>
-
-                          <p className="ticket-category-description">
-                            {getTicketDescription(
-                              type.name
-                            )}
-                          </p>
-
-                          <div className="ticket-category-footer">
-                            <span>
-                              {soldOut
-                                ? "Unavailable"
-                                : selected
-                                  ? "Selected"
-                                  : "Choose ticket"}
+                          ) : selected ? (
+                            <span className="vibely-ticket-state selected">
+                              ✓ SELECTED
                             </span>
+                          ) : (
+                            <span className="vibely-ticket-state">
+                              AVAILABLE
+                            </span>
+                          )}
+                        </div>
 
-                            {!soldOut && (
-                              <span className="category-arrow">
-                                {selected
-                                  ? "✓"
-                                  : "→"}
-                              </span>
-                            )}
+                        <div className="vibely-ticket-icon">
+                          {index === 0
+                            ? "✦"
+                            : index === 1
+                              ? "✧"
+                              : "♛"}
+                        </div>
+
+                        <span className="vibely-ticket-caption">
+                          THE EXPERIENCE
+                        </span>
+
+                        <h3>{type.name}</h3>
+
+                        <p className="vibely-ticket-description">
+                          {getCategoryDescription(type.name)}
+                        </p>
+
+                        <div className="vibely-ticket-price">
+                          <strong>{money(type.price)}</strong>
+                          <span>/ person</span>
+                        </div>
+
+                        <div className="vibely-ticket-divider" />
+
+                        <div className="vibely-ticket-actions">
+                          <span className="vibely-quantity-label">
+                            {isSoldOut
+                              ? "Fully booked"
+                              : "Select quantity"}
+                          </span>
+
+                          <div className="vibely-stepper">
+                            <button
+                              type="button"
+                              aria-label={`Remove ${type.name} ticket`}
+                              disabled={
+                                quantity === 0 ||
+                                bookingLoading ||
+                                unavailable
+                              }
+                              onClick={() =>
+                                changeQuantity(type, -1)
+                              }
+                            >
+                              −
+                            </button>
+
+                            <strong>{quantity}</strong>
+
+                            <button
+                              type="button"
+                              aria-label={`Add ${type.name} ticket`}
+                              disabled={
+                                isSoldOut ||
+                                unavailable ||
+                                bookingLoading ||
+                                quantity >= available
+                              }
+                              onClick={() =>
+                                changeQuantity(type, 1)
+                              }
+                            >
+                              +
+                            </button>
                           </div>
-                        </button>
-                      );
-                    }
-                  )}
+                        </div>
+
+                        {!isSoldOut && (
+                          <small className="vibely-availability">
+                            {available} tickets available
+                          </small>
+                        )}
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="vibely-perks">
+                <div>
+                  <span>✧</span>
+                  <strong>One easy checkout</strong>
+                  <p>
+                    Pay for all your selected categories
+                    together.
+                  </p>
                 </div>
-              ) : (
-                <div className="no-ticket-categories">
-                  Ticket categories are
-                  currently unavailable for
-                  this event.
+
+                <div>
+                  <span>◇</span>
+                  <strong>Digital tickets</strong>
+                  <p>
+                    Receive individual tickets after
+                    successful confirmation.
+                  </p>
                 </div>
-              )}
+
+                <div>
+                  <span>♡</span>
+                  <strong>Memories await</strong>
+                  <p>
+                    Choose your tickets and get ready
+                    for the experience.
+                  </p>
+                </div>
+              </div>
+
+              <div className="vibely-about">
+                <span className="vibely-eyebrow">
+                  A LITTLE MORE ABOUT THE EVENT
+                </span>
+                <h2>What to expect</h2>
+                <p>{event.description}</p>
+              </div>
             </div>
 
-            <div className="good-to-know">
-              <div className="good-to-know-heading">
+            <aside className="vibely-checkout">
+              <div className="vibely-checkout-heading">
+                <div className="vibely-checkout-mark">
+                  ✦
+                </div>
+
+                <span className="vibely-eyebrow">
+                  YOUR VIBELY MOMENT
+                </span>
+
+                <h2>Your reservation</h2>
                 <p>
-                  GOOD TO KNOW
-                </p>
-
-                <h2>
-                  Before you go
-                </h2>
-              </div>
-
-              <div className="good-to-know-items">
-                <div>
-                  <span>01</span>
-
-                  <p>
-                    Keep your ticket
-                    available for verification
-                    when you arrive.
-                  </p>
-                </div>
-
-                <div>
-                  <span>02</span>
-
-                  <p>
-                    Check the event date,
-                    time and location
-                    carefully before
-                    completing your booking.
-                  </p>
-                </div>
-
-                <div>
-                  <span>03</span>
-
-                  <p>
-                    Your booking details
-                    will be available from
-                    your Vibely account.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <aside className="booking-card">
-            <div className="booking-card-top">
-              <p className="booking-card-label">
-                RESERVE YOUR SPOT
-              </p>
-
-              <h2>Your ticket</h2>
-
-              <p className="booking-card-intro">
-                Choose a ticket from the
-                categories and complete
-                your booking here.
-              </p>
-            </div>
-
-            <div className="booking-divider"></div>
-
-            {selectedTicketType ? (
-              <div className="selected-ticket-banner">
-                <div className="selected-ticket-check">
-                  ✓
-                </div>
-
-                <div className="selected-ticket-info">
-                  <span>
-                    YOUR SELECTION
-                  </span>
-
-                  <strong>
-                    {selectedTicketType.name}
-                  </strong>
-
-                  <small>
-                    {getTicketExperience(
-                      selectedTicketType.name
-                    )}
-                  </small>
-                </div>
-
-                <strong className="selected-ticket-price">
-                  {formatPrice(
-                    selectedTicketType.price
-                  )}
-                </strong>
-              </div>
-            ) : (
-              <div className="choose-ticket-notice">
-                <div className="choose-ticket-icon">
-                  ♫
-                </div>
-
-                <div>
-                  <strong>
-                    Choose your ticket
-                  </strong>
-
-                  <p>
-                    Select Regular, VIP or
-                    VVIP from the ticket
-                    cards.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="booking-divider"></div>
-
-            <div className="quantity-section">
-              <div>
-                <h4>
-                  Number of tickets
-                </h4>
-
-                <p>
-                  Select your quantity
+                  Everything you love, all in one booking.
                 </p>
               </div>
 
-              <div className="quantity-control">
+              <div className="vibely-checkout-body">
+                {selections.length === 0 ? (
+                  <div className="vibely-cart-empty">
+                    <span>♡</span>
+                    <h3>Your experience starts here</h3>
+                    <p>
+                      Select your favourite ticket categories
+                      to build your reservation.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="vibely-cart-items">
+                    {selections.map((type) => (
+                      <div
+                        className="vibely-cart-item"
+                        key={getCategoryKey(type)}
+                      >
+                        <div className="vibely-cart-icon">
+                          ✦
+                        </div>
+
+                        <div className="vibely-cart-item-info">
+                          <strong>{type.name}</strong>
+                          <span>
+                            {type.selectedQuantity} ×{" "}
+                            {money(type.price)}
+                          </span>
+                        </div>
+
+                        <strong>
+                          {money(
+                            type.selectedQuantity *
+                              Number(type.price)
+                          )}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="vibely-checkout-divider" />
+
+                <div className="vibely-checkout-line">
+                  <span>Total tickets</span>
+                  <strong>{ticketCount}</strong>
+                </div>
+
+                <div className="vibely-checkout-total">
+                  <span>TOTAL AMOUNT</span>
+                  <strong>{money(totalAmount)}</strong>
+                </div>
+
+                <p className="vibely-checkout-note">
+                  Any additional payment charges, if
+                  applicable, will be shown at checkout.
+                </p>
+
+                {bookingError && (
+                  <div
+                    className="vibely-booking-error"
+                    role="alert"
+                  >
+                    {bookingError}
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  onClick={
-                    decreaseQuantity
-                  }
+                  className="vibely-pay-button"
+                  onClick={handleBooking}
                   disabled={
-                    quantity === 1 ||
-                    !selectedTicketType ||
-                    bookingLoading
-                  }
-                >
-                  −
-                </button>
-
-                <strong>
-                  {quantity}
-                </strong>
-
-                <button
-                  type="button"
-                  onClick={
-                    increaseQuantity
-                  }
-                  disabled={
-                    !selectedTicketType ||
                     bookingLoading ||
-                    quantity >=
-                    (selectedTicketType?.availableTickets ||
-                      0)
+                    ticketCount === 0 ||
+                    unavailable ||
+                    soldOut
                   }
                 >
-                  +
+                  {bookingLoading
+                    ? "Preparing your checkout..."
+                    : unavailable
+                      ? "Event unavailable"
+                      : soldOut
+                        ? "Sold out"
+                        : ticketCount === 0
+                          ? "Select your tickets"
+                          : "Continue to payment  ↗"}
                 </button>
+
+                <div className="vibely-secure-note">
+                  <span>♢</span>
+                  Secure checkout powered by Paystack
+                </div>
               </div>
+
+              <div className="vibely-checkout-footer">
+                <span>✧</span>
+                <p>
+                  Good times look better when they're
+                  shared.
+                </p>
+              </div>
+            </aside>
+          </section>
+
+          <section className="vibely-bottom-banner">
+            <div>
+              <span className="vibely-eyebrow">
+                KEEP THE GOOD TIMES GOING
+              </span>
+
+              <h2>
+                Your next favourite
+                <em> memory awaits.</em>
+              </h2>
             </div>
 
-            {selectedTicketType && (
-              <div className="booking-summary">
-                <div className="booking-summary-line">
-                  <span>
-                    {selectedTicketType.name}{" "}
-                    × {quantity}
-                  </span>
-
-                  <span>
-                    {formatPrice(
-                      selectedTicketType.price *
-                      quantity
-                    )}
-                  </span>
-                </div>
-
-                <div className="booking-summary-each">
-                  <span>
-                    {formatPrice(
-                      selectedTicketType.price
-                    )}{" "}
-                    per ticket
-                  </span>
-                </div>
-
-                <div className="booking-total">
-                  <span>Total</span>
-
-                  <strong>
-                    {formatPrice(
-                      totalPrice
-                    )}
-                  </strong>
-                </div>
-              </div>
-            )}
-
-            {bookingError && (
-              <div className="booking-message booking-error-message">
-                {bookingError}
-              </div>
-            )}
-
-            {bookingSuccess && (
-              <div className="booking-message booking-success-message">
-                {bookingSuccess}
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="book-ticket-button"
-              onClick={
-                handleBookTicket
-              }
-              disabled={
-                unavailable ||
-                allTicketTypesSoldOut ||
-                bookingLoading ||
-                ticketTypes.length === 0
-              }
-            >
-              {bookingLoading
-                ? "Creating Booking..."
-                : allTicketTypesSoldOut
-                  ? "Sold Out"
-                  : unavailable
-                    ? "Currently Unavailable"
-                    : selectedTicketType
-                      ? `Book ${selectedTicketType.name}`
-                      : "Select a Ticket Category"}
-            </button>
-
-            {!unavailable &&
-              !allTicketTypesSoldOut && (
-                <div className="booking-benefits">
-                  <p>
-                    <span>✓</span>
-                    Secure checkout
-                  </p>
-
-                  <p>
-                    <span>✓</span>
-                    Digital ticket after
-                    payment
-                  </p>
-
-                  <p>
-                    <span>✓</span>
-                    Booking stored in your
-                    account
-                  </p>
-                </div>
-              )}
-          </aside>
-        </section>
-
-        <section className="event-details-bottom">
-          <div>
-            <p>
-              MORE TO EXPERIENCE
-            </p>
-
-            <h2>
-              Find another moment
-              worth showing up for.
-            </h2>
-          </div>
-
-          <Link to="/events">
-            Explore more events
-            <span>→</span>
-          </Link>
-        </section>
+            <Link to="/events">
+              Discover more events <span>↗</span>
+            </Link>
+          </section>
+        </div>
 
         {showAuthPrompt && (
           <div
-            className="auth-prompt-overlay"
-            onClick={() =>
-              setShowAuthPrompt(false)
-            }
+            className="vibely-modal-overlay"
+            onClick={() => setShowAuthPrompt(false)}
           >
             <div
-              className="auth-prompt"
-              onClick={(e) =>
-                e.stopPropagation()
-              }
+              className="vibely-auth-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="vibely-auth-title"
+              onClick={(e) => e.stopPropagation()}
             >
               <button
+                className="vibely-modal-close"
                 type="button"
-                className="auth-prompt-close"
-                onClick={() =>
-                  setShowAuthPrompt(false)
-                }
+                aria-label="Close"
+                onClick={() => setShowAuthPrompt(false)}
               >
                 ×
               </button>
@@ -893,37 +834,37 @@ const EventDetails = () => {
               <img
                 src={vibelyLogo}
                 alt="Vibely"
+                className="vibely-modal-logo"
               />
 
-              <p className="auth-prompt-label">
-                VIBELY
-              </p>
+              <span className="vibely-eyebrow">
+                YOU'RE ALMOST THERE
+              </span>
 
-              <h2>
-                Sign in to continue
+              <h2 id="vibely-auth-title">
+                Your moment is waiting.
               </h2>
 
-              <p className="auth-prompt-text">
-                Login to your Vibely
-                account or create a new
-                account to continue with
-                your booking.
+              <p>
+                Sign in or create your Vibely account
+                to reserve your tickets and continue
+                to payment.
               </p>
 
               <button
                 type="button"
-                className="auth-login-button"
-                onClick={goToLogin}
+                className="vibely-modal-primary"
+                onClick={() => goToAuth("/login")}
               >
-                Login
+                Sign in to Vibely
               </button>
 
               <button
                 type="button"
-                className="auth-signup-button"
-                onClick={goToSignup}
+                className="vibely-modal-secondary"
+                onClick={() => goToAuth("/signup")}
               >
-                Create Account
+                Create an account
               </button>
             </div>
           </div>

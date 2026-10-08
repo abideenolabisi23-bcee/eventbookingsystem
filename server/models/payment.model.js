@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const PaymentSchema = new mongoose.Schema(
@@ -16,7 +17,8 @@ const PaymentSchema = new mongoose.Schema(
 
     amount: {
       type: Number,
-      required: true
+      required: true,
+      min: 0
     },
 
     paymentReference: {
@@ -27,49 +29,74 @@ const PaymentSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-    //   enum: ["card", "bank_transfer", "ussd"],
       default: null
     },
 
     status: {
-  type: String,
-  enum: [
-    "pending",
-    "processing",
-    "paid",
-    "failed",
-    "partially_refunded",
-    "refunded"
-  ],
-  default: "pending"
-},
+      type: String,
+      enum: [
+        "pending",
+        "processing",
+        "paid",
+        "failed",
+        "partially_refunded",
+        "refunded"
+      ],
+      default: "pending"
+    },
 
     refundedAmount: {
-  type: Number,
-  default: 0
-},
+      type: Number,
+      default: 0,
+      min: 0
+    },
 
-refundStatus: {
-  type: String,
-  enum: [
-    "none",
-    "pending",
-    "partially_refunded",
-    "refunded",
-    "failed"
-  ],
-  default: "none"
-},
-
-
-
+    refundStatus: {
+      type: String,
+      enum: [
+        "none",
+        "pending",
+        "partially_refunded",
+        "refunded",
+        "failed"
+      ],
+      default: "none"
+    }
   },
   {
     timestamps: true,
-    strict: "throw"
+    strict: "throw",
+    optimisticConcurrency: true
   }
 );
 
-const PaymentModel = mongoose.model("Payment", PaymentSchema);
+PaymentSchema.path("amount").validate(
+  Number.isFinite,
+  "Payment amount must be a finite number"
+);
+
+PaymentSchema.path("refundedAmount").validate(
+  Number.isFinite,
+  "Refunded amount must be a finite number"
+);
+
+PaymentSchema.pre("validate", function () {
+  if (
+    Number.isFinite(this.amount) &&
+    Number.isFinite(this.refundedAmount) &&
+    Math.round(this.refundedAmount * 100) >
+      Math.round(this.amount * 100)
+  ) {
+    this.invalidate(
+      "refundedAmount",
+      "Refunded amount cannot exceed payment amount"
+    );
+  }
+});
+
+const PaymentModel = mongoose.model(
+  "Payment",
+  PaymentSchema
+);
 
 module.exports = PaymentModel;

@@ -1,346 +1,386 @@
-import { useEffect, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import "../styles/paymentCallback.css";
+import "../styles/vibelyTickets.css";
 
-const EventPaymentCallback = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
-  const [status, setStatus] = useState("verifying");
+const getToken = () =>
+  localStorage.getItem("accessToken") ||
+  localStorage.getItem("token");
 
-  const [message, setMessage] = useState(
-    "Please wait while we confirm your event payment."
-  );
+export default function EventPaymentCallback() {
+  const [params] = useSearchParams();
+  const reference = params.get("reference") || params.get("trxref");
 
+  const [status, setStatus] = useState("checking");
+  const [message, setMessage] = useState("");
   const [booking, setBooking] = useState(null);
   const [tickets, setTickets] = useState([]);
 
-  useEffect(() => {
-    const verifyPayment = async () => {
-      const accessToken =
-        localStorage.getItem("accessToken");
+  const requestId = useRef(0);
 
-      const reference =
-        searchParams.get("reference") ||
-        searchParams.get("trxref");
+  const verifyPayment = useCallback(async () => {
+    const currentRequest = ++requestId.current;
 
-      if (!accessToken) {
-        navigate("/login", {
-          state: {
-            returnTo:
-              window.location.pathname +
-              window.location.search,
-          },
-        });
+    if (!reference) {
+      setStatus("error");
+      setMessage("No payment reference was provided.");
+      return;
+    }
 
-        return;
-      }
+    const token = getToken();
 
-      if (!reference) {
-        setStatus("failed");
-        setMessage(
-          "Payment reference was not found."
-        );
-        return;
-      }
+    if (!token) {
+      setStatus("login");
+      setMessage(
+        "Please sign in to verify your payment. You do not need to pay again."
+      );
+      return;
+    }
 
-      try {
-        const response = await axios.get(
-          `https://eventbookingsystem-sooty.vercel.app/api/v1/payments/verify/${reference}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+    setStatus("checking");
+    setMessage("We're securely confirming your payment.");
+
+    try {
+      const response = await axios.get(
+        `${API}/payments/verify/${encodeURIComponent(reference)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
-        );
+        }
+      );
 
-        const responseData =
-          response.data.data || {};
+      if (currentRequest !== requestId.current) return;
 
-        setBooking(
-          responseData.booking || null
-        );
+      const data = response.data?.data || {};
+      const payment = data.payment;
+      const verifiedBooking = data.booking;
+      const verifiedTickets = Array.isArray(data.tickets)
+        ? data.tickets
+        : [];
 
-        setTickets(
-          responseData.tickets || []
-        );
-
+      if (
+        payment?.status === "paid" &&
+        verifiedBooking?.paymentStatus === "paid" &&
+        verifiedBooking?.bookingStatus === "confirmed" &&
+        verifiedTickets.length === Number(verifiedBooking.quantity)
+      ) {
+        setBooking(verifiedBooking);
+        setTickets(verifiedTickets);
         setStatus("success");
-
         setMessage(
-          response.data.message ||
-          "Your event payment was confirmed successfully."
+          "Your payment is confirmed and your tickets are ready!"
         );
-      } catch (error) {
-        console.log(
-          "EVENT PAYMENT VERIFY ERROR:",
-          error
+        sessionStorage.removeItem("vibelyPendingBooking");
+        return;
+      }
+
+      if (
+        payment?.status === "refunded" ||
+        payment?.status === "partially_refunded" ||
+        payment?.refundStatus === "pending" ||
+        payment?.refundStatus === "refunded" ||
+        payment?.refundStatus === "partially_refunded"
+      ) {
+        setStatus("refund");
+        setMessage(
+          "This payment has refund activity. Please check your refund status before taking further action."
         );
+        return;
+      }
 
-        const responseData =
-          error.response?.data;
+      setStatus("pending");
+      setMessage(
+        response.data?.message ||
+          "Your payment is still being confirmed. Please do not pay again."
+      );
+    } catch (error) {
+      if (currentRequest !== requestId.current) return;
 
-        if (
-          responseData?.refundInitiated ||
-          responseData?.refundStarted
-        ) {
-          setStatus("refund");
+      const httpStatus = error.response?.status;
+      const data = error.response?.data || {};
 
-          setMessage(
-            responseData.message ||
-            "Your payment was received, but your event booking could not be confirmed. A refund is being processed."
-          );
-
-          return;
-        }
-
-        if (error.response?.status === 202) {
+      if (httpStatus === 401) {
+        setStatus("login");
+        setMessage(
+          "Your session has expired. Sign in to check your payment."
+        );
+      } else if (httpStatus === 202) {
+        if (data.requiresAttention) {
+          setStatus("attention");
+        } else {
           setStatus("pending");
-
-          setMessage(
-            responseData?.message ||
-            "Your event payment is still being confirmed."
-          );
-
-          return;
         }
 
-        setStatus("failed");
-
         setMessage(
-          responseData?.message ||
-          "We could not verify your event payment."
+          data.message ||
+            "Your payment is still being processed."
+        );
+      } else if (
+        data.requiresAttention ||
+        data.paymentReceived
+      ) {
+        setStatus("attention");
+        setMessage(
+          data.message ||
+            "Your payment requires additional verification. Do not pay again."
+        );
+      } else if (
+        httpStatus === 400 &&
+        data.paymentStatus &&
+        data.paymentStatus !== "success"
+      ) {
+        setStatus("pending");
+        setMessage(
+          "Paystack has not confirmed a successful payment. Check the transaction status before trying again."
+        );
+      } else {
+        setStatus("error");
+        setMessage(
+          data.message ||
+            "We couldn't verify your payment right now. Please check again before making another payment."
         );
       }
-    };
+    }
+  }, [reference]);
 
+  useEffect(() => {
     verifyPayment();
-  }, [navigate, searchParams]);
 
-  const formatAmount = (amount) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
+    return () => {
+      requestId.current += 1;
+    };
+  }, [verifyPayment]);
 
-  const firstTicket = tickets[0];
+  const details = {
+    checking: {
+      icon: "✦",
+      title: "One little moment",
+      subtitle: "We're making sure everything is perfect."
+    },
+    success: {
+      icon: "✓",
+      title: "You're going!",
+      subtitle: "Your unforgettable experience starts here."
+    },
+    pending: {
+      icon: "◷",
+      title: "Almost there",
+      subtitle: "Your payment confirmation is in progress."
+    },
+    refund: {
+      icon: "↺",
+      title: "Refund update",
+      subtitle: "Let's check the status of your refund."
+    },
+    attention: {
+      icon: "!",
+      title: "We're looking into it",
+      subtitle: "Your transaction needs additional attention."
+    },
+    login: {
+      icon: "♡",
+      title: "Welcome back",
+      subtitle: "Sign in to continue checking your payment."
+    },
+    error: {
+      icon: "!",
+      title: "Unable to verify",
+      subtitle: "Your payment status couldn't be confirmed."
+    }
+  }[status];
 
   return (
-    <main className="payment-callback-page">
-      <div className="payment-callback-card">
-        {status === "verifying" && (
-          <>
-            <div className="payment-callback-loader"></div>
+    <main className="vb-page vb-payment-page">
+      <div className="vb-payment-card">
+        <div className="vb-payment-head">
+          <Link to="/" className="vb-logo">
+            ✦ VIBELY
+          </Link>
 
-            <span className="payment-callback-label">
-              VERIFYING PAYMENT
-            </span>
+          <span className="vb-overline">
+            THE ART OF EXPERIENCES
+          </span>
 
-            <h1>Confirming your ticket</h1>
-
-            <p>{message}</p>
-
-            <small>
-              Please do not close this page.
-            </small>
-          </>
-        )}
-
-        {status === "success" && (
-          <>
-            <div className="payment-callback-icon success">
-              <i className="bi bi-check-lg"></i>
-            </div>
-
-            <span className="payment-callback-label">
-              PAYMENT SUCCESSFUL
-            </span>
-
-            <h1>Your ticket is ready!</h1>
-
-            <p>
-              Your payment has been confirmed and
-              your event ticket is now available
-              in your Vibely account.
-            </p>
-
-            {booking && (
-              <div className="apartment-confirmation-summary">
-                {booking.bookingReference && (
-                  <div>
-                    <span>
-                      Booking Reference
-                    </span>
-
-                    <strong>
-                      {booking.bookingReference}
-                    </strong>
-                  </div>
-                )}
-
-                {booking.ticketType && (
-                  <div>
-                    <span>Ticket Type</span>
-
-                    <strong>
-                      {booking.ticketType}
-                    </strong>
-                  </div>
-                )}
-
-                {booking.quantity && (
-                  <div>
-                    <span>Tickets</span>
-
-                    <strong>
-                      {booking.quantity}
-                    </strong>
-                  </div>
-                )}
-
-                {booking.totalAmount && (
-                  <div>
-                    <span>Amount Paid</span>
-
-                    <strong>
-                      {formatAmount(
-                        booking.totalAmount
-                      )}
-                    </strong>
-                  </div>
-                )}
-              </div>
+          <div className={`vb-payment-symbol vb-symbol-${status}`}>
+            {status === "checking" ? (
+              <span className="vb-loader" />
+            ) : (
+              details.icon
             )}
+          </div>
 
-            <div className="payment-callback-actions">
+          <h1>{details.title}</h1>
+
+          <p className="vb-subtitle">
+            {details.subtitle}
+          </p>
+
+          <p className="vb-message">
+            {message}
+          </p>
+        </div>
+
+        <div className="vb-payment-body">
+          {reference && (
+            <div className="vb-reference">
+              <span>PAYMENT REFERENCE</span>
+              <strong>{reference}</strong>
+            </div>
+          )}
+
+          {status === "success" && (
+            <>
+              <div className="vb-notice">
+                <strong>✧ Your tickets are ready</strong>
+
+                <p>
+                  You have {tickets.length}{" "}
+                  {tickets.length === 1 ? "ticket" : "tickets"}.
+                  Each ticket has its own unique QR code.
+                </p>
+              </div>
+
               <Link
                 to="/my-tickets"
-                className="payment-primary-button"
+                className="vb-main-button"
               >
-                View Ticket
+                View my tickets <span>↗</span>
               </Link>
 
-              <Link
-                to="/events"
-                className="payment-secondary-button"
-              >
-                Explore Events
-              </Link>
-            </div>
-          </>
-        )}
-
-        {status === "refund" && (
-          <>
-            <div className="payment-callback-icon pending">
-              <i className="bi bi-arrow-repeat"></i>
-            </div>
-
-            <span className="payment-callback-label">
-              REFUND IN PROGRESS
-            </span>
-
-            <h1>
-              We're processing your refund
-            </h1>
-
-            <p>{message}</p>
-
-            <div className="payment-callback-actions">
-              <Link
-                to="/payments-refunds"
-                className="payment-primary-button"
-              >
-                Payments & Refunds
-              </Link>
-
-              <Link
-                to="/events"
-                className="payment-secondary-button"
-              >
-                Find Another Event
-              </Link>
-            </div>
-          </>
-        )}
-
-        {status === "pending" && (
-          <>
-            <div className="payment-callback-icon pending">
-              <i className="bi bi-clock"></i>
-            </div>
-
-            <span className="payment-callback-label">
-              PAYMENT PROCESSING
-            </span>
-
-            <h1>
-              Payment is being confirmed
-            </h1>
-
-            <p>{message}</p>
-
-            <div className="payment-callback-actions">
-              <Link
-                to="/my-tickets"
-                className="payment-primary-button"
-              >
-                My Tickets
-              </Link>
-
-              <Link
-                to="/events"
-                className="payment-secondary-button"
-              >
-                Back to Events
-              </Link>
-            </div>
-          </>
-        )}
-
-        {status === "failed" && (
-          <>
-            <div className="payment-callback-icon failed">
-              <i className="bi bi-x-lg"></i>
-            </div>
-
-            <span className="payment-callback-label">
-              PAYMENT NOT CONFIRMED
-            </span>
-
-            <h1>
-              We couldn't confirm payment
-            </h1>
-
-            <p>{message}</p>
-
-            <div className="payment-callback-actions">
               <Link
                 to="/my-bookings"
-                className="payment-primary-button"
+                className="vb-outline-button"
               >
-                Check My Bookings
+                View my bookings
               </Link>
+            </>
+          )}
+
+          {status === "pending" && (
+            <>
+              <button
+                type="button"
+                className="vb-main-button"
+                onClick={verifyPayment}
+              >
+                Check payment again <span>↻</span>
+              </button>
 
               <Link
-                to="/events"
-                className="payment-secondary-button"
+                to="/my-bookings"
+                className="vb-outline-button"
               >
-                Back to Events
+                View my bookings
               </Link>
-            </div>
-          </>
-        )}
+            </>
+          )}
+
+          {status === "refund" && (
+            <>
+              <Link
+                to="/my-refunds"
+                className="vb-main-button"
+              >
+                Check my refunds <span>↗</span>
+              </Link>
+
+              <button
+                type="button"
+                className="vb-outline-button"
+                onClick={verifyPayment}
+              >
+                Refresh payment status
+              </button>
+            </>
+          )}
+
+          {status === "attention" && (
+            <>
+              <div className="vb-notice">
+                <strong>Important</strong>
+
+                <p>
+                  Please do not make another payment for this
+                  booking until its status has been resolved.
+                </p>
+              </div>
+
+              <Link
+                to="/my-bookings"
+                className="vb-main-button"
+              >
+                View my bookings <span>↗</span>
+              </Link>
+
+              <button
+                type="button"
+                className="vb-outline-button"
+                onClick={verifyPayment}
+              >
+                Check again
+              </button>
+            </>
+          )}
+
+          {status === "login" && (
+            <Link
+              to="/login"
+              state={{
+                returnTo: `/event-payment/callback?reference=${encodeURIComponent(reference || "")}`
+              }}
+              className="vb-main-button"
+            >
+              Sign in to continue <span>↗</span>
+            </Link>
+          )}
+
+          {status === "error" && (
+            <>
+              <button
+                type="button"
+                className="vb-main-button"
+                onClick={verifyPayment}
+              >
+                Try verification again <span>↻</span>
+              </button>
+
+              <Link
+                to="/my-bookings"
+                className="vb-outline-button"
+              >
+                View my bookings
+              </Link>
+            </>
+          )}
+
+          {booking?._id && (
+            <p className="vb-small-note">
+              Booking ID: {booking._id}
+            </p>
+          )}
+
+          <Link
+            to="/events"
+            className="vb-text-link"
+          >
+            Explore more experiences →
+          </Link>
+
+          <p className="vb-secure">
+            ♢ Secure verification powered by Paystack
+          </p>
+        </div>
       </div>
+
+      <p className="vb-tagline">
+        Beautiful moments. Unforgettable memories.
+      </p>
     </main>
   );
-};
-
-export default EventPaymentCallback;
+}

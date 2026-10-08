@@ -1,160 +1,158 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, {
+  useEffect,
+  useRef,
+  useState
+} from "react";
+
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Html5Qrcode } from "html5-qrcode";
+
 import {
   ArrowLeft,
+  ArrowRight,
+  BedDouble,
+  Building2,
+  CalendarDays,
   Camera,
-  CameraOff,
   CheckCircle2,
   CircleAlert,
-  Clock3,
+  Clock,
   CreditCard,
-  DoorOpen,
-  Hash,
   Home,
-  KeyRound,
-  LoaderCircle,
+  Keyboard,
   MapPin,
   QrCode,
+  RotateCcw,
   ScanLine,
-  Search,
-  UserRound,
-  XCircle
+  ShieldCheck,
+  Sparkles,
+  UserRound
 } from "lucide-react";
+
 import "../styles/apartmentQRCheckIn.css";
+import vibelyLogo from "../assets/vibely-logo.png";
 
 const API_URL =
   "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const ApartmentQRCheckIn = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
+
+  const scannerRef = useRef(null);
+  const processingRef = useRef(false);
 
   const [ticketCode, setTicketCode] = useState("");
   const [validatedData, setValidatedData] = useState(null);
 
-  const [validating, setValidating] = useState(false);
-  const [checkingIn, setCheckingIn] = useState(false);
-
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [scannerStarting, setScannerStarting] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
 
-  const [availableCameras, setAvailableCameras] =
-    useState([]);
+  const [cameraStarted, setCameraStarted] = useState(false);
+  const [startingCamera, setStartingCamera] = useState(false);
 
-  const [selectedCameraId, setSelectedCameraId] =
-    useState("");
+  const [cameras, setCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState("");
 
-  const scannerRef = useRef(null);
-  const scannerRunningRef = useRef(false);
-  const scanProcessingRef = useRef(false);
+  const [scanHistory, setScanHistory] = useState([]);
 
   const accessToken =
     localStorage.getItem("accessToken");
 
-  const getHeaders = () => {
-    return {
-      Authorization: `Bearer ${accessToken}`
+  const firstname =
+    localStorage.getItem("firstname") || "Organizer";
+
+  const stopScanner = async () => {
+    try {
+      if (
+        scannerRef.current &&
+        scannerRef.current.isScanning
+      ) {
+        await scannerRef.current.stop();
+      }
+
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.clear();
+        } catch {
+          scannerRef.current = null;
+        }
+      }
+    } catch {
+      scannerRef.current = null;
+    } finally {
+      scannerRef.current = null;
+      setCameraStarted(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadCameras = async () => {
+      try {
+        const devices =
+          await Html5Qrcode.getCameras();
+
+        setCameras(devices || []);
+
+        if (devices && devices.length > 0) {
+          const backCamera =
+            devices.find((camera) =>
+              /back|rear|environment/i.test(
+                camera.label
+              )
+            ) || devices[devices.length - 1];
+
+          setSelectedCamera(backCamera.id);
+        }
+      } catch {
+        setCameras([]);
+      }
     };
-  };
 
-  const showMessage = (type, text) => {
-    setMessageType(type);
-    setMessage(text);
-  };
+    loadCameras();
 
-  const clearResult = () => {
+    return () => {
+      if (
+        scannerRef.current &&
+        scannerRef.current.isScanning
+      ) {
+        scannerRef.current
+          .stop()
+          .catch(() => {});
+      }
+    };
+  }, []);
+
+  const resetResult = () => {
     setValidatedData(null);
     setMessage("");
     setMessageType("");
   };
 
-  const formatPrice = (amount) => {
-    return Number(amount || 0).toLocaleString(
-      "en-NG"
-    );
-  };
-
-  const formatDate = (date) => {
-    if (!date) {
-      return "Not available";
-    }
-
-    return new Date(date).toLocaleDateString(
-      "en-NG",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-      }
-    );
-  };
-
-  const formatDateTime = (date) => {
-    if (!date) {
-      return "Not available";
-    }
-
-    return new Date(date).toLocaleString(
-      "en-NG",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-      }
-    );
-  };
-
-  const stopScanner = async () => {
-    if (!scannerRef.current) {
-      scannerRunningRef.current = false;
-      return;
-    }
-
-    try {
-      if (scannerRunningRef.current) {
-        await scannerRef.current.stop();
-      }
-    } catch (error) {
-      console.log(
-        "STOP APARTMENT SCANNER ERROR:",
-        error
-      );
-    }
-
-    try {
-      await scannerRef.current.clear();
-    } catch (error) {
-      console.log(
-        "CLEAR APARTMENT SCANNER ERROR:",
-        error
-      );
-    }
-
-    scannerRef.current = null;
-    scannerRunningRef.current = false;
-  };
-
-  const validateCode = async (
+  const validateTicket = async (
     value,
     scanned = false
   ) => {
-    const cleanValue =
-      typeof value === "string"
-        ? value.trim()
-        : "";
+    const cleanValue = String(
+      value || ""
+    ).trim();
 
     if (!cleanValue) {
-      showMessage(
-        "error",
+      setMessage(
         "Enter an apartment ticket code first."
       );
+      setMessageType("error");
+      return;
+    }
+
+    if (!accessToken) {
+      setMessage(
+        "Your session has expired. Please login again."
+      );
+      setMessageType("error");
       return;
     }
 
@@ -178,105 +176,103 @@ const ApartmentQRCheckIn = () => {
         `${API_URL}/apartment-tickets/validate`,
         payload,
         {
-          headers: getHeaders()
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
         }
       );
 
-      if (!response.data.valid) {
-        setValidatedData(
-          response.data.data || null
-        );
+      const result = response.data;
 
-        showMessage(
-          "error",
-          response.data.message ||
-            "Apartment ticket is not valid."
-        );
+      setValidatedData(
+        result.data || null
+      );
 
+      if (!result.valid) {
+        setMessage(
+          result.message ||
+            "This apartment ticket cannot be used."
+        );
+        setMessageType("warning");
         return;
       }
 
-      const data = response.data.data;
+      setMessage(
+        result.message ||
+          "Apartment ticket validated successfully."
+      );
 
-      if (
-        id &&
-        data.apartment?._id &&
-        data.apartment._id.toString() !==
-          id.toString()
-      ) {
-        setValidatedData(null);
-
-        showMessage(
-          "error",
-          "This ticket belongs to another apartment."
-        );
-
-        return;
-      }
-
-      setValidatedData(data);
+      setMessageType("success");
 
       setTicketCode(
-        data.ticketCode || cleanValue
-      );
-
-      showMessage(
-        "success",
-        response.data.message ||
-          "Apartment ticket is valid."
+        result.data?.ticketCode ||
+          cleanValue.replace(
+            "APARTMENT:",
+            ""
+          )
       );
     } catch (error) {
-      console.log(
-        "VALIDATE APARTMENT TICKET ERROR:",
-        error
+      setValidatedData(
+        error.response?.data?.data || null
       );
 
-      setValidatedData(null);
-
-      showMessage(
-        "error",
+      setMessage(
         error.response?.data?.message ||
-          "Cannot validate apartment ticket at this time."
+          "Unable to validate this apartment ticket."
       );
+
+      setMessageType("error");
     } finally {
       setValidating(false);
-      scanProcessingRef.current = false;
+      processingRef.current = false;
     }
   };
 
-  const handleManualValidation = async (
-    event
-  ) => {
-    event.preventDefault();
-
-    await validateCode(ticketCode, false);
-  };
-
-  const handleSuccessfulScan = async (
-    decodedText
-  ) => {
-    if (scanProcessingRef.current) {
+  const startScanner = async () => {
+    if (
+      cameraStarted ||
+      startingCamera
+    ) {
       return;
     }
 
-    scanProcessingRef.current = true;
+    resetResult();
 
-    await stopScanner();
-
-    setScannerOpen(false);
-
-    setTicketCode(decodedText);
-
-    await validateCode(decodedText, true);
-  };
-
-  const runScanner = async (cameraId) => {
     try {
-      await stopScanner();
+      setStartingCamera(true);
+
+      let cameraId = selectedCamera;
+
+      if (!cameraId) {
+        const devices =
+          await Html5Qrcode.getCameras();
+
+        setCameras(devices || []);
+
+        if (
+          !devices ||
+          devices.length === 0
+        ) {
+          throw new Error(
+            "No camera was found on this device."
+          );
+        }
+
+        const preferredCamera =
+          devices.find((camera) =>
+            /back|rear|environment/i.test(
+              camera.label
+            )
+          ) || devices[devices.length - 1];
+
+        cameraId = preferredCamera.id;
+
+        setSelectedCamera(cameraId);
+      }
 
       const scanner =
         new Html5Qrcode(
-          "vibely-apartment-qr-reader"
+          "apartment-organizer-qr-reader"
         );
 
       scannerRef.current = scanner;
@@ -284,581 +280,803 @@ const ApartmentQRCheckIn = () => {
       await scanner.start(
         cameraId,
         {
-          fps: 15,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const smallestSide = Math.min(
-              viewfinderWidth,
-              viewfinderHeight
-            );
-
-            const size = Math.floor(
-              smallestSide * 0.7
-            );
-
-            return {
-              width: size,
-              height: size
-            };
-          }
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          },
+          aspectRatio: 1
         },
         async (decodedText) => {
-          await handleSuccessfulScan(
-            decodedText
+          if (processingRef.current) {
+            return;
+          }
+
+          processingRef.current = true;
+
+          await stopScanner();
+
+          await validateTicket(
+            decodedText,
+            true
           );
         },
         () => {}
       );
 
-      scannerRunningRef.current = true;
+      setCameraStarted(true);
     } catch (error) {
-      console.log(
-        "APARTMENT CAMERA START ERROR:",
-        error
+      setMessage(
+        error.message ||
+          "Unable to start the camera."
       );
 
-      scannerRunningRef.current = false;
-
-      showMessage(
-        "error",
-        "Camera could not start. Try another camera or enter the ticket code manually."
-      );
+      setMessageType("error");
+      setCameraStarted(false);
+      scannerRef.current = null;
+    } finally {
+      setStartingCamera(false);
     }
   };
 
-  const startScanner = async () => {
-    try {
-      clearResult();
+  const handleCameraChange =
+    async (event) => {
+      const cameraId =
+        event.target.value;
 
-      setScannerOpen(true);
-      setScannerStarting(true);
-
-      scanProcessingRef.current = false;
-
-      const cameras =
-        await Html5Qrcode.getCameras();
-
-      if (
-        !cameras ||
-        cameras.length === 0
-      ) {
-        showMessage(
-          "error",
-          "No camera was found on this device."
-        );
-
-        setScannerOpen(false);
-        return;
+      if (cameraStarted) {
+        await stopScanner();
       }
 
-      setAvailableCameras(cameras);
+      setSelectedCamera(cameraId);
+    };
 
-      const preferredCamera =
-        cameras.find((camera) => {
-          const label =
-            camera.label?.toLowerCase() || "";
+  const handleManualValidation =
+    async (event) => {
+      event.preventDefault();
 
-          return (
-            label.includes("back") ||
-            label.includes("rear") ||
-            label.includes("environment")
-          );
-        }) ||
-        cameras.find((camera) => {
-          const label =
-            camera.label?.toLowerCase() || "";
-
-          return (
-            label.includes("integrated") ||
-            label.includes("webcam") ||
-            label.includes("front") ||
-            label.includes("hp")
-          );
-        }) ||
-        cameras[0];
-
-      setSelectedCameraId(
-        preferredCamera.id
+      await validateTicket(
+        ticketCode,
+        false
       );
+    };
 
-      setTimeout(async () => {
-        await runScanner(
-          preferredCamera.id
-        );
-      }, 100);
-    } catch (error) {
-      console.log(
-        "GET APARTMENT CAMERAS ERROR:",
-        error
-      );
-
-      showMessage(
-        "error",
-        "Camera permission was denied or the camera could not be accessed."
-      );
-
-      setScannerOpen(false);
-    } finally {
-      setScannerStarting(false);
-    }
-  };
-
-  const closeScanner = async () => {
-    await stopScanner();
-
-    setScannerOpen(false);
-    setScannerStarting(false);
-    scanProcessingRef.current = false;
-  };
-
-  const handleCameraChange = async (
-    event
-  ) => {
-    const cameraId =
-      event.target.value;
-
-    setSelectedCameraId(cameraId);
-
-    setScannerStarting(true);
-
-    await runScanner(cameraId);
-
-    setScannerStarting(false);
-  };
-
-  const handleCheckInGuest = async () => {
+  const handleCheckIn = async () => {
     if (!validatedData?.bookingId) {
-      showMessage(
-        "error",
-        "Validate the apartment ticket before checking in the guest."
-      );
-
       return;
     }
 
     try {
       setCheckingIn(true);
 
-      const response = await axios.patch(
-        `${API_URL}/organizer/apartment-bookings/${validatedData.bookingId}/check-in`,
-        {},
-        {
-          headers: getHeaders()
-        }
-      );
+      const response =
+        await axios.patch(
+          `${API_URL}/organizer/apartment-bookings/${validatedData.bookingId}/check-in`,
+          {},
+          {
+            headers: {
+              Authorization:
+                `Bearer ${accessToken}`
+            }
+          }
+        );
 
-      setValidatedData((current) => ({
-        ...current,
-        stayStatus: "checked_in",
-        checkedInAt:
-          response.data.data?.checkedInAt ||
-          new Date().toISOString()
-      }));
+      const result = response.data;
 
-      showMessage(
-        "success",
-        response.data.message ||
+      const checkedInAt =
+        result.data?.checkedInAt ||
+        new Date().toISOString();
+
+      setMessage(
+        result.message ||
           "Guest checked in successfully."
       );
-    } catch (error) {
-      console.log(
-        "APARTMENT CHECK-IN ERROR:",
-        error
+
+      setMessageType("success");
+
+      setValidatedData(
+        (previous) => ({
+          ...previous,
+          stayStatus: "checked_in",
+          checkedInAt
+        })
       );
 
-      showMessage(
-        "error",
-        error.response?.data?.message ||
-          "Cannot check in guest at this time."
+      setScanHistory(
+        (previous) => [
+          {
+            ticketCode:
+              validatedData.ticketCode,
+            guest:
+              getGuestName(
+                validatedData
+              ),
+            apartment:
+              validatedData.apartment
+                ?.title ||
+              "Apartment",
+            category:
+              validatedData.apartment
+                ?.apartmentType ||
+              "",
+            checkedInAt
+          },
+          ...previous
+        ]
       );
+    } catch (error) {
+      setMessage(
+        error.response?.data?.message ||
+          "Unable to check in this guest."
+      );
+
+      setMessageType("error");
     } finally {
       setCheckingIn(false);
     }
   };
 
-  const resetValidation = async () => {
-    await closeScanner();
+  const handleScanAnother =
+    async () => {
+      await stopScanner();
 
-    setTicketCode("");
-    setValidatedData(null);
-    setMessage("");
-    setMessageType("");
+      processingRef.current = false;
+
+      setTicketCode("");
+      setValidatedData(null);
+      setMessage("");
+      setMessageType("");
+    };
+
+  const getGuestName = (data) => {
+    const guest = data?.guest;
+
+    if (!guest) {
+      return "Guest";
+    }
+
+    const name = [
+      guest.firstname,
+      guest.lastname
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      name ||
+      guest.email ||
+      "Guest"
+    );
   };
 
-  useEffect(() => {
-    return () => {
-      if (
-        scannerRef.current &&
-        scannerRunningRef.current
-      ) {
-        scannerRef.current
-          .stop()
-          .catch(() => {});
-      }
-    };
-  }, []);
-
-  if (!accessToken) {
+  const getGuestEmail = (data) => {
     return (
-      <div className="apartment-qr-auth-page">
-        <div className="apartment-qr-auth-card">
-          <KeyRound size={38} />
-
-          <h2>Organizer login required</h2>
-
-          <p>
-            Please sign in again before
-            validating apartment tickets.
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              navigate("/organizer/login")
-            }
-          >
-            Go to Organizer Login
-          </button>
-        </div>
-      </div>
+      data?.guest?.email ||
+      "Guest information verified"
     );
-  }
+  };
+
+  const formatCategory = (value) => {
+    if (!value) {
+      return "Not available";
+    }
+
+    return value
+      .replace(/_/g, " ")
+      .replace(
+        /\b\w/g,
+        (letter) =>
+          letter.toUpperCase()
+      );
+  };
+
+  const formatStayType = (value) => {
+    if (value === "day_use") {
+      return "Day Use";
+    }
+
+    if (value === "overnight") {
+      return "Overnight";
+    }
+
+    return formatCategory(value);
+  };
+
+  const formatDate = (value) => {
+    if (!value) {
+      return "Not available";
+    }
+
+    return new Date(
+      value
+    ).toLocaleDateString(
+      "en-NG",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      }
+    );
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) {
+      return "Not available";
+    }
+
+    return new Date(
+      value
+    ).toLocaleString(
+      "en-NG",
+      {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }
+    );
+  };
+
+  const formatMoney = (value) => {
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount)) {
+      return "Not available";
+    }
+
+    return new Intl.NumberFormat(
+      "en-NG",
+      {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 0
+      }
+    ).format(amount);
+  };
+
+  const stayStatus =
+    validatedData?.stayStatus;
+
+  const alreadyCheckedIn =
+    stayStatus === "checked_in";
+
+  const alreadyCheckedOut =
+    stayStatus === "checked_out";
+
+  const usableTicket =
+    validatedData &&
+    !alreadyCheckedIn &&
+    !alreadyCheckedOut &&
+    validatedData.bookingId;
 
   return (
     <div className="apartment-qr-page">
-      <div className="apartment-qr-container">
-        <header className="apartment-qr-header">
-          <button
-            type="button"
-            className="apartment-qr-back"
-            onClick={() =>
-              navigate(
-                `/organizer/apartments/${id}`
-              )
-            }
-          >
-            <ArrowLeft size={18} />
-            Apartment
-          </button>
+      <header className="apartment-qr-header">
+        <button
+          className="apartment-qr-brand"
+          onClick={() =>
+            navigate(
+              "/organizer/dashboard"
+            )
+          }
+        >
+          <img
+            src={vibelyLogo}
+            alt="Vibely"
+          />
+        </button>
 
-          <div className="apartment-qr-heading">
-            <div className="apartment-qr-heading-icon">
-              <QrCode size={27} />
+        <div className="apartment-header-center">
+          <ShieldCheck size={15} />
+          <span>
+            Organizer Check-In Portal
+          </span>
+        </div>
+
+        <button
+          className="apartment-qr-back-button"
+          onClick={() =>
+            navigate(
+              "/organizer/check-in"
+            )
+          }
+        >
+          <ArrowLeft size={16} />
+          <span>Check-In Center</span>
+        </button>
+      </header>
+
+      <main className="apartment-qr-main">
+        <section className="apartment-qr-hero">
+          <div className="apartment-hero-content">
+            <div className="apartment-hero-badge">
+              <Sparkles size={12} />
+              APARTMENT OPERATIONS
             </div>
 
-            <div>
-              <span>
-                Guest Verification
-              </span>
+            <h1>
+              Welcome guests with{" "}
+              <span>confidence.</span>
+            </h1>
 
-              <h1>
-                Apartment Check-In
-              </h1>
+            <p>
+              Welcome back, {firstname}.
+              Scan any valid apartment
+              ticket from your Vibely
+              listings and verify the
+              guest, stay and payment
+              before check-in.
+            </p>
 
-              <p>
-                Scan the guest's QR code or
-                enter their apartment ticket
-                code manually.
-              </p>
+            <div className="apartment-hero-features">
+              <div>
+                <Building2 size={14} />
+                <span>
+                  All your apartments
+                </span>
+              </div>
+
+              <div>
+                <ShieldCheck size={14} />
+                <span>
+                  Ownership protected
+                </span>
+              </div>
+
+              <div>
+                <QrCode size={14} />
+                <span>
+                  Secure guest access
+                </span>
+              </div>
             </div>
           </div>
-        </header>
 
-        {message && (
-          <div
-            className={`apartment-qr-message ${messageType}`}
-          >
-            {messageType ===
-            "success" ? (
-              <CheckCircle2 size={21} />
-            ) : (
-              <CircleAlert size={21} />
-            )}
+          <div className="apartment-hero-art">
+            <div className="apartment-hero-art-glow"></div>
 
-            <span>{message}</span>
-          </div>
-        )}
-
-        <div className="apartment-qr-layout">
-          <section className="apartment-qr-control-card">
-            <div className="apartment-qr-card-heading">
-              <span>
-                <ScanLine size={17} />
-                Verification
-              </span>
-
-              <h2>
-                Scan or enter ticket
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="apartment-open-camera"
-              onClick={
-                scannerOpen
-                  ? closeScanner
-                  : startScanner
-              }
-              disabled={
-                scannerStarting ||
-                validating
-              }
-            >
-              {scannerOpen ? (
-                <>
-                  <CameraOff size={19} />
-                  Close Camera
-                </>
-              ) : (
-                <>
-                  <Camera size={19} />
-                  Scan QR Code
-                </>
-              )}
-            </button>
-
-            {scannerOpen && (
-              <div className="apartment-camera-section">
-                {availableCameras.length >
-                  1 && (
-                  <div className="apartment-camera-selector">
-                    <label>
-                      Select Camera
-                    </label>
-
-                    <select
-                      value={
-                        selectedCameraId
-                      }
-                      onChange={
-                        handleCameraChange
-                      }
-                      disabled={
-                        scannerStarting
-                      }
-                    >
-                      {availableCameras.map(
-                        (
-                          camera,
-                          index
-                        ) => (
-                          <option
-                            key={
-                              camera.id
-                            }
-                            value={
-                              camera.id
-                            }
-                          >
-                            {camera.label ||
-                              `Camera ${
-                                index + 1
-                              }`}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-                )}
-
-                <div className="apartment-camera-frame">
-                  <div
-                    id="vibely-apartment-qr-reader"
-                    className="apartment-qr-reader"
-                  ></div>
-
-                  {scannerStarting && (
-                    <div className="apartment-camera-loading">
-                      <LoaderCircle
-                        size={30}
-                        className="apartment-spin"
-                      />
-
-                      <span>
-                        Starting camera...
-                      </span>
-                    </div>
-                  )}
+            <div className="apartment-floating-ticket">
+              <div className="apartment-floating-ticket-top">
+                <div className="apartment-floating-icon">
+                  <Building2 size={25} />
                 </div>
 
-                <p className="apartment-camera-help">
-                  Hold the apartment QR
-                  code inside the scanning
-                  box.
+                <div>
+                  <span>
+                    VIBELY STAYS
+                  </span>
+                  <strong>
+                    Guest Check-In
+                  </strong>
+                </div>
+              </div>
+
+              <div className="apartment-ticket-dashes"></div>
+
+              <div className="apartment-floating-ticket-bottom">
+                <span>
+                  ACCESS
+                </span>
+
+                <strong>
+                  VERIFIED STAYS
+                </strong>
+
+                <QrCode size={31} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="apartment-security-strip">
+          <div className="apartment-security-strip-icon">
+            <ShieldCheck size={19} />
+          </div>
+
+          <div>
+            <strong>
+              One scanner for every
+              apartment you manage.
+            </strong>
+
+            <p>
+              Vibely identifies the
+              apartment and category
+              automatically. Tickets
+              for apartments belonging
+              to another organizer are
+              rejected.
+            </p>
+          </div>
+        </section>
+
+        <section className="apartment-workspace">
+          <div className="apartment-scanner-panel">
+            <div className="apartment-panel-heading">
+              <div>
+                <span className="apartment-section-label">
+                  CAMERA SCANNER
+                </span>
+
+                <h2>
+                  Scan Stay Ticket
+                </h2>
+
+                <p>
+                  Position the guest's
+                  QR code inside the
+                  frame for secure
+                  verification.
                 </p>
+              </div>
+
+              <div className="apartment-panel-heading-icon">
+                <ScanLine size={21} />
+              </div>
+            </div>
+
+            {cameras.length > 0 && (
+              <div className="apartment-camera-field">
+                <label>
+                  Camera source
+                </label>
+
+                <div className="apartment-select-wrap">
+                  <Camera size={15} />
+
+                  <select
+                    value={selectedCamera}
+                    onChange={
+                      handleCameraChange
+                    }
+                  >
+                    {cameras.map(
+                      (
+                        camera,
+                        index
+                      ) => (
+                        <option
+                          key={
+                            camera.id
+                          }
+                          value={
+                            camera.id
+                          }
+                        >
+                          {camera.label ||
+                            `Camera ${
+                              index + 1
+                            }`}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
               </div>
             )}
 
-            <div className="apartment-qr-divider">
-              <span>OR</span>
+            <div
+              className={`apartment-camera-area ${
+                cameraStarted
+                  ? "active"
+                  : ""
+              }`}
+            >
+              <div
+                id="apartment-organizer-qr-reader"
+                className="apartment-qr-reader"
+              ></div>
+
+              {!cameraStarted && (
+                <div className="apartment-camera-placeholder">
+                  <div className="apartment-scan-frame">
+                    <span className="corner top-left"></span>
+                    <span className="corner top-right"></span>
+                    <span className="corner bottom-left"></span>
+                    <span className="corner bottom-right"></span>
+
+                    <div className="apartment-camera-icon">
+                      <Camera
+                        size={34}
+                      />
+                    </div>
+                  </div>
+
+                  <h3>
+                    Ready to scan
+                  </h3>
+
+                  <p>
+                    Start the camera
+                    and hold the
+                    guest's apartment
+                    QR ticket inside
+                    the frame.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {!cameraStarted ? (
+              <button
+                className="apartment-primary-button"
+                onClick={startScanner}
+                disabled={
+                  startingCamera
+                }
+              >
+                <Camera size={17} />
+
+                {startingCamera
+                  ? "Starting Camera..."
+                  : "Start Camera"}
+
+                {!startingCamera && (
+                  <ArrowRight
+                    size={16}
+                  />
+                )}
+              </button>
+            ) : (
+              <button
+                className="apartment-stop-button"
+                onClick={
+                  stopScanner
+                }
+              >
+                <Camera size={17} />
+                Stop Camera
+              </button>
+            )}
+
+            <div className="apartment-divider">
+              OR ENTER TICKET MANUALLY
             </div>
 
             <form
+              className="apartment-manual-form"
               onSubmit={
                 handleManualValidation
               }
-              className="apartment-manual-form"
             >
-              <label
-                htmlFor="apartment-ticket-code"
-              >
-                Apartment Ticket Code
+              <label>
+                Apartment ticket code
               </label>
 
-              <div className="apartment-ticket-input">
-                <Hash size={18} />
+              <div className="apartment-manual-input-wrap">
+                <Keyboard
+                  size={16}
+                />
 
                 <input
-                  id="apartment-ticket-code"
                   type="text"
                   value={ticketCode}
-                  onChange={(event) => {
+                  onChange={(event) =>
                     setTicketCode(
                       event.target.value
-                    );
-
-                    if (
-                      validatedData
-                    ) {
-                      setValidatedData(
-                        null
-                      );
-                    }
-                  }}
+                    )
+                  }
                   placeholder="APT-TKT-..."
-                  autoComplete="off"
                 />
               </div>
 
               <button
                 type="submit"
                 className="apartment-validate-button"
-                disabled={
-                  validating ||
-                  !ticketCode.trim()
-                }
+                disabled={validating}
               >
-                {validating ? (
-                  <>
-                    <LoaderCircle
-                      size={18}
-                      className="apartment-spin"
-                    />
-                    Validating...
-                  </>
-                ) : (
-                  <>
-                    <Search size={18} />
-                    Validate Ticket
-                  </>
-                )}
+                <QrCode size={17} />
+
+                {validating
+                  ? "Validating Ticket..."
+                  : "Validate Ticket"}
               </button>
             </form>
-          </section>
+          </div>
 
-          <section className="apartment-qr-result-card">
-            {!validatedData ? (
-              <div className="apartment-empty-result">
-                <div className="apartment-empty-result-icon">
-                  <QrCode size={39} />
-                </div>
+          <div className="apartment-result-panel">
+            <div className="apartment-panel-heading">
+              <div>
+                <span className="apartment-section-label">
+                  GUEST VERIFICATION
+                </span>
 
-                <h3>
-                  Waiting for a ticket
-                </h3>
+                <h2>
+                  Stay Details
+                </h2>
 
                 <p>
-                  Scan a customer's
-                  apartment QR code or
-                  enter their ticket code
-                  to see their booking
-                  details.
+                  Verify the guest,
+                  apartment, dates and
+                  payment before
+                  granting access.
                 </p>
               </div>
-            ) : (
-              <>
-                <div className="apartment-result-header">
-                  <div>
-                    <span>
-                      Verification Result
-                    </span>
 
-                    <h2>
-                      Guest Booking
-                    </h2>
+              <div className="apartment-panel-heading-icon">
+                <ShieldCheck
+                  size={21}
+                />
+              </div>
+            </div>
+
+            {!validatedData &&
+              !message && (
+                <div className="apartment-empty-result">
+                  <div className="apartment-empty-visual">
+                    <div className="apartment-empty-circle">
+                      <QrCode
+                        size={37}
+                      />
+                    </div>
+
+                    <span className="apartment-empty-dot dot-one"></span>
+                    <span className="apartment-empty-dot dot-two"></span>
+                    <span className="apartment-empty-dot dot-three"></span>
                   </div>
 
-                  <div
-                    className={`apartment-result-status ${
-                      validatedData.stayStatus ===
-                      "checked_in"
-                        ? "checked-in"
-                        : "valid"
-                    }`}
-                  >
-                    {validatedData.stayStatus ===
-                    "checked_in" ? (
-                      <>
-                        <CheckCircle2
-                          size={16}
-                        />
-                        Checked In
-                      </>
+                  <h3>
+                    Waiting for a
+                    stay ticket
+                  </h3>
+
+                  <p>
+                    Scan an apartment
+                    QR code or enter a
+                    ticket code. Guest
+                    and stay details
+                    will appear here
+                    automatically.
+                  </p>
+
+                  <div className="apartment-empty-secure">
+                    <ShieldCheck
+                      size={13}
+                    />
+                    Organizer ownership
+                    is verified
+                  </div>
+                </div>
+              )}
+
+            {message && (
+              <div
+                className={`apartment-message ${messageType}`}
+              >
+                <div className="apartment-message-icon">
+                  {messageType ===
+                  "success" ? (
+                    <CheckCircle2
+                      size={18}
+                    />
+                  ) : (
+                    <CircleAlert
+                      size={18}
+                    />
+                  )}
+                </div>
+
+                <span>
+                  {message}
+                </span>
+              </div>
+            )}
+
+            {validatedData && (
+              <div className="apartment-ticket-result">
+                <div
+                  className={`apartment-validation-banner ${
+                    alreadyCheckedIn ||
+                    alreadyCheckedOut
+                      ? "used"
+                      : "valid"
+                  }`}
+                >
+                  <div className="apartment-validation-icon">
+                    {alreadyCheckedIn ||
+                    alreadyCheckedOut ? (
+                      <CircleAlert
+                        size={19}
+                      />
                     ) : (
-                      <>
-                        <CheckCircle2
-                          size={16}
-                        />
-                        Valid
-                      </>
+                      <CheckCircle2
+                        size={19}
+                      />
                     )}
+                  </div>
+
+                  <div>
+                    <span>
+                      {alreadyCheckedOut
+                        ? "STAY COMPLETED"
+                        : alreadyCheckedIn
+                        ? "ACCESS ALREADY GRANTED"
+                        : "BOOKING VERIFIED"}
+                    </span>
+
+                    <strong>
+                      {alreadyCheckedOut
+                        ? "Guest has already checked out"
+                        : alreadyCheckedIn
+                        ? "Guest is currently checked in"
+                        : "Valid apartment booking"}
+                    </strong>
                   </div>
                 </div>
 
                 <div className="apartment-guest-card">
                   <div className="apartment-guest-avatar">
-                    <UserRound size={24} />
+                    <UserRound
+                      size={21}
+                    />
+                  </div>
+
+                  <div className="apartment-guest-info">
+                    <span>
+                      PRIMARY GUEST
+                    </span>
+
+                    <h3>
+                      {getGuestName(
+                        validatedData
+                      )}
+                    </h3>
+
+                    <p>
+                      {getGuestEmail(
+                        validatedData
+                      )}
+                    </p>
+                  </div>
+
+                  <div
+                    className={`apartment-status-pill ${
+                      alreadyCheckedIn ||
+                      alreadyCheckedOut
+                        ? "used"
+                        : "valid"
+                    }`}
+                  >
+                    {alreadyCheckedOut
+                      ? "Checked Out"
+                      : alreadyCheckedIn
+                      ? "Checked In"
+                      : "Valid"}
+                  </div>
+                </div>
+
+                <div className="apartment-stay-highlight">
+                  <div className="apartment-stay-highlight-icon">
+                    <Building2
+                      size={20}
+                    />
                   </div>
 
                   <div>
-                    <span>Guest</span>
+                    <span>
+                      VERIFIED STAY
+                    </span>
 
                     <strong>
-                      {validatedData.guest
-                        ?.firstname ||
-                        "Guest"}{" "}
-                      {validatedData.guest
-                        ?.lastname || ""}
+                      {validatedData
+                        .apartment
+                        ?.title ||
+                        "Apartment"}
                     </strong>
 
                     <small>
-                      {validatedData.guest
-                        ?.email ||
-                        "No email available"}
+                      {formatCategory(
+                        validatedData
+                          .apartment
+                          ?.apartmentType
+                      )}
                     </small>
                   </div>
                 </div>
 
-                <div className="apartment-result-grid">
-                  <div className="apartment-result-item">
-                    <Home size={18} />
-
-                    <div>
-                      <span>
-                        Apartment
-                      </span>
-
-                      <strong>
-                        {validatedData
-                          .apartment
-                          ?.title ||
-                          "Apartment"}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="apartment-result-item">
-                    <MapPin size={18} />
+                <div className="apartment-detail-list">
+                  <div className="apartment-detail-item">
+                    <MapPin
+                      size={17}
+                    />
 
                     <div>
                       <span>
@@ -874,22 +1092,10 @@ const ApartmentQRCheckIn = () => {
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
-                    <Hash size={18} />
-
-                    <div>
-                      <span>
-                        Booking Reference
-                      </span>
-
-                      <strong>
-                        {validatedData.bookingReference}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="apartment-result-item">
-                    <QrCode size={18} />
+                  <div className="apartment-detail-item">
+                    <QrCode
+                      size={17}
+                    />
 
                     <div>
                       <span>
@@ -897,13 +1103,33 @@ const ApartmentQRCheckIn = () => {
                       </span>
 
                       <strong>
-                        {validatedData.ticketCode}
+                        {validatedData.ticketCode ||
+                          "Not available"}
                       </strong>
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
-                    <DoorOpen size={18} />
+                  <div className="apartment-detail-item">
+                    <ShieldCheck
+                      size={17}
+                    />
+
+                    <div>
+                      <span>
+                        Booking Reference
+                      </span>
+
+                      <strong>
+                        {validatedData.bookingReference ||
+                          "Not available"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="apartment-detail-item">
+                    <BedDouble
+                      size={17}
+                    />
 
                     <div>
                       <span>
@@ -911,35 +1137,38 @@ const ApartmentQRCheckIn = () => {
                       </span>
 
                       <strong>
-                        {validatedData.stayType ===
-                        "day_use"
-                          ? "Day Use"
-                          : "Overnight"}
+                        {formatStayType(
+                          validatedData.stayType
+                        )}
                       </strong>
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
-                    <Home size={18} />
+                  <div className="apartment-detail-item">
+                    <Home
+                      size={17}
+                    />
 
                     <div>
                       <span>
-                        Rooms
+                        Units
                       </span>
 
                       <strong>
-                        {validatedData.numberOfUnits ||
-                          1}
+                        {validatedData.numberOfUnits ??
+                          "Not available"}
                       </strong>
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
-                    <Clock3 size={18} />
+                  <div className="apartment-detail-item">
+                    <CalendarDays
+                      size={17}
+                    />
 
                     <div>
                       <span>
-                        Check-In Date
+                        Check-In
                       </span>
 
                       <strong>
@@ -950,12 +1179,14 @@ const ApartmentQRCheckIn = () => {
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
-                    <Clock3 size={18} />
+                  <div className="apartment-detail-item">
+                    <CalendarDays
+                      size={17}
+                    />
 
                     <div>
                       <span>
-                        Check-Out Date
+                        Check-Out
                       </span>
 
                       <strong>
@@ -966,26 +1197,45 @@ const ApartmentQRCheckIn = () => {
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
-                    <CreditCard size={18} />
+                  {validatedData.expectedCheckInTime && (
+                    <div className="apartment-detail-item">
+                      <Clock
+                        size={17}
+                      />
+
+                      <div>
+                        <span>
+                          Expected Arrival
+                        </span>
+
+                        <strong>
+                          {validatedData.expectedCheckInTime}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="apartment-detail-item">
+                    <CreditCard
+                      size={17}
+                    />
 
                     <div>
                       <span>
-                        Amount Paid
+                        Amount
                       </span>
 
                       <strong>
-                        ₦
-                        {formatPrice(
+                        {formatMoney(
                           validatedData.totalAmount
                         )}
                       </strong>
                     </div>
                   </div>
 
-                  <div className="apartment-result-item">
+                  <div className="apartment-detail-item">
                     <CheckCircle2
-                      size={18}
+                      size={17}
                     />
 
                     <div>
@@ -994,112 +1244,199 @@ const ApartmentQRCheckIn = () => {
                       </span>
 
                       <strong>
-                        {validatedData.paymentStatus}
+                        {formatCategory(
+                          validatedData.paymentStatus
+                        )}
                       </strong>
                     </div>
                   </div>
                 </div>
 
-                {validatedData.expectedCheckInTime && (
-                  <div className="apartment-schedule-note">
-                    <Clock3 size={18} />
-
-                    <div>
-                      <span>
-                        Expected Arrival
-                      </span>
-
-                      <strong>
-                        {
-                          validatedData.expectedCheckInTime
-                        }
-                      </strong>
-                    </div>
-                  </div>
-                )}
-
-                {validatedData.stayStatus ===
-                "checked_in" ? (
-                  <div className="apartment-already-checked">
-                    <CheckCircle2
-                      size={23}
-                    />
-
-                    <div>
-                      <strong>
-                        Guest is checked in
-                      </strong>
-
-                      <span>
-                        {validatedData.checkedInAt
-                          ? `Checked in ${formatDateTime(
-                              validatedData.checkedInAt
-                            )}`
-                          : "Check-in completed successfully."}
-                      </span>
-                    </div>
-                  </div>
-                ) : validatedData.stayStatus ===
-                  "checked_out" ? (
-                  <div className="apartment-invalid-state">
-                    <XCircle size={23} />
-
-                    <div>
-                      <strong>
-                        Guest has checked out
-                      </strong>
-
-                      <span>
-                        This stay has already
-                        been completed.
-                      </span>
-                    </div>
-                  </div>
-                ) : (
+                {usableTicket && (
                   <button
-                    type="button"
                     className="apartment-checkin-button"
                     onClick={
-                      handleCheckInGuest
+                      handleCheckIn
                     }
                     disabled={
                       checkingIn
                     }
                   >
-                    {checkingIn ? (
-                      <>
-                        <LoaderCircle
-                          size={19}
-                          className="apartment-spin"
-                        />
-                        Checking In...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2
-                          size={19}
-                        />
-                        Check In Guest
-                      </>
+                    <CheckCircle2
+                      size={18}
+                    />
+
+                    {checkingIn
+                      ? "Checking In Guest..."
+                      : "Check In Guest"}
+
+                    {!checkingIn && (
+                      <ArrowRight
+                        size={16}
+                      />
                     )}
                   </button>
                 )}
 
+                {alreadyCheckedIn &&
+                  validatedData.checkedInAt && (
+                    <div className="apartment-checked-time">
+                      <CheckCircle2
+                        size={18}
+                      />
+
+                      <div>
+                        <span>
+                          Guest checked in
+                        </span>
+
+                        <strong>
+                          {formatDateTime(
+                            validatedData.checkedInAt
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
+
+                {alreadyCheckedOut &&
+                  validatedData.checkedOutAt && (
+                    <div className="apartment-checked-time">
+                      <CheckCircle2
+                        size={18}
+                      />
+
+                      <div>
+                        <span>
+                          Guest checked out
+                        </span>
+
+                        <strong>
+                          {formatDateTime(
+                            validatedData.checkedOutAt
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
+
                 <button
-                  type="button"
-                  className="apartment-scan-another"
+                  className="apartment-scan-another-button"
                   onClick={
-                    resetValidation
+                    handleScanAnother
                   }
                 >
-                  <ScanLine size={17} />
-                  Verify Another Guest
+                  <RotateCcw
+                    size={16}
+                  />
+                  Scan Another Ticket
                 </button>
-              </>
+              </div>
             )}
+          </div>
+        </section>
+
+        <section className="apartment-help-strip">
+          <div>
+            <div className="apartment-help-icon">
+              <ShieldCheck
+                size={18}
+              />
+            </div>
+
+            <div>
+              <strong>
+                Secure organizer
+                verification
+              </strong>
+
+              <p>
+                Apartment ownership,
+                booking and payment
+                are checked before
+                access is granted.
+              </p>
+            </div>
+          </div>
+
+          <span>
+            One apartment scanner
+            works across Budget,
+            Standard and Luxury
+            listings owned by your
+            organizer account.
+          </span>
+        </section>
+
+        {scanHistory.length > 0 && (
+          <section className="apartment-history">
+            <div className="apartment-history-heading">
+              <div>
+                <span className="apartment-section-label">
+                  THIS SESSION
+                </span>
+
+                <h2>
+                  Recent Apartment
+                  Check-Ins
+                </h2>
+
+                <p>
+                  Guests successfully
+                  admitted during this
+                  scanner session.
+                </p>
+              </div>
+
+              <div className="apartment-history-count">
+                {scanHistory.length}
+              </div>
+            </div>
+
+            <div className="apartment-history-list">
+              {scanHistory.map(
+                (item, index) => (
+                  <div
+                    className="apartment-history-item"
+                    key={`${item.ticketCode}-${index}`}
+                  >
+                    <div className="apartment-history-success">
+                      <CheckCircle2
+                        size={17}
+                      />
+                    </div>
+
+                    <div className="apartment-history-person">
+                      <strong>
+                        {item.guest}
+                      </strong>
+
+                      <span>
+                        {item.apartment} •{" "}
+                        {formatCategory(
+                          item.category
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="apartment-history-code">
+                      <strong>
+                        {item.ticketCode}
+                      </strong>
+
+                      <span>
+                        {formatDateTime(
+                          item.checkedInAt
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
           </section>
-        </div>
-      </div>
+        )}
+      </main>
     </div>
   );
 };

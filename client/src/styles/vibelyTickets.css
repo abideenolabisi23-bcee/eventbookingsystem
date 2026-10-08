@@ -1,0 +1,769 @@
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap");
+
+.vb-page {
+  --wine: #650e2e;
+  --wine-dark: #39091e;
+  --blush: #f5d8e2;
+  --rose: #c8879f;
+  --muted: #927987;
+  min-height: 100vh;
+  background: #fff9fb;
+  color: var(--wine-dark);
+  font-family: "DM Sans", sans-serif;
+}
+
+.vb-page * {
+  box-sizing: border-box;
+}
+
+.vb-logo {
+  color: var(--wine);
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 4px;
+}
+
+.vb-overline {
+  display: block;
+  color: var(--rose);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+}
+
+.vb-payment-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 70px 20px;
+  background:
+    radial-gradient(circle at 12% 20%, #f5d9e4, transparent 32%),
+    radial-gradient(circle at 88% 80%, #f8e4eb, transparent 32%),
+    #fff9fb;
+}
+
+.vb-payment-card {
+  width: 100%;
+  max-width: 530px;
+  background: white;
+  border: 1px solid #f0d9e2;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 25px 90px rgba(101, 14, 46, .12);
+}
+
+.vb-payment-head {
+  text-align: center;
+  padding: 45px 40px 38px;
+  background: linear-gradient(150deg, #fff0f5, #fffafd);
+}
+
+.vb-payment-head .vb-logo {
+  display: block;
+  margin-bottom: 30px;
+}
+
+.vb-payment-symbol {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--wine);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 45px;
+  margin: 30px auto 25px;
+  box-shadow: 0 12px 35px rgba(101, 14, 46, .2);
+}
+
+.vb-symbol-pending,
+.vb-symbol-login {
+  background: #bd8297;
+}
+
+.vb-symbol-error {
+  background: #a7475c;
+}
+
+.vb-payment-head h1,
+.vb-tickets-header h1,
+.vb-discover-banner h2 {
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
+}
+
+.vb-payment-head h1 {
+  font-size: clamp(36px, 5vw, 48px);
+  margin: 0 0 12px;
+}
+
+.vb-subtitle {
+  color: #8c6376;
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+.vb-message {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 0 auto;
+  max-width: 370px;
+}
+
+.vb-payment-body {
+  padding: 30px 38px 38px;
+}
+
+.vb-reference {
+  padding: 17px;
+  background: #fff7fa;
+  border: 1px dashed #e5c1cf;
+  border-radius: 13px;
+  margin-bottom: 22px;
+  overflow-wrap: anywhere;
+}
+
+.vb-reference span,
+.vb-ticket-meta small {
+  display: block;
+  font-size: 10px;
+  color: #aa8091;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.vb-reference strong {
+  color: var(--wine);
+  font-size: 12px;
+}
+
+.vb-notice {
+  padding: 18px;
+  background: #fff1f6;
+  border-radius: 13px;
+  margin-bottom: 22px;
+}
+
+.vb-notice strong {
+  color: var(--wine);
+  font-size: 13px;
+}
+
+.vb-notice p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.vb-main-button,
+.vb-outline-button {
+  width: 100%;
+  min-height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px;
+  padding: 15px 20px;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .25s ease;
+}
+
+.vb-main-button {
+  background: var(--wine);
+  color: white;
+  border: 1px solid var(--wine);
+}
+
+.vb-main-button:hover {
+  background: var(--wine-dark);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.vb-outline-button {
+  color: var(--wine);
+  border: 1px solid #e8c5d2;
+  margin-top: 12px;
+}
+
+.vb-text-link {
+  display: block;
+  color: var(--wine);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 25px;
+}
+
+.vb-secure,
+.vb-small-note {
+  font-size: 10px;
+  text-align: center;
+  color: #ad929e;
+  margin-top: 22px;
+  overflow-wrap: anywhere;
+}
+
+.vb-tagline {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  color: #b48498;
+  margin-top: 30px;
+  text-align: center;
+}
+
+.vb-loader {
+  display: inline-block;
+  width: 35px;
+  height: 35px;
+  border: 3px solid rgba(255, 255, 255, .4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: vb-spin .8s linear infinite;
+}
+
+.vb-dark-loader {
+  border-color: #f2d7e1;
+  border-top-color: var(--wine);
+}
+
+@keyframes vb-spin {
+  to { transform: rotate(360deg); }
+}
+
+.vb-container {
+  max-width: 1200px;
+  width: calc(100% - 50px);
+  margin: 0 auto;
+}
+
+.vb-tickets-page {
+  padding: 65px 0 85px;
+  background:
+    radial-gradient(circle at 5% 8%, #f8e5ec, transparent 32%),
+    #fff9fb;
+}
+
+.vb-tickets-header {
+  text-align: center;
+  padding-bottom: 65px;
+}
+
+.vb-tickets-header .vb-logo {
+  display: block;
+  margin-bottom: 50px;
+}
+
+.vb-tickets-header h1 {
+  font-size: clamp(42px, 6vw, 70px);
+  line-height: 1.15;
+  margin: 18px 0;
+}
+
+.vb-tickets-header h1 em,
+.vb-discover-banner h2 em {
+  color: var(--rose);
+  font-weight: 400;
+}
+
+.vb-tickets-header p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.vb-tickets-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+  padding-bottom: 25px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #ead4dd;
+}
+
+.vb-ticket-counter span {
+  display: block;
+  color: #b08094;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.vb-ticket-counter strong {
+  color: var(--wine);
+  font-size: 16px;
+}
+
+.vb-ticket-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.vb-ticket-controls input,
+.vb-ticket-controls select {
+  background: white;
+  border: 1px solid #ead1db;
+  border-radius: 10px;
+  padding: 13px 15px;
+  color: var(--wine);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.vb-ticket-controls input:focus,
+.vb-ticket-controls select:focus {
+  border-color: var(--wine);
+}
+
+.vb-tickets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px;
+}
+
+.vb-ticket-card {
+  background: white;
+  border-radius: 23px;
+  overflow: hidden;
+  box-shadow: 0 20px 65px rgba(101, 14, 46, .1);
+  transition: transform .25s ease;
+}
+
+.vb-ticket-card:hover {
+  transform: translateY(-5px);
+}
+
+.vb-ticket-top {
+  background:
+    radial-gradient(circle at 95% 0%, #99405f, transparent 55%),
+    linear-gradient(135deg, #3c0921, #78183b);
+  padding: 30px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  color: white;
+}
+
+.vb-ticket-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vb-ticket-topline span {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.vb-ticket-topline small {
+  font-size: 9px;
+  color: #f4c7d6;
+  letter-spacing: 2px;
+}
+
+.vb-ticket-main {
+  margin-top: 38px;
+}
+
+.vb-ticket-main h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 12px 0 20px;
+}
+
+.vb-category {
+  display: inline-block;
+  border: 1px solid #b77a91;
+  color: #ffe2ec;
+  border-radius: 30px;
+  padding: 9px 15px;
+  font-size: 11px;
+}
+
+.vb-ticket-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: auto;
+  padding-top: 25px;
+}
+
+.vb-ticket-info small {
+  display: block;
+  color: #dfaabe;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  margin-bottom: 8px;
+}
+
+.vb-ticket-info strong {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.vb-ticket-perforation {
+  height: 24px;
+  background: white;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.vb-ticket-perforation span {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff9fb;
+}
+
+.vb-ticket-perforation span:first-child {
+  left: -12px;
+}
+
+.vb-ticket-perforation span:last-child {
+  right: -12px;
+}
+
+.vb-ticket-perforation div {
+  width: 100%;
+  border-top: 2px dashed #e7cbd5;
+  margin: 0 20px;
+}
+
+.vb-ticket-bottom {
+  padding: 20px 30px 30px;
+}
+
+.vb-ticket-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.vb-qr {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  border: 1px solid #eed9e1;
+  border-radius: 12px;
+  padding: 7px;
+  flex-shrink: 0;
+}
+
+.vb-qr-missing {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: #fff4f8;
+  color: #a47d8d;
+  font-size: 11px;
+}
+
+.vb-ticket-meta {
+  min-width: 0;
+}
+
+.vb-ticket-meta strong {
+  display: block;
+  color: var(--wine);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  margin-bottom: 11px;
+}
+
+.vb-status {
+  display: inline-block;
+  border-radius: 30px;
+  padding: 7px 12px;
+  margin-bottom: 14px;
+  font-size: 10px;
+  font-weight: 800;
+  background: #f7e6ed;
+  color: #97445f;
+}
+
+.vb-status-valid {
+  background: #e7f5eb;
+  color: #2e7548;
+}
+
+.vb-status-used {
+  background: #edf0fb;
+  color: #5969a6;
+}
+
+.vb-ticket-action {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 22px;
+  padding: 15px 18px;
+  border: 1px solid #e3bfd0;
+  background: #fff6f9;
+  border-radius: 11px;
+  color: var(--wine);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.vb-booking-ref {
+  font-size: 10px;
+  color: #a78a97;
+  text-align: center;
+  overflow-wrap: anywhere;
+  margin: 15px 0 0;
+}
+
+.vb-empty {
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 65px 35px;
+  border-radius: 24px;
+  background: white;
+  border: 1px solid #f0dce3;
+}
+
+.vb-empty-symbol {
+  font-size: 65px;
+  color: #d9a5b8;
+}
+
+.vb-empty h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 31px;
+  font-weight: 500;
+  margin: 20px 0;
+}
+
+.vb-empty p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.vb-empty .vb-main-button {
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.vb-discover-banner {
+  background: #3c0921;
+  border-radius: 23px;
+  padding: 48px;
+  margin-top: 85px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+}
+
+.vb-discover-banner h2 {
+  color: white;
+  font-size: 37px;
+  margin: 15px 0 0;
+}
+
+.vb-discover-banner a {
+  color: var(--wine);
+  background: white;
+  padding: 17px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.vb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(30, 4, 16, .7);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.vb-ticket-modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 24px;
+  padding: 38px;
+  text-align: center;
+}
+
+.vb-ticket-modal .vb-overline {
+  margin-top: 25px;
+}
+
+.vb-ticket-modal h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 30px;
+  font-weight: 500;
+  margin: 15px 0 25px;
+}
+
+.vb-modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 30px;
+  color: var(--wine);
+  cursor: pointer;
+}
+
+.vb-modal-qr {
+  width: 210px;
+  height: 210px;
+  object-fit: contain;
+  max-width: 100%;
+}
+
+.vb-modal-code {
+  color: var(--wine);
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.vb-modal-details {
+  text-align: left;
+  margin: 25px 0;
+  border-top: 1px solid #f0dce3;
+}
+
+.vb-modal-details p {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0dce3;
+  font-size: 12px;
+}
+
+.vb-modal-details span {
+  color: var(--muted);
+}
+
+.vb-modal-details strong {
+  color: var(--wine);
+  text-align: right;
+}
+
+@media (max-width: 800px) {
+  .vb-tickets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vb-tickets-toolbar,
+  .vb-discover-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 560px) {
+  .vb-container {
+    width: calc(100% - 30px);
+  }
+
+  .vb-payment-head {
+    padding: 35px 22px;
+  }
+
+  .vb-payment-body {
+    padding: 25px 22px 32px;
+  }
+
+  .vb-ticket-controls {
+    flex-direction: column;
+  }
+
+  .vb-ticket-top {
+    padding: 25px;
+  }
+
+  .vb-ticket-bottom {
+    padding: 20px 23px 25px;
+  }
+
+  .vb-ticket-main h2 {
+    font-size: 27px;
+  }
+
+  .vb-qr {
+    width: 90px;
+    height: 90px;
+  }
+
+  .vb-discover-banner {
+    padding: 35px 25px;
+  }
+
+  .vb-discover-banner h2 {
+    font-size: 29px;
+  }
+
+  .vb-ticket-modal {
+    padding: 30px 22px;
+  }
+}
+
+
+.vb-symbol-refund {
+  background: #a76585;
+}
+
+.vb-symbol-attention {
+  background: #a64a62;
+}
+
+.vb-symbol-error {
+  background: #91324d;
+}
+
+.vb-symbol-pending {
+  background: #bd8297;
+}
+
+.vb-symbol-success {
+  background: #650e2e;
+}
+
+.vb-payment-body button.vb-outline-button {
+  text-align: left;
+}
+
+.vb-payment-body button.vb-main-button,
+.vb-payment-body button.vb-outline-button {
+  font-family: "DM Sans", sans-serif;
+}
+

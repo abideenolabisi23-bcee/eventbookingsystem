@@ -1,5 +1,42 @@
 const mongoose = require("mongoose");
 
+const BookingTicketSelectionSchema = new mongoose.Schema(
+  {
+    ticketTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true
+    },
+
+    ticketType: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+      validate: Number.isInteger
+    },
+
+    ticketPrice: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0
+    }
+  },
+  {
+    _id: false
+  }
+);
+
 const BookingSchema = new mongoose.Schema(
   {
     user: {
@@ -14,26 +51,32 @@ const BookingSchema = new mongoose.Schema(
       required: true
     },
 
-   ticketType: {
-  type: String,
-  enum: ["Regular", "VIP", "VVIP"],
-  default: null
-},
+    ticketType: {
+      type: String,
+      default: null
+    },
 
-ticketPrice: {
-  type: Number,
-  default: null
-},
+    ticketPrice: {
+      type: Number,
+      default: null
+    },
+
+    ticketSelections: {
+      type: [BookingTicketSelectionSchema],
+      default: []
+    },
 
     quantity: {
       type: Number,
       required: true,
-      min: 1
+      min: 1,
+      validate: Number.isInteger
     },
 
     totalAmount: {
       type: Number,
-      required: true
+      required: true,
+      min: 0
     },
 
     bookingReference: {

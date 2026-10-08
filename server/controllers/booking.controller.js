@@ -1,43 +1,122 @@
+
+const mongoose = require("mongoose");
+const crypto = require("crypto");
+
 const BookingModel = require("../models/booking.model");
 const EventModel = require("../models/event.model");
 const TicketModel = require("../models/ticket.model");
 const PaymentModel = require("../models/payment.model");
 const RefundModel = require("../models/refund.model");
 
+const getCategory = (event, selection) => {
+  const categories = event.ticketTypes || [];
+
+  if (selection.ticketTypeId) {
+    const category = categories.find(
+      (type) =>
+        type._id &&
+        String(type._id) === String(selection.ticketTypeId)
+    );
+
+    if (category) return category;
+  }
+
+  const name = String(
+    selection.ticketType || selection.name || ""
+  ).trim();
+
+  if (!name) return null;
+
+  return categories.find(
+    (type) =>
+      type.name.toLowerCase() === name.toLowerCase()
+  );
+};
+
+const getTotalAvailability = (event) => {
+  return (event.ticketTypes || []).reduce(
+    (total, type) => total + Number(type.availableTickets || 0),
+    0
+  );
+};
+
+const restoreCategoryAvailability = async (eventId, tickets) => {
+  const quantities = new Map();
+
+  for (const ticket of tickets) {
+    const key = ticket.ticketTypeId
+      ? `id:${ticket.ticketTypeId}`
+      : `name:${String(ticket.ticketType || "").toLowerCase()}`;
+
+    if (!key || key === "name:") {
+      throw new Error("Ticket category is missing");
+    }
+
+    if (!quantities.has(key)) {
+      quantities.set(key, {
+        ticketTypeId: ticket.ticketTypeId,
+        ticketType: ticket.ticketType,
+        quantity: 0
+      });
+    }
+
+    quantities.get(key).quantity += 1;
+  }
+
+  for (const selection of quantities.values()) {
+    const event = await EventModel.findById(eventId);
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    const category = getCategory(event, selection);
+
+    if (!category) {
+      throw new Error(
+        `Ticket category ${selection.ticketType} no longer exists`
+      );
+    }
+
+    const filter = category._id
+      ? { _id: eventId, "ticketTypes._id": category._id }
+      : { _id: eventId, "ticketTypes.name": category.name };
+
+    const result = await EventModel.findOneAndUpdate(
+      filter,
+      {
+        $inc: {
+          "ticketTypes.$.availableTickets": selection.quantity,
+          availableTickets: selection.quantity
+        }
+      },
+      { new: true }
+    );
+
+    if (!result) {
+      throw new Error("Could not restore ticket availability");
+    }
+  }
+};
 
 const bookEvent = async (req, res) => {
   try {
     const {
       eventId,
+      ticketSelections,
       ticketType,
       quantity
     } = req.body;
 
-    const { id } = req.user;
+    const userId = req.user.id;
 
-    if (
-      !quantity ||
-      !Number.isInteger(Number(quantity)) ||
-      Number(quantity) < 1
-    ) {
+    if (!mongoose.isValidObjectId(eventId)) {
       return res.status(400).send({
-        message:
-          "Ticket quantity must be at least 1"
+        message: "Please provide a valid event ID"
       });
     }
 
-    if (!ticketType) {
-      return res.status(400).send({
-        message:
-          "Please select a ticket type"
-      });
-    }
-
-    const ticketQuantity =
-      Number(quantity);
-
-    const event =
-      await EventModel.findById(eventId);
+    const event = await EventModel.findById(eventId);
 
     if (!event) {
       return res.status(404).send({
@@ -47,87 +126,136 @@ const bookEvent = async (req, res) => {
 
     if (event.isAvailable === false) {
       return res.status(400).send({
-        message:
-          "This event is currently unavailable for booking"
+        message: "This event is currently unavailable for booking"
       });
     }
 
-    const selectedTicketType =
-      event.ticketTypes.find(
-        (type) =>
-          type.name.toLowerCase() ===
-          ticketType.toLowerCase()
-      );
+    const requestedSelections = Array.isArray(ticketSelections)
+      ? ticketSelections
+      : [{ ticketType, quantity }];
 
-    if (!selectedTicketType) {
+    if (requestedSelections.length === 0) {
       return res.status(400).send({
-        message:
-          "Selected ticket type is not available for this event"
+        message: "Please select at least one ticket"
       });
+    }
+
+    const normalizedSelections = [];
+    const selectedCategories = new Set();
+
+    let totalQuantity = 0;
+    let totalAmount = 0;
+
+    for (const selection of requestedSelections) {
+      const selectedQuantity = Number(selection.quantity);
+
+      if (
+        !Number.isSafeInteger(selectedQuantity) ||
+        selectedQuantity < 1
+      ) {
+        return res.status(400).send({
+          message: "Each selected ticket quantity must be at least 1"
+        });
+      }
+
+      const category = getCategory(event, selection);
+
+      if (!category) {
+        return res.status(400).send({
+          message: "One or more selected ticket categories are invalid"
+        });
+      }
+
+      if (!category._id) {
+        return res.status(400).send({
+          message:
+            "This event needs its ticket categories updated before mixed-category booking can be used"
+        });
+      }
+
+      const categoryId = String(category._id);
+
+      if (selectedCategories.has(categoryId)) {
+        return res.status(400).send({
+          message: `You selected ${category.name} more than once`
+        });
+      }
+
+      selectedCategories.add(categoryId);
+
+      if (selectedQuantity > category.availableTickets) {
+        return res.status(400).send({
+          message: `Only ${category.availableTickets} ${category.name} ticket(s) are available`
+        });
+      }
+
+      const price = Number(category.price);
+
+      if (!Number.isFinite(price) || price < 0) {
+        return res.status(400).send({
+          message: `Invalid price for ${category.name}`
+        });
+      }
+
+      const subtotal = price * selectedQuantity;
+
+      normalizedSelections.push({
+        ticketTypeId: category._id,
+        ticketType: category.name,
+        quantity: selectedQuantity,
+        ticketPrice: price,
+        subtotal
+      });
+
+      totalQuantity += selectedQuantity;
+      totalAmount += subtotal;
     }
 
     if (
-      selectedTicketType.availableTickets <= 0
+      !Number.isSafeInteger(totalQuantity) ||
+      !Number.isSafeInteger(totalAmount) ||
+      totalQuantity < 1
     ) {
       return res.status(400).send({
-        message:
-          `${selectedTicketType.name} tickets are sold out`
+        message: "Invalid booking total"
       });
     }
-
-    if (
-      ticketQuantity >
-      selectedTicketType.availableTickets
-    ) {
-      return res.status(400).send({
-        message:
-          `Only ${selectedTicketType.availableTickets} ${selectedTicketType.name} ticket(s) are currently available`
-      });
-    }
-
-    const ticketPrice =
-      selectedTicketType.price;
-
-    const totalAmount =
-      ticketPrice * ticketQuantity;
 
     const bookingReference =
-      "BK-" +
-      Date.now() +
-      "-" +
-      Math.floor(Math.random() * 1000);
+      "BK-" + crypto.randomBytes(12).toString("hex").toUpperCase();
 
-    const booking =
-      await BookingModel.create({
-        user: id,
-        event: eventId,
-        ticketType:
-          selectedTicketType.name,
-        ticketPrice,
-        quantity: ticketQuantity,
-        totalAmount,
-        bookingReference,
-        bookingStatus: "pending",
-        paymentStatus: "pending"
-      });
+    const singleSelection =
+      normalizedSelections.length === 1
+        ? normalizedSelections[0]
+        : null;
+
+    const booking = await BookingModel.create({
+      user: userId,
+      event: event._id,
+      ticketType: singleSelection
+        ? singleSelection.ticketType
+        : null,
+      ticketPrice: singleSelection
+        ? singleSelection.ticketPrice
+        : null,
+      ticketSelections: normalizedSelections,
+      quantity: totalQuantity,
+      totalAmount,
+      bookingReference,
+      bookingStatus: "pending",
+      paymentStatus: "pending"
+    });
 
     return res.status(201).send({
       message:
         "Booking created successfully. Complete payment to secure your tickets.",
-
-      data: {
-        booking
-      }
+      data: { booking }
     });
   } catch (error) {
-    console.log(
-      "BOOK EVENT ERROR:",
-      error
-    );
+    console.log("BOOK EVENT ERROR:", error);
 
-    return res.status(400).send({
-      message:
-        "Cannot book event at this time",
+    return res.status(500).send({
+      message: "Cannot book event at this time",
       error: error.message
     });
   }
@@ -135,20 +263,17 @@ const bookEvent = async (req, res) => {
 
 const getMyBookings = async (req, res) => {
   try {
-    const { id } = req.user;
-
-    // Find all bookings made by the logged-in person
     const bookings = await BookingModel.find({
-      user: id
-    }).populate(
-      "event",
-      "title description location date price"
-    );
+      user: req.user.id
+    })
+      .populate(
+        "event",
+        "title description location date price image"
+      )
+      .sort({ createdAt: -1 });
 
-    // Add the individual tickets to each booking
-    const bookingsWithTickets = await Promise.all(
+    const data = await Promise.all(
       bookings.map(async (booking) => {
-
         const tickets = await TicketModel.find({
           booking: booking._id
         });
@@ -162,13 +287,12 @@ const getMyBookings = async (req, res) => {
 
     return res.status(200).send({
       message: "Bookings fetched successfully",
-      data: bookingsWithTickets
+      data
     });
-
   } catch (error) {
-    console.log(error);
+    console.log("GET MY BOOKINGS ERROR:", error);
 
-    return res.status(400).send({
+    return res.status(500).send({
       message: "Cannot fetch bookings at this time"
     });
   }
@@ -177,30 +301,30 @@ const getMyBookings = async (req, res) => {
 const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
 
-    // Find the booking
-    const booking = await BookingModel.findById(id)
-      .populate(
-        "event",
-        "title description location date price"
-      );
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).send({
+        message: "Invalid booking ID"
+      });
+    }
 
-    // Check if booking exists
+    const booking = await BookingModel.findById(id).populate(
+      "event",
+      "title description location date price image"
+    );
+
     if (!booking) {
       return res.status(404).send({
         message: "Booking not found"
       });
     }
 
-    // Make sure the booking belongs to the logged-in person
-    if (booking.user.toString() !== userId) {
+    if (String(booking.user) !== String(req.user.id)) {
       return res.status(403).send({
         message: "You cannot view this booking"
       });
     }
 
-    // Find all individual tickets under this booking
     const tickets = await TicketModel.find({
       booking: booking._id
     });
@@ -212,23 +336,25 @@ const getBookingById = async (req, res) => {
         tickets
       }
     });
-
   } catch (error) {
-    console.log(error);
+    console.log("GET BOOKING ERROR:", error);
 
-    return res.status(400).send({
+    return res.status(500).send({
       message: "Cannot fetch booking at this time"
     });
   }
 };
 
-
 const getEventBookings = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const organizerId = req.user.id;
 
-    // Find the event
+    if (!mongoose.isValidObjectId(eventId)) {
+      return res.status(400).send({
+        message: "Invalid event ID"
+      });
+    }
+
     const event = await EventModel.findById(eventId);
 
     if (!event) {
@@ -237,25 +363,20 @@ const getEventBookings = async (req, res) => {
       });
     }
 
-    // Check if this event belongs to the logged-in organizer
-    if (event.createdBy.toString() !== organizerId) {
+    if (String(event.createdBy) !== String(req.user.id)) {
       return res.status(403).send({
         message: "You cannot view bookings for this event"
       });
     }
 
-    // Find all bookings for this event
     const bookings = await BookingModel.find({
       event: eventId
-    }).populate(
-      "user",
-      "firstname lastname email"
-    );
+    })
+      .populate("user", "firstname lastname email")
+      .sort({ createdAt: -1 });
 
-    // Find tickets belonging to each booking
     const bookingsWithTickets = await Promise.all(
       bookings.map(async (booking) => {
-
         const tickets = await TicketModel.find({
           booking: booking._id
         });
@@ -267,9 +388,12 @@ const getEventBookings = async (req, res) => {
       })
     );
 
-    // Calculate number of tickets sold
-    const ticketsSold =
-      event.totalTickets - event.availableTickets;
+    const totalTickets = (event.ticketTypes || []).reduce(
+      (total, type) => total + Number(type.totalTickets || 0),
+      0
+    );
+
+    const availableTickets = getTotalAvailability(event);
 
     return res.status(200).send({
       message: "Event bookings fetched successfully",
@@ -277,18 +401,18 @@ const getEventBookings = async (req, res) => {
         event: {
           _id: event._id,
           title: event.title,
-          totalTickets: event.totalTickets,
-          availableTickets: event.availableTickets,
-          ticketsSold
+          totalTickets,
+          availableTickets,
+          ticketsSold: totalTickets - availableTickets,
+          ticketTypes: event.ticketTypes
         },
         bookings: bookingsWithTickets
       }
     });
-
   } catch (error) {
-    console.log(error);
+    console.log("GET EVENT BOOKINGS ERROR:", error);
 
-    return res.status(400).send({
+    return res.status(500).send({
       message: "Cannot fetch event bookings at this time"
     });
   }
@@ -298,16 +422,33 @@ const cancelTickets = async (req, res) => {
   try {
     const { bookingId } = req.params;
     const { ticketIds } = req.body;
-    const userId = req.user.id;
 
-    // 1. Make sure the user selected at least one ticket
-    if (!ticketIds || !Array.isArray(ticketIds) || ticketIds.length === 0) {
+    if (!mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).send({
+        message: "Invalid booking ID"
+      });
+    }
+
+    if (
+      !Array.isArray(ticketIds) ||
+      ticketIds.length === 0
+    ) {
       return res.status(400).send({
         message: "Please select at least one ticket to cancel"
       });
     }
 
-    // 2. Find the booking
+    const uniqueIds = ticketIds.map(String);
+
+    if (
+      uniqueIds.some((id) => !mongoose.isValidObjectId(id)) ||
+      new Set(uniqueIds).size !== uniqueIds.length
+    ) {
+      return res.status(400).send({
+        message: "Ticket IDs must be valid and unique"
+      });
+    }
+
     const booking = await BookingModel.findById(bookingId);
 
     if (!booking) {
@@ -316,60 +457,30 @@ const cancelTickets = async (req, res) => {
       });
     }
 
-    // 3. Make sure the booking belongs to the logged-in user
-    if (booking.user.toString() !== userId) {
+    if (String(booking.user) !== String(req.user.id)) {
       return res.status(403).send({
         message: "You cannot cancel tickets from this booking"
       });
     }
 
-    // 4. Find the tickets the user selected
     const tickets = await TicketModel.find({
-      _id: { $in: ticketIds },
-      booking: bookingId
+      _id: { $in: uniqueIds },
+      booking: booking._id
     });
 
-    // 5. Make sure all selected tickets belong to this booking
-    if (tickets.length !== ticketIds.length) {
+    if (tickets.length !== uniqueIds.length) {
       return res.status(400).send({
         message: "One or more selected tickets are invalid"
       });
     }
 
-    // 6. Check if any ticket is already cancelled
-    const alreadyCancelled = tickets.some(
-      (ticket) => ticket.status === "cancelled"
-    );
-
-    if (alreadyCancelled) {
-      return res.status(400).send({
-        message: "One or more selected tickets have already been cancelled"
+    if (tickets.some((ticket) => ticket.status !== "valid")) {
+      return res.status(409).send({
+        message:
+          "Only valid, unused tickets without a pending refund can be cancelled"
       });
     }
 
-    // 7. Check if any ticket has already been used
-    const alreadyUsed = tickets.some(
-      (ticket) => ticket.status === "used"
-    );
-
-    if (alreadyUsed) {
-      return res.status(400).send({
-        message: "Used tickets cannot be cancelled"
-      });
-    }
-
-    // 8. Check if any ticket already has a refund pending
-    const alreadyRefundPending = tickets.some(
-      (ticket) => ticket.status === "refund_pending"
-    );
-
-    if (alreadyRefundPending) {
-      return res.status(400).send({
-        message: "One or more selected tickets already have a pending refund"
-      });
-    }
-
-    // 9. Find the event
     const event = await EventModel.findById(booking.event);
 
     if (!event) {
@@ -378,189 +489,315 @@ const cancelTickets = async (req, res) => {
       });
     }
 
-    // 10. Calculate how much the selected tickets are worth
-    const refundAmount =
-  tickets.reduce(
-    (total, ticket) =>
-      total + ticket.ticketPrice,
-    0
-  );
+    const refundableTickets = tickets.map((ticket) => ({
+      ...ticket.toObject(),
+      ticketType: ticket.ticketType || booking.ticketType,
+      ticketPrice:
+        ticket.ticketPrice !== null &&
+        ticket.ticketPrice !== undefined
+          ? ticket.ticketPrice
+          : booking.ticketPrice
+    }));
 
-
-   // Check if booking is paid or has already been partially refunded
-if (
-  ["paid", "partially_refunded"].includes(
-    booking.paymentStatus
-  )
-) {
-
-  // Find the original successful payment
-  const payment = await PaymentModel.findOne({
-    booking: bookingId,
-    status: {
-      $in: ["paid", "partially_refunded"]
+    if (
+      refundableTickets.some(
+        (ticket) =>
+          !ticket.ticketType ||
+          ticket.ticketPrice === null ||
+          ticket.ticketPrice === undefined ||
+          !Number.isFinite(Number(ticket.ticketPrice)) ||
+          Number(ticket.ticketPrice) < 0
+      )
+    ) {
+      return res.status(400).send({
+        message:
+          "Ticket category or refund price is missing. Please contact support."
+      });
     }
-  });
 
-  if (!payment) {
-    return res.status(404).send({
-      message: "Paid transaction not found"
-    });
-  }
+    const refundAmount = refundableTickets.reduce(
+      (total, ticket) => total + Number(ticket.ticketPrice),
+      0
+    );
 
-  // Send refund request to Paystack
-  const paystackResponse = await fetch(
-        "https://api.paystack.co/refund",
-        {
-          method: "POST",
+    const refundAmountInKobo = Math.round(refundAmount * 100);
 
-          headers: {
-            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-            "Content-Type": "application/json"
-          },
+    if (
+      !Number.isSafeInteger(refundAmountInKobo) ||
+      refundAmountInKobo <= 0
+    ) {
+      return res.status(400).send({
+        message: "Invalid refund amount"
+      });
+    }
 
-          body: JSON.stringify({
-            transaction: payment.paymentReference,
-
-            // Paystack wants the amount in Kobo
-            amount: refundAmount * 100
-          })
+    if (
+      ["paid", "partially_refunded"].includes(
+        booking.paymentStatus
+      )
+    ) {
+      const payment = await PaymentModel.findOne({
+        booking: booking._id,
+        status: {
+          $in: ["paid", "partially_refunded"]
         }
-      );
+      });
 
-      const refundData = await paystackResponse.json();
-
-      // 13. Check if Paystack rejected the refund
-      if (!paystackResponse.ok || !refundData.status) {
-        return res.status(400).send({
-          message: "Refund request failed",
-          error: refundData.message
+      if (!payment) {
+        return res.status(404).send({
+          message: "Paid transaction not found"
         });
       }
 
-      // 14. Create a refund record in our database
-      const refund = await RefundModel.create({
+      const existingPendingRefund = await RefundModel.findOne({
         payment: payment._id,
-        booking: booking._id,
-        user: userId,
-
-        tickets: tickets.map(
-          (ticket) => ticket._id
-        ),
-
-        amount: refundAmount,
-
-        paystackRefundId: refundData.data.id.toString(),
-
-        status: "pending"
+        status: {
+          $in: [
+            "pending",
+            "processing",
+            "needs-attention"
+          ]
+        }
       });
 
-      // 15. Mark the selected tickets as waiting for refund
-      await TicketModel.updateMany(
+      if (
+        existingPendingRefund ||
+        payment.refundStatus === "pending"
+      ) {
+        return res.status(409).send({
+          message:
+            "Another refund is already pending for this payment"
+        });
+      }
+
+      const remainingRefundable =
+        Number(payment.amount) -
+        Number(payment.refundedAmount || 0);
+
+      if (
+        !Number.isFinite(remainingRefundable) ||
+        refundAmount > remainingRefundable
+      ) {
+        return res.status(400).send({
+          message:
+            "Refund amount exceeds the remaining payment"
+        });
+      }
+
+      const session = await mongoose.startSession();
+
+      let refund;
+
+      try {
+        await session.withTransaction(async () => {
+          const currentPayment = await PaymentModel.findOne({
+            _id: payment._id,
+            status: {
+              $in: ["paid", "partially_refunded"]
+            },
+            refundStatus: {
+              $nin: ["pending", "processing", "needs-attention"]
+            }
+          }).session(session);
+
+          if (!currentPayment) {
+            throw new Error(
+              "Payment is no longer available for refund"
+            );
+          }
+
+          const pendingRefund = await RefundModel.findOne({
+            payment: currentPayment._id,
+            status: {
+              $in: [
+                "pending",
+                "processing",
+                "needs-attention"
+              ]
+            }
+          }).session(session);
+
+          if (pendingRefund) {
+            throw new Error(
+              "Another refund is already pending"
+            );
+          }
+
+          const availableAmount =
+            Number(currentPayment.amount) -
+            Number(currentPayment.refundedAmount || 0);
+
+          if (refundAmount > availableAmount) {
+            throw new Error(
+              "Refund exceeds remaining payment amount"
+            );
+          }
+
+          const reserved = await TicketModel.updateMany(
+            {
+              _id: { $in: uniqueIds },
+              booking: booking._id,
+              status: "valid"
+            },
+            {
+              $set: {
+                status: "refund_pending"
+              }
+            },
+            { session }
+          );
+
+          if (reserved.modifiedCount !== uniqueIds.length) {
+            throw new Error(
+              "Ticket status changed. Please try again."
+            );
+          }
+
+          currentPayment.refundStatus = "pending";
+
+          await currentPayment.save({ session });
+
+          const createdRefunds = await RefundModel.create(
+            [
+              {
+                payment: currentPayment._id,
+                booking: booking._id,
+                user: req.user.id,
+                tickets: uniqueIds,
+                amount: refundAmount,
+                status: "pending"
+              }
+            ],
+            { session }
+          );
+
+          refund = createdRefunds[0];
+        });
+      } catch (error) {
+        console.log("REFUND RESERVATION ERROR:", error);
+
+        return res.status(409).send({
+          message:
+            "Could not reserve tickets for refund. Please refresh and try again."
+        });
+      } finally {
+        await session.endSession();
+      }
+
+      let paystackResponse;
+      let refundData;
+
+      try {
+        paystackResponse = await fetch(
+          "https://api.paystack.co/refund",
+          {
+            method: "POST",
+            headers: {
+              Authorization:
+                `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              transaction: payment.paymentReference,
+              amount: refundAmountInKobo
+            })
+          }
+        );
+
+        refundData = await paystackResponse.json();
+      } catch (error) {
+        console.log("PAYSTACK REFUND NETWORK ERROR:", error);
+
+        await RefundModel.updateOne(
+          {
+            _id: refund._id,
+            status: "pending"
+          },
+          {
+            $set: {
+              status: "needs-attention"
+            }
+          }
+        );
+
+        return res.status(202).send({
+          message:
+            "Refund request outcome is uncertain. Please contact support and do not request another refund.",
+          data: {
+            refundId: refund._id,
+            refundStatus: "needs-attention"
+          }
+        });
+      }
+
+      if (
+        !paystackResponse.ok ||
+        !refundData.status ||
+        !refundData.data?.id
+      ) {
+        await RefundModel.updateOne(
+          {
+            _id: refund._id,
+            status: "pending"
+          },
+          {
+            $set: {
+              status: "needs-attention"
+            }
+          }
+        );
+
+        return res.status(202).send({
+          message:
+            "Paystack did not confirm the refund request. The request needs review before another attempt.",
+          data: {
+            refundId: refund._id,
+            refundStatus: "needs-attention"
+          }
+        });
+      }
+
+      await RefundModel.updateOne(
         {
-          _id: { $in: ticketIds },
-          booking: bookingId,
-          status: "valid"
+          _id: refund._id,
+          status: "pending"
         },
         {
           $set: {
-            status: "refund_pending"
+            paystackRefundId: String(refundData.data.id)
           }
         }
       );
 
-      // 16. Update overall payment refund status
-      payment.refundStatus = "pending";
-
-      await payment.save();
-
-      // 17. Send response
       return res.status(200).send({
         message: "Refund request submitted successfully",
         data: {
           refundId: refund._id,
-          paystackRefundId: refund.paystackRefundId,
-          refundAmount: refund.amount,
-          refundStatus: refund.status,
-          ticketsToCancel: tickets.length
+          paystackRefundId: String(refundData.data.id),
+          refundAmount,
+          refundStatus: "pending",
+          ticketsToCancel: uniqueIds.length
         }
       });
     }
 
-
-    await TicketModel.updateMany(
-      {
-        _id: { $in: ticketIds },
-        booking: bookingId
-      },
-      {
-        $set: {
-          status: "cancelled",
-          qrCode: null
-        }
-      }
-    );
-const ticketType =
-  event.ticketTypes.find(
-    (type) =>
-      type.name === booking.ticketType
-  );
-
-if (ticketType) {
-  ticketType.availableTickets +=
-    tickets.length;
-
-  await event.save();
-}
-
-    // 20. Count cancelled tickets
-    const cancelledTickets = await TicketModel.countDocuments({
-      booking: bookingId,
-      status: "cancelled"
-    });
-
-    // 21. Count tickets that haven't been cancelled
-    const nonCancelledTickets = await TicketModel.countDocuments({
-      booking: bookingId,
-      status: {
-        $in: ["valid", "used"]
-      }
-    });
-
-    // 22. Update booking status
-    if (nonCancelledTickets === 0) {
-
-      booking.bookingStatus = "cancelled";
-
-    } else if (cancelledTickets > 0) {
-
-      booking.bookingStatus = "partially_cancelled";
-
-    } else {
-
-      booking.bookingStatus = "confirmed";
+    if (booking.paymentStatus === "pending") {
+      return res.status(409).send({
+        message:
+          "This booking has not been paid for. Pending bookings without issued tickets should be cancelled through a separate booking cancellation endpoint."
+      });
     }
 
-    await booking.save();
-
-    // 23. Send response
-    return res.status(200).send({
-      message: "Ticket cancellation successful",
-      data: {
-        cancelledTickets: tickets.length,
-        remainingTickets: nonCancelledTickets,
-        availableTickets: event.availableTickets,
-        bookingStatus: booking.bookingStatus
-      }
+    return res.status(400).send({
+      message:
+        "This booking cannot be cancelled in its current payment state"
     });
 
   } catch (error) {
+    console.log("CANCEL TICKETS ERROR:", error);
 
-    console.log("CANCEL TICKET ERROR:", error);
-
-    return res.status(400).send({
-      message: "Cannot cancel tickets at this time",
-      error: error.message
+    return res.status(500).send({
+      message: "Cannot cancel tickets at this time"
     });
   }
 };

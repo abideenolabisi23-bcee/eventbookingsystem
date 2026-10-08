@@ -1,7 +1,8 @@
+
 import {
   BrowserRouter,
   Routes,
-  Route,
+  Route
 } from "react-router-dom";
 
 import Home from "./pages/Home";
@@ -40,11 +41,12 @@ import MyApartments from "./pages/MyApartments";
 import AddApartment from "./pages/AddApartment";
 import OrganizerApartmentDetails from "./pages/OrganizerApartmentDetails";
 import EditApartment from "./pages/EditApartment";
-
-import OrganizerProtectedRoute from "./component/OrganizerProtectedRoute";
 import OrganizerApartmentBookings from "./pages/OrganizerApartmentBookings";
 import OrganizerCheckIn from "./pages/OrganizerCheckIn";
+import ApartmentQRCheckIn from "./pages/ApartmentQRCheckIn";
 
+import UserProtectedRoute from "./component/UserProtectedRoute";
+import OrganizerProtectedRoute from "./component/OrganizerProtectedRoute";
 
 import Food from "./component/Food";
 import FoodDetails from "./component/FoodDetails";
@@ -67,7 +69,8 @@ import AdminPayments from "./pages/AdminPayments";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminSettings from "./pages/AdminSettings";
 
-import ApartmentQRCheckIn from "./pages/ApartmentQRCheckIn";
+import MyRefunds from "./pages/MyRefunds";
+
 function App() {
   return (
     <BrowserRouter>
@@ -88,11 +91,6 @@ function App() {
         />
 
         <Route
-          path="/event-payment/callback"
-          element={<EventPaymentCallback />}
-        />
-
-        <Route
           path="/apartments"
           element={<Apartments />}
         />
@@ -100,21 +98,6 @@ function App() {
         <Route
           path="/apartments/:id"
           element={<ApartmentDetails />}
-        />
-
-        <Route
-          path="/my-apartment-bookings"
-          element={<MyApartmentBookings />}
-        />
-
-        <Route
-          path="/my-apartment-bookings/:id"
-          element={<ApartmentBookingDetails />}
-        />
-
-        <Route
-          path="/apartment-payment/callback"
-          element={<ApartmentPaymentCallback />}
         />
 
         <Route
@@ -128,26 +111,6 @@ function App() {
         />
 
         <Route
-          path="/food-checkout/:orderId"
-          element={<FoodCheckout />}
-        />
-
-        <Route
-          path="/my-food-orders"
-          element={<MyFoodOrders />}
-        />
-
-        <Route
-          path="/my-food-orders/:id"
-          element={<FoodOrderDetails />}
-        />
-
-        <Route
-          path="/food-payment/callback"
-          element={<FoodPaymentSuccess />}
-        />
-
-        <Route
           path="/login"
           element={<Login />}
         />
@@ -157,30 +120,77 @@ function App() {
           element={<Signup />}
         />
 
-        <Route
-          path="/profile"
-          element={<Profile />}
-        />
+        <Route element={<UserProtectedRoute />}>
+          <Route
+            path="/profile"
+            element={<Profile />}
+          />
 
-        <Route
-          path="/my-tickets"
-          element={<MyTickets />}
-        />
+          <Route
+            path="/my-tickets"
+            element={<MyTickets />}
+          />
 
-        <Route
-          path="/my-bookings"
-          element={<MyBookings />}
-        />
+          <Route
+            path="/my-bookings"
+            element={<MyBookings />}
+          />
 
-        <Route
-          path="/payments-refunds"
-          element={<PaymentsRefunds />}
-        />
+          <Route
+            path="/my-refunds"
+            element={<MyRefunds />}
+          />
 
-        <Route
-          path="/change-password"
-          element={<ChangePassword />}
-        />
+          <Route
+            path="/my-apartment-bookings"
+            element={<MyApartmentBookings />}
+          />
+
+          <Route
+            path="/my-apartment-bookings/:id"
+            element={<ApartmentBookingDetails />}
+          />
+
+          <Route
+            path="/my-food-orders"
+            element={<MyFoodOrders />}
+          />
+
+          <Route
+            path="/my-food-orders/:id"
+            element={<FoodOrderDetails />}
+          />
+
+          <Route
+            path="/food-checkout/:orderId"
+            element={<FoodCheckout />}
+          />
+
+          <Route
+            path="/payments-refunds"
+            element={<PaymentsRefunds />}
+          />
+
+          <Route
+            path="/change-password"
+            element={<ChangePassword />}
+          />
+
+          <Route
+            path="/event-payment/callback"
+            element={<EventPaymentCallback />}
+          />
+
+          <Route
+            path="/apartment-payment/callback"
+            element={<ApartmentPaymentCallback />}
+          />
+
+          <Route
+            path="/food-payment/callback"
+            element={<FoodPaymentSuccess />}
+          />
+        </Route>
 
         <Route
           path="/organizer"
@@ -269,40 +279,29 @@ function App() {
           />
 
           <Route
-  path="/organizer/check-in"
-  element={
-    <OrganizerProtectedRoute>
-      <OrganizerCheckIn />
-    </OrganizerProtectedRoute>
-  }
-/>
-
-<Route
-  path="/organizer/check-in/events"
-  element={
-    <OrganizerProtectedRoute>
-      <QRCheckIn />
-    </OrganizerProtectedRoute>
-  }
-/>
-
-<Route
-  path="/organizer/apartments/:id/check-in"
-  element={
-    <OrganizerProtectedRoute>
-      <ApartmentQRCheckIn />
-    </OrganizerProtectedRoute>
-  }
-/>
-          <Route
             path="/organizer/apartments/:id/edit"
             element={<EditApartment />}
           />
 
           <Route
-  path="/organizer/apartments/:id/bookings"
-  element={<OrganizerApartmentBookings />}
-/>
+            path="/organizer/apartments/:id/bookings"
+            element={<OrganizerApartmentBookings />}
+          />
+
+          <Route
+            path="/organizer/check-in"
+            element={<OrganizerCheckIn />}
+          />
+
+          <Route
+            path="/organizer/check-in/events"
+            element={<QRCheckIn />}
+          />
+
+          <Route
+            path="/organizer/check-in/apartments"
+            element={<ApartmentQRCheckIn />}
+          />
         </Route>
 
         <Route

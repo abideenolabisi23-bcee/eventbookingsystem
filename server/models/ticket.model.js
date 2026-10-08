@@ -20,16 +20,22 @@ const TicketSchema = new mongoose.Schema(
       required: true
     },
 
-    ticketType: {
-  type: String,
-  enum: ["Regular", "VIP", "VVIP"],
-  default: null
-},
+    ticketTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
 
-ticketPrice: {
-  type: Number,
-  default: null
-},
+    ticketType: {
+      type: String,
+      trim: true,
+      default: null
+    },
+
+    ticketPrice: {
+      type: Number,
+      min: 0,
+      default: null
+    },
 
     ticketCode: {
       type: String,

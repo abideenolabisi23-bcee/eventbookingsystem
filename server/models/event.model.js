@@ -5,7 +5,7 @@ const TicketTypeSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      enum: ["Regular", "VIP", "VVIP"]
+      trim: true
     },
 
     price: {
@@ -27,7 +27,7 @@ const TicketTypeSchema = new mongoose.Schema(
     }
   },
   {
-    _id: false
+    _id: true
   }
 );
 
@@ -54,15 +54,18 @@ const EventSchema = new mongoose.Schema(
     },
 
     price: {
-      type: Number
+      type: Number,
+      min: 0
     },
 
     totalTickets: {
-      type: Number
+      type: Number,
+      min: 0
     },
 
     availableTickets: {
-      type: Number
+      type: Number,
+      min: 0
     },
 
     ticketTypes: {
@@ -93,9 +96,10 @@ const EventSchema = new mongoose.Schema(
     ]
   },
   {
-    timestamps: true,
-    strict: "throw"
-  }
+  timestamps: true,
+  strict: "throw",
+  optimisticConcurrency: true
+}
 );
 
 const EventModel = mongoose.model(
