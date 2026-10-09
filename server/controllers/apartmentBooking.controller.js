@@ -413,7 +413,7 @@ const getMyApartmentBookings = async (req, res) => {
     })
       .populate(
         "apartment",
-        "title description apartmentType location pricePerNight dayUsePrice image amenities"
+        "title description apartmentType location pricePerNight dayUsePrice images amenities"
       )
       .sort({ createdAt: -1 });
 
@@ -423,14 +423,10 @@ const getMyApartmentBookings = async (req, res) => {
     });
 
   } catch (error) {
-    console.log(
-      "GET APARTMENT BOOKINGS ERROR:",
-      error
-    );
+    console.log("GET APARTMENT BOOKINGS ERROR:", error);
 
     return res.status(500).send({
-      message:
-        "Cannot fetch apartment bookings at this time"
+      message: "Cannot fetch apartment bookings at this time"
     });
   }
 };
@@ -445,7 +441,7 @@ const getApartmentBookingById = async (req, res) => {
       user: userId
     }).populate(
       "apartment",
-      "title description apartmentType location pricePerNight dayUsePrice image amenities"
+      "title description apartmentType location pricePerNight dayUsePrice images amenities"
     );
 
     if (!booking) {
@@ -455,20 +451,15 @@ const getApartmentBookingById = async (req, res) => {
     }
 
     return res.status(200).send({
-      message:
-        "Apartment booking fetched successfully",
+      message: "Apartment booking fetched successfully",
       data: booking
     });
 
   } catch (error) {
-    console.log(
-      "GET APARTMENT BOOKING ERROR:",
-      error
-    );
+    console.log("GET APARTMENT BOOKING ERROR:", error);
 
     return res.status(500).send({
-      message:
-        "Cannot fetch apartment booking at this time"
+      message: "Cannot fetch apartment booking at this time"
     });
   }
 };
