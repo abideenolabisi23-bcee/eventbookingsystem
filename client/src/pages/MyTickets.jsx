@@ -21,12 +21,8 @@ const formatPrice = (amount) =>
 
 const formatDate = (value, includeTime = false) => {
   if (!value) return "Not specified";
-
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Not specified";
-  }
+  if (Number.isNaN(date.getTime())) return "Not specified";
 
   return new Intl.DateTimeFormat("en-NG", {
     dateStyle: "medium",
@@ -58,10 +54,7 @@ const formatStatus = (value) => {
     failed: "Failed"
   };
 
-  return (
-    labels[value] ||
-    String(value || "Unknown").replaceAll("_", " ")
-  );
+  return labels[value] || String(value || "Unknown").replaceAll("_", " ");
 };
 
 const getLocation = (location) => {
@@ -73,9 +66,7 @@ const getLocation = (location) => {
       location.area,
       location.city,
       location.state
-    ]
-      .filter(Boolean)
-      .join(", ") || "Location not specified";
+    ].filter(Boolean).join(", ") || "Location not specified";
   }
 
   return "Location not specified";
@@ -85,7 +76,10 @@ const getImage = (image) => {
   if (typeof image === "string") return image;
 
   if (Array.isArray(image)) {
-    return getImage(image[0]);
+    for (const value of image) {
+      const found = getImage(value);
+      if (found) return found;
+    }
   }
 
   if (image && typeof image === "object") {
@@ -102,26 +96,38 @@ const getImage = (image) => {
   return "";
 };
 
+const getApartmentImages = (apartment) => {
+  const fields = [
+    ["exterior", "Exterior"],
+    ["livingRoom", "Living Room"],
+    ["bedroom", "Bedroom"],
+    ["kitchen", "Kitchen"],
+    ["bathroom", "Bathroom"],
+    ["balcony", "Balcony"]
+  ];
+
+  return fields
+    .map(([key, label]) => ({
+      key,
+      label,
+      url: getImage(apartment?.images?.[key])
+    }))
+    .filter((image) => image.url);
+};
+
 const getBookingId = (booking) => {
   if (!booking) return "";
-
   if (typeof booking === "string") return booking;
-
   return String(booking._id || booking.id || "");
 };
 
-const isApartmentPassReady = (booking) =>
-  booking.bookingStatus === "confirmed" &&
-  booking.paymentStatus === "paid";
+const getApartmentQr = (ticket) => {
+  const qr = ticket?.qrCode;
 
-const getApartmentQr = (booking) => {
-  const qr = booking.qrCode;
-
-  if (typeof qr === "string" && qr.startsWith("data:image/")) {
-    return qr;
-  }
-
-  if (typeof qr === "string" && /^https:\/\//i.test(qr)) {
+  if (
+    typeof qr === "string" &&
+    (qr.startsWith("data:image/") || /^https:\/\//i.test(qr))
+  ) {
     return qr;
   }
 
@@ -141,9 +147,7 @@ export default function MyTickets() {
   const requestedType = searchParams.get("type");
   const requestedBooking = searchParams.get("booking");
 
-  const activeTab = ["events", "apartments", "food"].includes(
-    requestedType
-  )
+  const activeTab = ["events", "apartments", "food"].includes(requestedType)
     ? requestedType
     : requestedType === "apartment"
       ? "apartments"
@@ -152,7 +156,7 @@ export default function MyTickets() {
         : "all";
 
   const [eventTickets, setEventTickets] = useState([]);
-  const [apartmentBookings, setApartmentBookings] = useState([]);
+  const [apartmentTickets, setApartmentTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -186,14 +190,8 @@ export default function MyTickets() {
       };
 
       const results = await Promise.allSettled([
-        axios.get(`${API}/tickets/my`, {
-          headers,
-          signal
-        }),
-        axios.get(`${API}/apartment-bookings/my`, {
-          headers,
-          signal
-        })
+        axios.get(`${API}/tickets/my`, { headers, signal }),
+        axios.get(`${API}/apartment-tickets/my`, { headers, signal })
       ]);
 
       if (signal?.aborted) return;
@@ -218,24 +216,22 @@ export default function MyTickets() {
       if (results[1].status === "fulfilled") {
         const result = results[1].value.data?.data;
 
-        setApartmentBookings(
+        setApartmentTickets(
           Array.isArray(result)
             ? result
-            : Array.isArray(result?.bookings)
-              ? result.bookings
+            : Array.isArray(result?.tickets)
+              ? result.tickets
               : []
         );
       } else {
-        setApartmentBookings([]);
-        failures.push("apartment reservations");
+        setApartmentTickets([]);
+        failures.push("apartment tickets");
       }
 
       setFailedSections(failures);
 
       if (failures.length === 2) {
-        setError(
-          "We couldn't load your tickets and apartment reservations. Please try again."
-        );
+        setError("We couldn't load your tickets. Please try again.");
       }
     } catch (err) {
       if (axios.isCancel(err)) return;
@@ -245,17 +241,13 @@ export default function MyTickets() {
         "We couldn't load your tickets right now."
       );
     } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-
     fetchTickets(controller.signal);
-
     return () => controller.abort();
   }, [fetchTickets]);
 
@@ -271,25 +263,33 @@ export default function MyTickets() {
       ticket
     }));
 
-    const apartments = apartmentBookings
-      .filter(isApartmentPassReady)
-      .map((booking) => ({
-        key: `apartment-${booking._id}`,
+    const apartments = apartmentTickets.map((ticket) => {
+      const booking = ticket.booking || {};
+      const apartment = ticket.apartment || {};
+
+      return {
+        key: `apartment-${ticket._id || ticket.ticketCode}`,
         type: "apartments",
-        date: booking.createdAt || booking.checkInDate || "",
-        status: booking.stayStatus || "upcoming",
-        title: booking.apartment?.title || "Apartment Reservation",
-        location: getLocation(booking.apartment?.location),
-        reference: booking.bookingReference || "",
+        date: ticket.createdAt || booking.checkInDate || "",
+        status:
+          ticket.status === "cancelled" ||
+          booking.bookingStatus === "cancelled"
+            ? "cancelled"
+            : booking.stayStatus || ticket.status || "upcoming",
+        title: apartment.title || "Apartment Reservation",
+        location: getLocation(apartment.location),
+        reference: ticket.ticketCode || "",
+        ticket,
         booking
-      }));
+      };
+    });
 
     return [...events, ...apartments].sort(
       (a, b) =>
         new Date(b.date || 0).getTime() -
         new Date(a.date || 0).getTime()
     );
-  }, [eventTickets, apartmentBookings]);
+  }, [eventTickets, apartmentTickets]);
 
   const counts = useMemo(
     () => ({
@@ -320,32 +320,21 @@ export default function MyTickets() {
         item.location,
         item.reference,
         item.ticket?.ticketType,
+        item.booking?.bookingReference,
         item.booking?.stayType
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      ].filter(Boolean).join(" ").toLowerCase();
 
       if (!text.includes(search.trim().toLowerCase())) {
         return false;
       }
 
-      if (
-        statusFilter !== "all" &&
-        item.status !== statusFilter
-      ) {
+      if (statusFilter !== "all" && item.status !== statusFilter) {
         return false;
       }
 
       return true;
     });
-  }, [
-    items,
-    activeTab,
-    requestedBooking,
-    search,
-    statusFilter
-  ]);
+  }, [items, activeTab, requestedBooking, search, statusFilter]);
 
   const downloadQR = (ticket) => {
     if (
@@ -363,17 +352,16 @@ export default function MyTickets() {
     link.remove();
   };
 
-  const selectedEvent = selectedItem?.type === "events"
-    ? selectedItem.ticket
-    : null;
+  const selectedEvent =
+    selectedItem?.type === "events" ? selectedItem.ticket : null;
 
-  const selectedApartment = selectedItem?.type === "apartments"
-    ? selectedItem.booking
-    : null;
+  const selectedApartmentTicket =
+    selectedItem?.type === "apartments" ? selectedItem.ticket : null;
 
-  const selectedApartmentQr = selectedApartment
-    ? getApartmentQr(selectedApartment)
-    : "";
+  const selectedApartment = selectedApartmentTicket?.apartment || {};
+  const selectedBooking = selectedApartmentTicket?.booking || {};
+  const selectedApartmentQr = getApartmentQr(selectedApartmentTicket);
+  const selectedApartmentImages = getApartmentImages(selectedApartment);
 
   return (
     <main className="vtickets-page">
@@ -394,8 +382,8 @@ export default function MyTickets() {
           </h1>
 
           <p>
-            All your experiences, stays and reservations
-            beautifully organized in one place.
+            All your experiences, stays and reservations beautifully
+            organized in one place.
           </p>
         </header>
 
@@ -453,10 +441,7 @@ export default function MyTickets() {
           <div className="vtickets-notice">
             Some information could not be loaded:{" "}
             {failedSections.join(", ")}.
-            <button
-              type="button"
-              onClick={() => fetchTickets()}
-            >
+            <button type="button" onClick={() => fetchTickets()}>
               Retry
             </button>
           </div>
@@ -473,10 +458,7 @@ export default function MyTickets() {
             <h2>We couldn't load your collection</h2>
             <p>{error}</p>
             {getToken() ? (
-              <button
-                type="button"
-                onClick={() => fetchTickets()}
-              >
+              <button type="button" onClick={() => fetchTickets()}>
                 Try again
               </button>
             ) : (
@@ -488,15 +470,13 @@ export default function MyTickets() {
             <span>✧</span>
             <h2>Food confirmations are coming next</h2>
             <p>
-              Your Food tab is ready. We'll connect your
-              food orders when we build the Food Vendor Dashboard
-              and customer order system.
+              Your Food tab is ready. We'll connect your food orders
+              when we build the food ordering system.
             </p>
           </div>
         ) : visibleItems.length === 0 ? (
           <div className="vtickets-empty">
             <span>✧</span>
-
             <h2>
               {requestedBooking && activeTab === "apartments"
                 ? "Apartment pass unavailable"
@@ -507,8 +487,8 @@ export default function MyTickets() {
 
             <p>
               {requestedBooking && activeTab === "apartments"
-                ? "This reservation may still be awaiting payment or confirmation, or it may no longer be available."
-                : "Your confirmed reservations and available tickets will appear here."}
+                ? "No apartment ticket was found for this booking. If payment was recently completed, refresh the page."
+                : "Your available tickets will appear here."}
             </p>
 
             {requestedBooking && activeTab === "apartments" ? (
@@ -526,10 +506,12 @@ export default function MyTickets() {
           <div className="vtickets-grid">
             {visibleItems.map((item) => {
               if (item.type === "apartments") {
-                const booking = item.booking;
-                const apartment = booking.apartment || {};
-                const apartmentQr = getApartmentQr(booking);
-                const image = getImage(apartment.image);
+                const ticket = item.ticket;
+                const booking = ticket.booking || {};
+                const apartment = ticket.apartment || {};
+                const apartmentQr = getApartmentQr(ticket);
+                const apartmentImages = getApartmentImages(apartment);
+                const image = apartmentImages[0]?.url || "";
 
                 return (
                   <article
@@ -557,16 +539,12 @@ export default function MyTickets() {
                       <div className="vticket-details">
                         <div>
                           <small>CHECK-IN</small>
-                          <strong>
-                            {formatDate(booking.checkInDate)}
-                          </strong>
+                          <strong>{formatDate(booking.checkInDate)}</strong>
                         </div>
 
                         <div>
                           <small>CHECK-OUT</small>
-                          <strong>
-                            {formatDate(booking.checkOutDate)}
-                          </strong>
+                          <strong>{formatDate(booking.checkOutDate)}</strong>
                         </div>
 
                         <div>
@@ -601,7 +579,7 @@ export default function MyTickets() {
                         {apartmentQr ? (
                           <img
                             src={apartmentQr}
-                            alt="Apartment check-in QR code"
+                            alt={`QR code for ${ticket.ticketCode}`}
                           />
                         ) : image ? (
                           <img
@@ -611,30 +589,30 @@ export default function MyTickets() {
                           />
                         ) : (
                           <div className="vticket-no-qr">
-                            ✦
-                            <br />
-                            STAY PASS
+                            QR unavailable
                           </div>
                         )}
 
                         <div>
-                          <small>BOOKING REFERENCE</small>
-                          <strong>{booking.bookingReference}</strong>
+                          <small>TICKET CODE</small>
+                          <strong>{ticket.ticketCode}</strong>
 
                           <span
                             className={`vticket-status ${
-                              booking.stayStatus === "upcoming"
+                              item.status === "upcoming" ||
+                              item.status === "valid"
                                 ? "valid"
                                 : "inactive"
                             }`}
                           >
-                            {formatStatus(booking.stayStatus)}
+                            {formatStatus(item.status)}
                           </span>
 
+                          <small>BOOKING REFERENCE</small>
+                          <strong>{booking.bookingReference || "—"}</strong>
+
                           <small>TOTAL PAID</small>
-                          <strong>
-                            {formatPrice(booking.totalAmount)}
-                          </strong>
+                          <strong>{formatPrice(booking.totalAmount)}</strong>
                         </div>
                       </div>
 
@@ -643,7 +621,7 @@ export default function MyTickets() {
                         className="vticket-download"
                         onClick={() => setSelectedItem(item)}
                       >
-                        View apartment pass ↗
+                        View apartment details ↗
                       </button>
                     </div>
                   </article>
@@ -677,9 +655,7 @@ export default function MyTickets() {
                     <div className="vticket-details">
                       <div>
                         <small>DATE & TIME</small>
-                        <strong>
-                          {formatDate(event.date, true)}
-                        </strong>
+                        <strong>{formatDate(event.date, true)}</strong>
                       </div>
 
                       <div>
@@ -723,9 +699,7 @@ export default function MyTickets() {
                         </span>
 
                         <small>PRICE</small>
-                        <strong>
-                          {formatPrice(ticket.ticketPrice)}
-                        </strong>
+                        <strong>{formatPrice(ticket.ticketPrice)}</strong>
                       </div>
                     </div>
 
@@ -789,17 +763,15 @@ export default function MyTickets() {
             </div>
 
             <span className="vtickets-eyebrow">
-              {selectedApartment
+              {selectedApartmentTicket
                 ? "YOUR STAY CONFIRMATION"
                 : "YOUR DIGITAL INVITATION"}
             </span>
 
             <h2>
-              {selectedApartment
-                ? selectedApartment.apartment?.title ||
-                  "Apartment Reservation"
-                : selectedEvent?.event?.title ||
-                  "Vibely Experience"}
+              {selectedApartmentTicket
+                ? selectedApartment.title || "Apartment Reservation"
+                : selectedEvent?.event?.title || "Vibely Experience"}
             </h2>
 
             {selectedEvent && (
@@ -825,23 +797,24 @@ export default function MyTickets() {
                       {selectedEvent.ticketType || "Event Ticket"}
                     </strong>
                   </p>
+
                   <p>
                     <span>Date</span>
                     <strong>
                       {formatDate(selectedEvent.event?.date, true)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Venue</span>
                     <strong>
                       {getLocation(selectedEvent.event?.location)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Status</span>
-                    <strong>
-                      {formatStatus(selectedEvent.status)}
-                    </strong>
+                    <strong>{formatStatus(selectedEvent.status)}</strong>
                   </p>
                 </div>
 
@@ -859,91 +832,160 @@ export default function MyTickets() {
               </>
             )}
 
-            {selectedApartment && (
+            {selectedApartmentTicket && (
               <>
                 {selectedApartmentQr ? (
                   <img
                     src={selectedApartmentQr}
-                    alt="Apartment check-in QR code"
+                    alt={`Apartment QR code ${selectedApartmentTicket.ticketCode}`}
                     className="vtickets-modal-qr"
                   />
                 ) : (
-                  <div className="vtickets-modal-stay-icon">
-                    ✦
-                  </div>
+                  <p>Apartment QR code unavailable.</p>
                 )}
 
                 <p className="vtickets-modal-code">
-                  {selectedApartment.bookingReference}
+                  {selectedApartmentTicket.ticketCode}
                 </p>
 
                 <div className="vtickets-modal-details">
                   <p>
-                    <span>Check-in</span>
+                    <span>Ticket status</span>
                     <strong>
-                      {formatDate(selectedApartment.checkInDate)}
+                      {formatStatus(selectedApartmentTicket.status)}
                     </strong>
                   </p>
+
+                  <p>
+                    <span>Booking reference</span>
+                    <strong>
+                      {selectedBooking.bookingReference || "—"}
+                    </strong>
+                  </p>
+
+                  <p>
+                    <span>Apartment type</span>
+                    <strong>
+                      {selectedApartment.apartmentType || "—"}
+                    </strong>
+                  </p>
+
+                  <p>
+                    <span>Location</span>
+                    <strong>
+                      {getLocation(selectedApartment.location)}
+                    </strong>
+                  </p>
+
+                  <p>
+                    <span>Check-in</span>
+                    <strong>
+                      {formatDate(selectedBooking.checkInDate)}
+                    </strong>
+                  </p>
+
                   <p>
                     <span>Check-out</span>
                     <strong>
-                      {formatDate(selectedApartment.checkOutDate)}
+                      {formatDate(selectedBooking.checkOutDate)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Stay type</span>
                     <strong>
-                      {formatStayType(selectedApartment.stayType)}
+                      {formatStayType(selectedBooking.stayType)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Expected arrival</span>
                     <strong>
-                      {selectedApartment.expectedCheckInTime ||
+                      {selectedBooking.expectedCheckInTime ||
                         "Not specified"}
                     </strong>
                   </p>
+
                   <p>
                     <span>Units</span>
                     <strong>
-                      {selectedApartment.numberOfUnits}
+                      {selectedBooking.numberOfUnits || 1}
                     </strong>
                   </p>
+
                   <p>
                     <span>Nights</span>
                     <strong>
-                      {selectedApartment.numberOfNights}
+                      {selectedBooking.stayType === "day_use"
+                        ? "Day use"
+                        : selectedBooking.numberOfNights || 0}
                     </strong>
                   </p>
+
                   <p>
                     <span>Booking status</span>
                     <strong>
-                      {formatStatus(selectedApartment.bookingStatus)}
+                      {formatStatus(selectedBooking.bookingStatus)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Payment</span>
                     <strong>
-                      {formatStatus(selectedApartment.paymentStatus)}
+                      {formatStatus(selectedBooking.paymentStatus)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Stay status</span>
                     <strong>
-                      {formatStatus(selectedApartment.stayStatus)}
+                      {formatStatus(selectedBooking.stayStatus)}
                     </strong>
                   </p>
+
                   <p>
                     <span>Total paid</span>
                     <strong>
-                      {formatPrice(selectedApartment.totalAmount)}
+                      {formatPrice(selectedBooking.totalAmount)}
                     </strong>
                   </p>
                 </div>
 
+                <div className="vtickets-apartment-gallery">
+                  <h3>Explore your apartment</h3>
+
+                  {selectedApartmentImages.length ? (
+                    <div className="vtickets-apartment-gallery-grid">
+                      {selectedApartmentImages.map((image) => (
+                        <div
+                          className="vtickets-apartment-gallery-item"
+                          key={image.key}
+                        >
+                          <img src={image.url} alt={image.label} />
+                          <span>{image.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>Apartment pictures are unavailable.</p>
+                  )}
+                </div>
+
+                {selectedApartmentTicket.qrCode?.startsWith(
+                  "data:image/png;base64,"
+                ) && (
+                  <button
+                    type="button"
+                    className="vtickets-modal-action"
+                    onClick={() => downloadQR(selectedApartmentTicket)}
+                  >
+                    Download apartment QR code ↓
+                  </button>
+                )}
+
                 <p className="vtickets-modal-note">
-                  Present your booking reference to the
-                  apartment organizer when checking in.
+                  Present your apartment QR code or ticket code
+                  to the organizer during check-in.
                 </p>
               </>
             )}
