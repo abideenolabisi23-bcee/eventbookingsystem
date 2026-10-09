@@ -1,12 +1,17 @@
+
 import { useEffect, useState } from "react";
 import {
   Link,
   useNavigate,
-  useParams,
+  useParams
 } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../component/Navbar";
 import "../styles/apartmentBookingDetails.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 function ApartmentBookingDetails() {
   const { id } = useParams();
@@ -23,11 +28,11 @@ function ApartmentBookingDetails() {
 
       if (!accessToken) {
         navigate("/login", {
+          replace: true,
           state: {
-            returnTo: `/my-apartment-bookings/${id}`,
-          },
+            returnTo: `/my-apartment-bookings/${id}`
+          }
         });
-
         return;
       }
 
@@ -36,23 +41,39 @@ function ApartmentBookingDetails() {
         setError("");
 
         const response = await axios.get(
-          `https://eventbookingsystem-sooty.vercel.app/api/v1/apartment-bookings/${id}`,
+          `${API_URL}/apartment-bookings/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+              Authorization: `Bearer ${accessToken}`
+            }
           }
         );
 
-        setBooking(response.data.data);
+        const responseData = response.data?.data;
+
+        const bookingData =
+          responseData?.booking ||
+          responseData;
+
+        if (!bookingData) {
+          setError("Apartment booking not found.");
+          return;
+        }
+
+        setBooking(bookingData);
       } catch (error) {
+        console.log(
+          "APARTMENT BOOKING DETAILS ERROR:",
+          error
+        );
+
         if (error.response?.status === 401) {
           navigate("/login", {
+            replace: true,
             state: {
-              returnTo: `/my-apartment-bookings/${id}`,
-            },
+              returnTo: `/my-apartment-bookings/${id}`
+            }
           });
-
           return;
         }
 
@@ -69,28 +90,33 @@ function ApartmentBookingDetails() {
   }, [id, navigate]);
 
   const formatMoney = (amount) => {
-    return `₦${Number(
-      amount || 0
-    ).toLocaleString()}`;
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0
+    }).format(Number(amount) || 0);
   };
 
   const formatDate = (date) => {
     if (!date) return "—";
 
-    return new Date(date).toLocaleDateString(
-      "en-NG",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }
-    );
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "—";
+    }
+
+    return parsedDate.toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
   };
 
   const formatStatus = (status) => {
     if (!status) return "—";
 
-    return status
+    return String(status)
       .replaceAll("_", " ")
       .replace(/\b\w/g, (letter) =>
         letter.toUpperCase()
@@ -161,6 +187,8 @@ function ApartmentBookingDetails() {
     booking.bookingStatus === "confirmed" &&
     booking.paymentStatus === "paid";
 
+  const bookingId = booking._id || id;
+
   return (
     <>
       <Navbar />
@@ -189,26 +217,22 @@ function ApartmentBookingDetails() {
                 <span>Booking reference</span>
 
                 <strong>
-                  {booking.bookingReference}
+                  {booking.bookingReference || "—"}
                 </strong>
               </div>
             </div>
 
             <div className="apartment-detail-status-group">
               <span
-                className={`apartment-detail-status ${booking.bookingStatus}`}
+                className={`apartment-detail-status ${booking.bookingStatus || ""}`}
               >
-                {formatStatus(
-                  booking.bookingStatus
-                )}
+                {formatStatus(booking.bookingStatus)}
               </span>
 
               <span
-                className={`apartment-detail-status ${booking.paymentStatus}`}
+                className={`apartment-detail-status ${booking.paymentStatus || ""}`}
               >
-                {formatStatus(
-                  booking.paymentStatus
-                )}
+                {formatStatus(booking.paymentStatus)}
               </span>
             </div>
           </section>
@@ -237,15 +261,13 @@ function ApartmentBookingDetails() {
                   <span>YOUR APARTMENT</span>
 
                   <h2>
-                    {apartment?.title ||
-                      "Apartment"}
+                    {apartment?.title || "Apartment"}
                   </h2>
                 </div>
 
                 {apartment?.location && (
                   <p className="apartment-detail-location">
                     <i className="bi bi-geo-alt"></i>
-
                     {apartment.location}
                   </p>
                 )}
@@ -256,34 +278,30 @@ function ApartmentBookingDetails() {
                   </p>
                 )}
 
-                {apartment?.amenities?.length >
-                  0 && (
-                    <div className="apartment-detail-amenities">
-                      {apartment.amenities.map(
-                        (amenity, index) => (
-                          <span key={index}>
-                            <i className="bi bi-check2"></i>
-                            {amenity}
-                          </span>
-                        )
-                      )}
-                    </div>
-                  )}
+                {apartment?.amenities?.length > 0 && (
+                  <div className="apartment-detail-amenities">
+                    {apartment.amenities.map(
+                      (amenity, index) => (
+                        <span key={index}>
+                          <i className="bi bi-check2"></i>
+                          {amenity}
+                        </span>
+                      )
+                    )}
+                  </div>
+                )}
 
                 <div className="apartment-detail-total">
                   <div>
                     <span>Total Amount</span>
 
                     <p>
-                      Your complete reservation
-                      payment
+                      Your complete reservation payment
                     </p>
                   </div>
 
                   <strong>
-                    {formatMoney(
-                      booking.totalAmount
-                    )}
+                    {formatMoney(booking.totalAmount)}
                   </strong>
                 </div>
               </div>
@@ -306,8 +324,7 @@ function ApartmentBookingDetails() {
                     <span>Booking Type</span>
 
                     <strong>
-                      {booking.stayType ===
-                        "day_use"
+                      {booking.stayType === "day_use"
                         ? "Day Use"
                         : "Overnight"}
                     </strong>
@@ -323,9 +340,7 @@ function ApartmentBookingDetails() {
                     <span>Check-in</span>
 
                     <strong>
-                      {formatDate(
-                        booking.checkInDate
-                      )}
+                      {formatDate(booking.checkInDate)}
                     </strong>
                   </div>
                 </div>
@@ -339,9 +354,7 @@ function ApartmentBookingDetails() {
                     <span>Check-out</span>
 
                     <strong>
-                      {formatDate(
-                        booking.checkOutDate
-                      )}
+                      {formatDate(booking.checkOutDate)}
                     </strong>
                   </div>
                 </div>
@@ -358,9 +371,7 @@ function ApartmentBookingDetails() {
                       </span>
 
                       <strong>
-                        {
-                          booking.expectedCheckInTime
-                        }
+                        {booking.expectedCheckInTime}
                       </strong>
                     </div>
                   </div>
@@ -375,29 +386,26 @@ function ApartmentBookingDetails() {
                     <span>Number of Units</span>
 
                     <strong>
-                      {booking.numberOfUnits}
+                      {booking.numberOfUnits || 1}
                     </strong>
                   </div>
                 </div>
 
-                {booking.stayType ===
-                  "overnight" && (
-                    <div className="apartment-detail-information-row">
-                      <div className="apartment-information-icon">
-                        <i className="bi bi-moon-stars"></i>
-                      </div>
-
-                      <div>
-                        <span>
-                          Number of Nights
-                        </span>
-
-                        <strong>
-                          {booking.numberOfNights}
-                        </strong>
-                      </div>
+                {booking.stayType === "overnight" && (
+                  <div className="apartment-detail-information-row">
+                    <div className="apartment-information-icon">
+                      <i className="bi bi-moon-stars"></i>
                     </div>
-                  )}
+
+                    <div>
+                      <span>Number of Nights</span>
+
+                      <strong>
+                        {booking.numberOfNights || 1}
+                      </strong>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="apartment-detail-status-section">
@@ -435,7 +443,7 @@ function ApartmentBookingDetails() {
               <div className="apartment-detail-actions">
                 {canViewTicket && (
                   <Link
-                    to={`/my-tickets?type=apartment&booking=${booking._id}`}
+                    to={`/my-apartment-tickets/${bookingId}`}
                     className="view-apartment-ticket-button"
                   >
                     <i className="bi bi-ticket-perforated"></i>
@@ -461,9 +469,7 @@ function ApartmentBookingDetails() {
                 <i className="bi bi-shield-check"></i>
 
                 <div>
-                  <strong>
-                    Secure reservation
-                  </strong>
+                  <strong>Secure reservation</strong>
 
                   <span>
                     Your booking information is

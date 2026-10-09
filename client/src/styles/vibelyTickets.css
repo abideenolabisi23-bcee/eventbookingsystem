@@ -1,594 +1,544 @@
 
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap");
-
-.vb-page {
-  --wine: #650e2e;
-  --wine-dark: #39091e;
-  --blush: #f5d8e2;
-  --rose: #c8879f;
-  --muted: #927987;
+.vtickets-page {
   min-height: 100vh;
-  background: #fff9fb;
-  color: var(--wine-dark);
+  background:
+    radial-gradient(circle at 5% 12%, #f8e4ec, transparent 30%),
+    #fffafc;
   font-family: "DM Sans", sans-serif;
+  color: #3c0a21;
+  padding: 75px 0 90px;
 }
 
-.vb-page * {
-  box-sizing: border-box;
+.vtickets-container {
+  width: min(1180px, calc(100% - 50px));
+  margin: 0 auto;
 }
 
-.vb-logo {
-  color: var(--wine);
-  text-decoration: none;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 4px;
+.vtickets-heading {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 40px;
 }
 
-.vb-overline {
+.vtickets-logo {
   display: block;
-  color: var(--rose);
+  margin-bottom: 25px;
+  color: #650e2e;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-decoration: none;
+}
+
+.vtickets-eyebrow {
+  display: block;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 2.5px;
+  color: #b06b84;
 }
 
-.vb-payment-page {
+.vtickets-heading h1 {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(39px, 5vw, 64px);
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 18px 0;
+}
+
+.vtickets-heading h1 em,
+.vtickets-bottom-banner h2 em {
+  color: #c17a94;
+  font-weight: 400;
+}
+
+.vtickets-heading p {
+  font-size: 14px;
+  color: #8d7480;
+  line-height: 1.9;
+}
+
+.vtickets-tabs {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 70px 20px;
-  background:
-    radial-gradient(circle at 12% 20%, #f5d9e4, transparent 32%),
-    radial-gradient(circle at 88% 80%, #f8e4eb, transparent 32%),
-    #fff9fb;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 auto 42px;
 }
 
-.vb-payment-card {
-  width: 100%;
-  max-width: 530px;
-  background: white;
-  border: 1px solid #f0d9e2;
-  border-radius: 28px;
-  overflow: hidden;
-  box-shadow: 0 25px 90px rgba(101, 14, 46, .12);
-}
-
-.vb-payment-head {
-  text-align: center;
-  padding: 45px 40px 38px;
-  background: linear-gradient(150deg, #fff0f5, #fffafd);
-}
-
-.vb-payment-head .vb-logo {
-  display: block;
-  margin-bottom: 30px;
-}
-
-.vb-payment-symbol {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: var(--wine);
-  color: white;
-  display: grid;
-  place-items: center;
-  font-size: 45px;
-  margin: 30px auto 25px;
-  box-shadow: 0 12px 35px rgba(101, 14, 46, .2);
-}
-
-.vb-symbol-pending,
-.vb-symbol-login {
-  background: #bd8297;
-}
-
-.vb-symbol-error {
-  background: #a7475c;
-}
-
-.vb-payment-head h1,
-.vb-tickets-header h1,
-.vb-discover-banner h2 {
-  font-family: "Playfair Display", serif;
-  font-weight: 500;
-}
-
-.vb-payment-head h1 {
-  font-size: clamp(36px, 5vw, 48px);
-  margin: 0 0 12px;
-}
-
-.vb-subtitle {
-  color: #8c6376;
-  font-size: 14px;
-  margin: 0 0 12px;
-}
-
-.vb-message {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.9;
-  margin: 0 auto;
-  max-width: 370px;
-}
-
-.vb-payment-body {
-  padding: 30px 38px 38px;
-}
-
-.vb-reference {
-  padding: 17px;
-  background: #fff7fa;
-  border: 1px dashed #e5c1cf;
-  border-radius: 13px;
-  margin-bottom: 22px;
-  overflow-wrap: anywhere;
-}
-
-.vb-reference span,
-.vb-ticket-meta small {
-  display: block;
-  font-size: 10px;
-  color: #aa8091;
-  letter-spacing: 1.5px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.vb-reference strong {
-  color: var(--wine);
-  font-size: 12px;
-}
-
-.vb-notice {
-  padding: 18px;
-  background: #fff1f6;
-  border-radius: 13px;
-  margin-bottom: 22px;
-}
-
-.vb-notice strong {
-  color: var(--wine);
-  font-size: 13px;
-}
-
-.vb-notice p {
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--muted);
-  margin: 8px 0 0;
-}
-
-.vb-main-button,
-.vb-outline-button {
-  width: 100%;
-  min-height: 50px;
-  display: flex;
-  justify-content: space-between;
+.vtickets-tab {
+  display: inline-flex;
   align-items: center;
-  border-radius: 12px;
-  padding: 15px 20px;
-  text-decoration: none;
+  gap: 9px;
+  padding: 13px 19px;
+  border: 1px solid #ecd8df;
+  border-radius: 30px;
+  background: white;
+  color: #754057;
   font-family: inherit;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: .25s ease;
+  transition: 0.25s ease;
 }
 
-.vb-main-button {
-  background: var(--wine);
-  color: white;
-  border: 1px solid var(--wine);
-}
-
-.vb-main-button:hover {
-  background: var(--wine-dark);
-  color: white;
-  transform: translateY(-2px);
-}
-
-.vb-outline-button {
-  color: var(--wine);
-  border: 1px solid #e8c5d2;
-  margin-top: 12px;
-}
-
-.vb-text-link {
-  display: block;
-  color: var(--wine);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
-  margin-top: 25px;
-}
-
-.vb-secure,
-.vb-small-note {
-  font-size: 10px;
-  text-align: center;
-  color: #ad929e;
-  margin-top: 22px;
-  overflow-wrap: anywhere;
-}
-
-.vb-tagline {
-  font-family: "Playfair Display", serif;
-  font-style: italic;
-  color: #b48498;
-  margin-top: 30px;
-  text-align: center;
-}
-
-.vb-loader {
-  display: inline-block;
-  width: 35px;
-  height: 35px;
-  border: 3px solid rgba(255, 255, 255, .4);
-  border-top-color: white;
+.vtickets-tab span {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
-  animation: vb-spin .8s linear infinite;
+  background: #f8e9ee;
+  color: #7e3654;
+  font-size: 10px;
 }
 
-.vb-dark-loader {
-  border-color: #f2d7e1;
-  border-top-color: var(--wine);
+.vtickets-tab:hover {
+  border-color: #650e2e;
+  color: #650e2e;
 }
 
-@keyframes vb-spin {
-  to { transform: rotate(360deg); }
+.vtickets-tab.active {
+  background: #650e2e;
+  border-color: #650e2e;
+  color: white;
+  box-shadow: 0 8px 20px rgba(101, 14, 46, 0.15);
 }
 
-.vb-container {
-  max-width: 1200px;
-  width: calc(100% - 50px);
-  margin: 0 auto;
+.vtickets-tab.active span {
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
 }
 
-.vb-tickets-page {
-  padding: 65px 0 85px;
-  background:
-    radial-gradient(circle at 5% 8%, #f8e5ec, transparent 32%),
-    #fff9fb;
-}
-
-.vb-tickets-header {
-  text-align: center;
-  padding-bottom: 65px;
-}
-
-.vb-tickets-header .vb-logo {
-  display: block;
-  margin-bottom: 50px;
-}
-
-.vb-tickets-header h1 {
-  font-size: clamp(42px, 6vw, 70px);
-  line-height: 1.15;
-  margin: 18px 0;
-}
-
-.vb-tickets-header h1 em,
-.vb-discover-banner h2 em {
-  color: var(--rose);
-  font-weight: 400;
-}
-
-.vb-tickets-header p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.vb-tickets-toolbar {
+.vtickets-count {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 25px;
-  padding-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 18px;
+  border-bottom: 1px solid #ebd6de;
+  padding-bottom: 20px;
   margin-bottom: 30px;
-  border-bottom: 1px solid #ead4dd;
 }
 
-.vb-ticket-counter span {
-  display: block;
-  color: #b08094;
+.vtickets-count > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vtickets-count span {
   font-size: 10px;
   font-weight: 800;
+  color: #b17a8f;
   letter-spacing: 2px;
-  margin-bottom: 8px;
 }
 
-.vb-ticket-counter strong {
-  color: var(--wine);
-  font-size: 16px;
+.vtickets-count strong {
+  font-size: 13px;
+  color: #650e2e;
 }
 
-.vb-ticket-controls {
+.vtickets-controls {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.vb-ticket-controls input,
-.vb-ticket-controls select {
-  background: white;
-  border: 1px solid #ead1db;
+.vtickets-controls input,
+.vtickets-controls select {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #e8d0d9;
   border-radius: 10px;
-  padding: 13px 15px;
-  color: var(--wine);
+  outline: none;
+  background: white;
+  color: #650e2e;
   font-family: inherit;
   font-size: 12px;
-  outline: none;
 }
 
-.vb-ticket-controls input:focus,
-.vb-ticket-controls select:focus {
-  border-color: var(--wine);
+.vtickets-controls input {
+  width: 240px;
 }
 
-.vb-tickets-grid {
+.vtickets-controls input:focus,
+.vtickets-controls select:focus {
+  border-color: #a54a6d;
+}
+
+.vtickets-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 15px 18px;
+  margin-bottom: 25px;
+  background: #fff2e5;
+  border: 1px solid #f1d5b8;
+  border-radius: 12px;
+  color: #825421;
+  font-size: 12px;
+}
+
+.vtickets-notice button {
+  border: 0;
+  background: #650e2e;
+  color: white;
+  padding: 8px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.vtickets-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 30px;
 }
 
-.vb-ticket-card {
+.vticket {
+  min-width: 0;
   background: white;
-  border-radius: 23px;
+  border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 20px 65px rgba(101, 14, 46, .1);
-  transition: transform .25s ease;
+  box-shadow: 0 18px 60px rgba(101, 14, 46, 0.11);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.vb-ticket-card:hover {
+.vticket:hover {
   transform: translateY(-5px);
+  box-shadow: 0 25px 70px rgba(101, 14, 46, 0.16);
 }
 
-.vb-ticket-top {
-  background:
-    radial-gradient(circle at 95% 0%, #99405f, transparent 55%),
-    linear-gradient(135deg, #3c0921, #78183b);
-  padding: 30px;
+.vticket-top {
   min-height: 320px;
+  padding: 30px;
+  background:
+    radial-gradient(circle at 95% 5%, rgba(255, 255, 255, 0.12), transparent 38%),
+    linear-gradient(130deg, #430a24, #852449);
+  color: white;
   display: flex;
   flex-direction: column;
-  color: white;
 }
 
-.vb-ticket-topline {
+.vticket-apartment .vticket-top {
+  background:
+    radial-gradient(circle at 95% 5%, rgba(255, 255, 255, 0.12), transparent 38%),
+    linear-gradient(130deg, #35000e, #68001c);
+}
+
+.vticket-topline {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.vb-ticket-topline span {
-  font-size: 17px;
+.vticket-brand {
   font-weight: 800;
+  font-size: 18px;
   letter-spacing: 3px;
 }
 
-.vb-ticket-topline small {
+.vticket-brand span {
+  margin-right: 7px;
+  color: #f4bfd0;
+}
+
+.vticket-topline small {
   font-size: 9px;
-  color: #f4c7d6;
+  font-weight: 800;
   letter-spacing: 2px;
+  color: #f1bbcd;
+  white-space: nowrap;
 }
 
-.vb-ticket-main {
-  margin-top: 38px;
+.vticket-overline {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #e7b5c6;
+  margin-top: 42px;
 }
 
-.vb-ticket-main h2 {
+.vticket-top h2 {
   font-family: "Playfair Display", serif;
-  font-size: 32px;
+  font-size: 31px;
   font-weight: 500;
-  line-height: 1.25;
-  margin: 12px 0 20px;
+  line-height: 1.3;
+  margin: 13px 0 17px;
 }
 
-.vb-category {
-  display: inline-block;
-  border: 1px solid #b77a91;
-  color: #ffe2ec;
-  border-radius: 30px;
-  padding: 9px 15px;
+.vticket-category {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 100px;
   font-size: 11px;
+  color: #ffe5ee;
+  margin-bottom: 26px;
 }
 
-.vb-ticket-info {
+.vticket-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: auto;
-  padding-top: 25px;
-}
-
-.vb-ticket-info small {
-  display: block;
-  color: #dfaabe;
-  font-size: 9px;
-  letter-spacing: 1.4px;
-  margin-bottom: 8px;
-}
-
-.vb-ticket-info strong {
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.vb-ticket-perforation {
-  height: 24px;
-  background: white;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.vb-ticket-perforation span {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #fff9fb;
-}
-
-.vb-ticket-perforation span:first-child {
-  left: -12px;
-}
-
-.vb-ticket-perforation span:last-child {
-  right: -12px;
-}
-
-.vb-ticket-perforation div {
-  width: 100%;
-  border-top: 2px dashed #e7cbd5;
-  margin: 0 20px;
-}
-
-.vb-ticket-bottom {
-  padding: 20px 30px 30px;
-}
-
-.vb-ticket-bottom-row {
-  display: flex;
-  align-items: center;
   gap: 20px;
+  margin-top: auto;
 }
 
-.vb-qr {
-  width: 112px;
-  height: 112px;
-  object-fit: contain;
-  border: 1px solid #eed9e1;
-  border-radius: 12px;
-  padding: 7px;
-  flex-shrink: 0;
-}
-
-.vb-qr-missing {
-  display: grid;
-  place-items: center;
-  text-align: center;
-  background: #fff4f8;
-  color: #a47d8d;
-  font-size: 11px;
-}
-
-.vb-ticket-meta {
+.vticket-details div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
   min-width: 0;
 }
 
-.vb-ticket-meta strong {
-  display: block;
-  color: var(--wine);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-  margin-bottom: 11px;
+.vticket-details small {
+  color: #dfaec0;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
 }
 
-.vb-status {
-  display: inline-block;
-  border-radius: 30px;
-  padding: 7px 12px;
-  margin-bottom: 14px;
+.vticket-details strong {
+  color: white;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.vticket-cut {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: white;
+  height: 24px;
+}
+
+.vticket-cut > span {
+  width: 24px;
+  height: 24px;
+  background: #fffafc;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.vticket-cut > span:first-child {
+  left: -12px;
+}
+
+.vticket-cut > span:last-child {
+  right: -12px;
+}
+
+.vticket-cut > div {
+  width: 100%;
+  border-top: 2px dashed #e6c9d4;
+  margin: 0 20px;
+}
+
+.vticket-bottom {
+  padding: 18px 30px 30px;
+}
+
+.vticket-qr-area {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+}
+
+.vticket-qr-area img {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  object-fit: contain;
+  padding: 7px;
+  background: white;
+  border: 1px solid #f0dce3;
+  border-radius: 12px;
+}
+
+.vticket-qr-area .vticket-property-image {
+  object-fit: cover;
+  padding: 0;
+}
+
+.vticket-qr-area > div:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 9px;
+}
+
+.vticket-qr-area small {
+  color: #a57b8c;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.vticket-qr-area strong {
+  color: #650e2e;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.vticket-status {
+  align-self: flex-start;
   font-size: 10px;
   font-weight: 800;
-  background: #f7e6ed;
-  color: #97445f;
+  text-transform: capitalize;
+  padding: 7px 11px;
+  border-radius: 100px;
 }
 
-.vb-status-valid {
-  background: #e7f5eb;
-  color: #2e7548;
+.vticket-status.valid {
+  background: #e8f5eb;
+  color: #32704b;
 }
 
-.vb-status-used {
-  background: #edf0fb;
-  color: #5969a6;
+.vticket-status.inactive {
+  background: #fbe7ed;
+  color: #9d3659;
 }
 
-.vb-ticket-action {
-  display: flex;
-  justify-content: space-between;
+.vticket-download {
   width: 100%;
-  margin-top: 22px;
-  padding: 15px 18px;
-  border: 1px solid #e3bfd0;
-  background: #fff6f9;
+  margin-top: 25px;
+  padding: 14px;
+  border: 1px solid #d8a8ba;
   border-radius: 11px;
-  color: var(--wine);
+  color: #650e2e;
+  background: #fff7fa;
   font-family: inherit;
   font-weight: 800;
   font-size: 12px;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.vb-booking-ref {
+.vticket-download:hover {
+  background: #f7e4eb;
+}
+
+.vticket-no-qr {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 11px;
+  color: #a57b8c;
+  background: #fff6f9;
+  border-radius: 12px;
+}
+
+.vticket-booking-ref {
+  margin: 13px 0 0;
   font-size: 10px;
-  color: #a78a97;
-  text-align: center;
+  color: #a57b8c;
   overflow-wrap: anywhere;
-  margin: 15px 0 0;
 }
 
-.vb-empty {
-  text-align: center;
-  max-width: 560px;
+.vtickets-empty {
+  max-width: 550px;
   margin: 0 auto;
-  padding: 65px 35px;
-  border-radius: 24px;
+  text-align: center;
   background: white;
   border: 1px solid #f0dce3;
+  border-radius: 25px;
+  padding: 65px 35px;
+  box-shadow: 0 20px 55px rgba(101, 14, 46, 0.06);
 }
 
-.vb-empty-symbol {
+.vtickets-empty > span:not(.vtickets-loader) {
+  display: block;
   font-size: 65px;
-  color: #d9a5b8;
+  color: #dba8ba;
 }
 
-.vb-empty h2 {
+.vtickets-empty h2 {
   font-family: "Playfair Display", serif;
-  font-size: 31px;
+  font-size: 30px;
   font-weight: 500;
   margin: 20px 0;
 }
 
-.vb-empty p {
-  color: var(--muted);
+.vtickets-empty p {
+  color: #8d7480;
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.9;
   margin-bottom: 25px;
 }
 
-.vb-empty .vb-main-button {
-  max-width: 200px;
-  margin: 0 auto;
+.vtickets-empty a,
+.vtickets-empty button {
+  display: inline-block;
+  border: none;
+  background: #650e2e;
+  color: white;
+  border-radius: 12px;
+  padding: 15px 25px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.vb-discover-banner {
-  background: #3c0921;
-  border-radius: 23px;
-  padding: 48px;
+.vtickets-loader {
+  display: block;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto;
+  border: 3px solid #f0d5df;
+  border-top-color: #650e2e;
+  border-radius: 50%;
+  animation: vtickets-spin 0.8s linear infinite;
+}
+
+@keyframes vtickets-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vtickets-bottom-banner {
   margin-top: 85px;
+  padding: 50px;
+  border-radius: 24px;
+  background: #430a24;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 25px;
 }
 
-.vb-discover-banner h2 {
-  color: white;
-  font-size: 37px;
-  margin: 15px 0 0;
+.vtickets-bottom-banner > div > span {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: #dfabc0;
 }
 
-.vb-discover-banner a {
-  color: var(--wine);
+.vtickets-bottom-banner h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 35px;
+  font-weight: 500;
+  color: white;
+  margin-top: 13px;
+}
+
+.vtickets-bottom-banner a {
+  color: #650e2e;
   background: white;
-  padding: 17px 24px;
+  padding: 17px 23px;
   border-radius: 12px;
   text-decoration: none;
   font-size: 12px;
@@ -596,174 +546,255 @@
   white-space: nowrap;
 }
 
-.vb-modal-backdrop {
+.vtickets-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(30, 4, 16, .7);
-  display: grid;
-  place-items: center;
-  padding: 20px;
-}
-
-.vb-ticket-modal {
-  position: relative;
-  width: 100%;
-  max-width: 460px;
-  max-height: 90vh;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow-y: auto;
+  padding: 25px 15px;
+  background: rgba(25, 3, 13, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.vtickets-modal {
+  position: relative;
+  width: min(510px, 100%);
+  max-height: calc(100vh - 50px);
+  overflow-y: auto;
+  padding: 35px;
+  border-radius: 22px;
   background: white;
-  border-radius: 24px;
-  padding: 38px;
   text-align: center;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25);
 }
 
-.vb-ticket-modal .vb-overline {
-  margin-top: 25px;
-}
-
-.vb-ticket-modal h2 {
-  font-family: "Playfair Display", serif;
-  font-size: 30px;
-  font-weight: 500;
-  margin: 15px 0 25px;
-}
-
-.vb-modal-close {
+.vtickets-modal-close {
   position: absolute;
-  top: 15px;
-  right: 20px;
-  background: none;
-  border: none;
+  top: 14px;
+  right: 17px;
+  border: 0;
+  background: transparent;
+  color: #650e2e;
   font-size: 30px;
-  color: var(--wine);
   cursor: pointer;
 }
 
-.vb-modal-qr {
-  width: 210px;
-  height: 210px;
-  object-fit: contain;
-  max-width: 100%;
+.vtickets-modal-brand {
+  margin-bottom: 20px;
+  color: #650e2e;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 3px;
 }
 
-.vb-modal-code {
-  color: var(--wine);
+.vtickets-modal h2 {
+  margin: 13px 0 22px;
+  color: #430a24;
+  font-family: "Playfair Display", serif;
+  font-size: 29px;
+  font-weight: 500;
+}
+
+.vtickets-modal-qr {
+  display: block;
+  width: 170px;
+  height: 170px;
+  max-width: 100%;
+  margin: 0 auto 15px;
+  padding: 8px;
+  border: 1px solid #f0dce3;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.vtickets-modal-stay-icon {
+  width: 90px;
+  height: 90px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #f8e4ec;
+  color: #650e2e;
+  font-size: 42px;
+}
+
+.vtickets-modal-code {
+  margin: 10px 0 22px;
+  color: #650e2e;
   font-size: 12px;
   font-weight: 800;
   overflow-wrap: anywhere;
 }
 
-.vb-modal-details {
+.vtickets-modal-details {
+  display: flex;
+  flex-direction: column;
   text-align: left;
-  margin: 25px 0;
   border-top: 1px solid #f0dce3;
 }
 
-.vb-modal-details p {
+.vtickets-modal-details p {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 15px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f0dce3;
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0e5e9;
+}
+
+.vtickets-modal-details span {
+  color: #997b87;
   font-size: 12px;
 }
 
-.vb-modal-details span {
-  color: var(--muted);
+.vtickets-modal-details strong {
+  max-width: 65%;
+  color: #430a24;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
-.vb-modal-details strong {
-  color: var(--wine);
-  text-align: right;
+.vtickets-modal-action {
+  width: 100%;
+  margin-top: 23px;
+  padding: 14px;
+  border: 0;
+  border-radius: 11px;
+  background: #650e2e;
+  color: white;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vtickets-modal-action:hover {
+  background: #852449;
+}
+
+.vtickets-modal-note {
+  margin: 20px 0 0;
+  color: #997b87;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 @media (max-width: 800px) {
-  .vb-tickets-grid {
+  .vtickets-grid {
     grid-template-columns: 1fr;
   }
 
-  .vb-tickets-toolbar,
-  .vb-discover-banner {
+  .vtickets-count {
+    align-items: flex-start;
     flex-direction: column;
-    align-items: stretch;
   }
 }
 
-@media (max-width: 560px) {
-  .vb-container {
+@media (max-width: 580px) {
+  .vtickets-page {
+    padding: 55px 0;
+  }
+
+  .vtickets-container {
     width: calc(100% - 30px);
   }
 
-  .vb-payment-head {
-    padding: 35px 22px;
+  .vtickets-heading {
+    margin-bottom: 30px;
   }
 
-  .vb-payment-body {
-    padding: 25px 22px 32px;
+  .vtickets-heading p {
+    font-size: 12px;
   }
 
-  .vb-ticket-controls {
-    flex-direction: column;
+  .vtickets-tabs {
+    gap: 8px;
+    margin-bottom: 30px;
   }
 
-  .vb-ticket-top {
+  .vtickets-tab {
+    padding: 10px 12px;
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .vtickets-tab span {
+    min-width: 19px;
+    height: 19px;
+    font-size: 9px;
+  }
+
+  .vtickets-controls {
+    width: 100%;
+  }
+
+  .vtickets-controls input {
+    width: 100%;
+  }
+
+  .vtickets-controls select {
+    width: 100%;
+  }
+
+  .vticket-top {
     padding: 25px;
   }
 
-  .vb-ticket-bottom {
-    padding: 20px 23px 25px;
+  .vticket-bottom {
+    padding: 18px 22px 25px;
   }
 
-  .vb-ticket-main h2 {
+  .vticket-top h2 {
     font-size: 27px;
   }
 
-  .vb-qr {
+  .vticket-qr-area {
+    gap: 12px;
+  }
+
+  .vticket-qr-area img,
+  .vticket-no-qr {
     width: 90px;
     height: 90px;
   }
 
-  .vb-discover-banner {
+  .vtickets-bottom-banner {
     padding: 35px 25px;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .vb-discover-banner h2 {
+  .vtickets-bottom-banner h2 {
     font-size: 29px;
   }
 
-  .vb-ticket-modal {
-    padding: 30px 22px;
+  .vtickets-modal {
+    padding: 30px 20px;
+  }
+
+  .vtickets-modal h2 {
+    font-size: 25px;
   }
 }
 
+@media (max-width: 380px) {
+  .vtickets-tab {
+    padding: 9px 10px;
+    font-size: 9px;
+  }
 
-.vb-symbol-refund {
-  background: #a76585;
+  .vticket-details {
+    gap: 14px;
+  }
+
+  .vticket-topline small {
+    font-size: 8px;
+  }
 }
-
-.vb-symbol-attention {
-  background: #a64a62;
-}
-
-.vb-symbol-error {
-  background: #91324d;
-}
-
-.vb-symbol-pending {
-  background: #bd8297;
-}
-
-.vb-symbol-success {
-  background: #650e2e;
-}
-
-.vb-payment-body button.vb-outline-button {
-  text-align: left;
-}
-
-.vb-payment-body button.vb-main-button,
-.vb-payment-body button.vb-outline-button {
-  font-family: "DM Sans", sans-serif;
-}
-

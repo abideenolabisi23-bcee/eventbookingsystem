@@ -1,57 +1,47 @@
+
 import axios from "axios";
 import { useFormik } from "formik";
-import {
-  Link,
-  useLocation,
-  useNavigate
-} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as yup from "yup";
-import {
-  useEffect,
-  useState
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
 import vibelyLogo from "../assets/vibely-logo.png";
 import "../styles/login.css";
 
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const redirectTimer = useRef(null);
 
-  const [loading, setLoading] =
-    useState(false);
-
-  const [
-    showPassword,
-    setShowPassword
-  ] = useState(false);
-
-  const [
-    notification,
-    setNotification
-  ] = useState(
-    location.state?.notification ||
-    null
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [notification, setNotification] = useState(
+    location.state?.notification || null
   );
 
-  const returnTo =
-    location.state?.returnTo || "/";
+  const returnTo = location.state?.returnTo || "/";
 
   useEffect(() => {
-    if (!notification) {
-      return;
-    }
+    if (!notification) return;
 
-    const timer = setTimeout(
-      () => {
-        setNotification(null);
-      },
-      4500
-    );
+    const timer = setTimeout(() => {
+      setNotification(null);
+    }, 4500);
 
-    return () =>
-      clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [notification]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
+    };
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -59,125 +49,111 @@ const Login = () => {
       password: ""
     },
 
-    validationSchema:
-      yup.object({
-        email: yup
-          .string()
-          .required(
-            "Email is required"
-          )
-          .email(
-            "Please enter a valid email"
-          ),
+    validationSchema: yup.object({
+      email: yup
+        .string()
+        .required("Email is required")
+        .email("Please enter a valid email"),
 
-        password: yup
-          .string()
-          .required(
-            "Password is required"
-          )
-      }),
+      password: yup
+        .string()
+        .required("Password is required")
+    }),
 
     onSubmit: async (values) => {
       try {
         setLoading(true);
         setNotification(null);
 
-        const response =
-          await axios.post(
-            "https://eventbookingsystem-sooty.vercel.app/api/v1/login",
-            values
-          );
-
-        if (
-          response.status === 200
-        ) {
-          const accessToken =
-            response.data.data
-              .accessToken;
-
-          const refreshToken =
-            response.data.data
-              .refreshToken;
-
-          const role =
-            response.data.data
-              .user?.role ||
-            response.data.data.role;
-
-          localStorage.setItem(
-            "accessToken",
-            accessToken
-          );
-
-          localStorage.setItem(
-            "refreshToken",
-            refreshToken
-          );
-
-          if (role) {
-            localStorage.setItem(
-              "role",
-              role
-            );
-          }
-
-          setNotification({
-            type: "success",
-            title:
-              "Login successful",
-            message:
-              "Welcome back to Vibely! Taking you to your account."
-          });
-
-          setTimeout(() => {
-            navigate(returnTo, {
-              replace: true
-            });
-          }, 1600);
-        }
-      } catch (error) {
-        console.log(
-          "LOGIN ERROR:",
-          error
+        const response = await axios.post(
+          `${API_URL}/login`,
+          values
         );
 
+        const responseData = response.data?.data || {};
+
+        const accessToken = responseData.accessToken;
+        const refreshToken = responseData.refreshToken;
+
+        const role =
+          responseData.user?.role ||
+          responseData.role;
+
+        if (role !== "user") {
+          setNotification({
+            type: "error",
+            title: "Customer account required",
+            message:
+              "This login is for Vibely customers only. Please sign in with your personal customer account. Organizer and admin accounts cannot be used here."
+          });
+          return;
+        }
+
+        if (!accessToken) {
+          setNotification({
+            type: "error",
+            title: "Login unsuccessful",
+            message:
+              "Your access token was not returned. Please try again."
+          });
+          return;
+        }
+
+        localStorage.setItem("accessToken", accessToken);
+
+        if (refreshToken) {
+          localStorage.setItem("refreshToken", refreshToken);
+        } else {
+          localStorage.removeItem("refreshToken");
+        }
+
+        localStorage.setItem("role", "user");
+
+        setNotification({
+          type: "success",
+          title: "Login successful",
+          message:
+            "Welcome back to Vibely! Taking you to your account."
+        });
+
+        const isValidCustomerDestination =
+          typeof returnTo === "string" &&
+          returnTo.startsWith("/") &&
+          !returnTo.startsWith("//") &&
+          !returnTo.startsWith("/\\") &&
+          !/^\/(?:organizer|admin)(?:\/|$|\?|#)/i.test(returnTo) &&
+          !/^\/(?:login|signup)(?:\/|$|\?|#)/i.test(returnTo);
+
+        const destination = isValidCustomerDestination
+          ? returnTo
+          : "/";
+
+        redirectTimer.current = setTimeout(() => {
+          navigate(destination, {
+            replace: true
+          });
+        }, 1600);
+      } catch (error) {
+        console.log("LOGIN ERROR:", error);
+
         const backendMessage =
-          error.response?.data
-            ?.message ||
+          error.response?.data?.message ||
           "Unable to sign in. Please try again.";
 
-        const lowerMessage =
-          backendMessage.toLowerCase();
+        const lowerMessage = backendMessage.toLowerCase();
 
-        let title =
-          "Login unsuccessful";
+        let title = "Login unsuccessful";
 
-        if (
-          lowerMessage.includes(
-            "password"
-          )
-        ) {
-          title =
-            "Incorrect password";
+        if (lowerMessage.includes("password")) {
+          title = "Incorrect password";
         } else if (
-          lowerMessage.includes(
-            "not found"
-          ) ||
-          lowerMessage.includes(
-            "does not exist"
-          ) ||
-          lowerMessage.includes(
-            "no user"
-          )
+          lowerMessage.includes("not found") ||
+          lowerMessage.includes("does not exist") ||
+          lowerMessage.includes("no user")
         ) {
-          title =
-            "Account not found";
-        } else if (
-          error.response?.status ===
-          403
-        ) {
-          title =
-            "Access unavailable";
+          title = "Account not found";
+        } else if (error.response?.status === 403) {
+          title = "Access unavailable";
         }
 
         setNotification({
@@ -199,58 +175,38 @@ const Login = () => {
     });
   };
 
-  const goToForgotPassword =
-    () => {
-      navigate(
-        "/forgot-password",
-        {
-          state: {
-            returnTo
-          }
-        }
-      );
-    };
+  const goToForgotPassword = () => {
+    navigate("/forgot-password", {
+      state: {
+        returnTo
+      }
+    });
+  };
 
   return (
     <main className="auth-login-page">
       <div className="auth-login-glow auth-login-glow-one"></div>
-
       <div className="auth-login-glow auth-login-glow-two"></div>
-
       <div className="auth-login-glow auth-login-glow-three"></div>
 
       <div className="auth-login-ring auth-login-ring-one"></div>
-
       <div className="auth-login-ring auth-login-ring-two"></div>
 
-      <Link
-        to="/"
-        className="auth-login-home"
-      >
+      <Link to="/" className="auth-login-home">
         <i className="bi bi-arrow-left"></i>
         Back to home
       </Link>
 
       <section className="auth-login-layout">
         <div className="auth-login-intro">
-          <Link
-            to="/"
-            className="auth-login-brand"
-          >
+          <Link to="/" className="auth-login-brand">
             <div className="auth-login-logo-shell">
-              <img
-                src={vibelyLogo}
-                alt="Vibely"
-              />
+              <img src={vibelyLogo} alt="Vibely" />
             </div>
 
             <div>
               <h1>Vibely</h1>
-
-              <span>
-                EVENTS · APARTMENTS ·
-                FOOD
-              </span>
+              <span>EVENTS · APARTMENTS · FOOD</span>
             </div>
           </Link>
 
@@ -262,20 +218,14 @@ const Login = () => {
             <h2>
               Your next vibe
               <br />
-              is just a
-              <em>
-                {" "}
-                sign in away.
-              </em>
+              is just a <em>sign in away.</em>
             </h2>
 
             <p>
-              Come back to the
-              experiences you love.
-              Discover events, book
-              beautiful apartments and
-              order your favourite food
-              — all in one place.
+              Come back to the experiences you love.
+              Discover events, book beautiful apartments
+              and order your favourite food — all in one
+              place.
             </p>
           </div>
 
@@ -284,11 +234,8 @@ const Login = () => {
               <div>
                 <i className="bi bi-ticket-perforated"></i>
               </div>
-
               <span>
-                <strong>
-                  Events
-                </strong>
+                <strong>Events</strong>
                 Feel the moment
               </span>
             </div>
@@ -297,11 +244,8 @@ const Login = () => {
               <div>
                 <i className="bi bi-buildings"></i>
               </div>
-
               <span>
-                <strong>
-                  Apartments
-                </strong>
+                <strong>Apartments</strong>
                 Find your space
               </span>
             </div>
@@ -310,11 +254,8 @@ const Login = () => {
               <div>
                 <i className="bi bi-bag-heart"></i>
               </div>
-
               <span>
-                <strong>
-                  Food
-                </strong>
+                <strong>Food</strong>
                 Taste the vibe
               </span>
             </div>
@@ -322,10 +263,8 @@ const Login = () => {
 
           <div className="auth-login-quote">
             <span>“</span>
-
             <p>
-              Beautiful experiences
-              should be easy to find,
+              Beautiful experiences should be easy to find,
               book and remember.
             </p>
           </div>
@@ -341,14 +280,8 @@ const Login = () => {
             <div className="auth-login-card-shine"></div>
 
             <div className="auth-login-mobile-logo">
-              <img
-                src={vibelyLogo}
-                alt="Vibely"
-              />
-
-              <strong>
-                Vibely
-              </strong>
+              <img src={vibelyLogo} alt="Vibely" />
+              <strong>Vibely</strong>
             </div>
 
             {notification && (
@@ -358,8 +291,7 @@ const Login = () => {
                 <div className="auth-form-message-icon">
                   <i
                     className={
-                      notification.type ===
-                        "success"
+                      notification.type === "success"
                         ? "bi bi-check-lg"
                         : "bi bi-exclamation-lg"
                     }
@@ -367,27 +299,14 @@ const Login = () => {
                 </div>
 
                 <div className="auth-form-message-content">
-                  <strong>
-                    {
-                      notification.title
-                    }
-                  </strong>
-
-                  <p>
-                    {
-                      notification.message
-                    }
-                  </p>
+                  <strong>{notification.title}</strong>
+                  <p>{notification.message}</p>
                 </div>
 
                 <button
                   type="button"
                   className="auth-form-message-close"
-                  onClick={() =>
-                    setNotification(
-                      null
-                    )
-                  }
+                  onClick={() => setNotification(null)}
                 >
                   <i className="bi bi-x-lg"></i>
                 </button>
@@ -397,41 +316,30 @@ const Login = () => {
             )}
 
             <div className="auth-login-heading">
-              <span>
-                MEMBER ACCESS
-              </span>
-
-              <h2>
-                Welcome back
-              </h2>
-
+              <span>MEMBER ACCESS</span>
+              <h2>Welcome back</h2>
               <p>
-                Sign in to continue your
-                Vibely experience.
+                Sign in to continue your Vibely experience.
               </p>
             </div>
 
             <form
-              onSubmit={
-                formik.handleSubmit
-              }
+              onSubmit={formik.handleSubmit}
               className="auth-login-form"
               noValidate
             >
               <div className="auth-login-field">
-                <label
-                  htmlFor="email"
-                >
+                <label htmlFor="email">
                   Email address
                 </label>
 
                 <div
-                  className={`auth-login-input ${formik.touched
-                    .email &&
+                  className={`auth-login-input ${
+                    formik.touched.email &&
                     formik.errors.email
-                    ? "auth-login-input-error"
-                    : ""
-                    }`}
+                      ? "auth-login-input-error"
+                      : ""
+                  }`}
                 >
                   <div className="auth-login-input-icon">
                     <i className="bi bi-envelope"></i>
@@ -443,82 +351,54 @@ const Login = () => {
                     name="email"
                     placeholder="Enter your email address"
                     autoComplete="email"
-                    value={
-                      formik.values.email
-                    }
-                    onChange={
-                      formik.handleChange
-                    }
-                    onBlur={
-                      formik.handleBlur
-                    }
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
                 </div>
 
-                {formik.touched
-                  .email &&
-                  formik.errors
-                    .email && (
+                {formik.touched.email &&
+                  formik.errors.email && (
                     <p className="auth-login-error">
                       <i className="bi bi-exclamation-circle"></i>
-
-                      {
-                        formik.errors
-                          .email
-                      }
+                      {formik.errors.email}
                     </p>
                   )}
               </div>
 
               <div className="auth-login-field">
-                <label
-                  htmlFor="password"
-                >
+                <label htmlFor="password">
                   Password
                 </label>
 
                 <div
-                  className={`auth-login-input ${formik.touched
-                    .password &&
-                    formik.errors
-                      .password
-                    ? "auth-login-input-error"
-                    : ""
-                    }`}
+                  className={`auth-login-input ${
+                    formik.touched.password &&
+                    formik.errors.password
+                      ? "auth-login-input-error"
+                      : ""
+                  }`}
                 >
                   <div className="auth-login-input-icon">
                     <i className="bi bi-lock"></i>
                   </div>
 
                   <input
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     name="password"
                     placeholder="Enter your password"
                     autoComplete="current-password"
-                    value={
-                      formik.values
-                        .password
-                    }
-                    onChange={
-                      formik.handleChange
-                    }
-                    onBlur={
-                      formik.handleBlur
-                    }
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
 
                   <button
                     type="button"
                     className="auth-login-eye"
                     onClick={() =>
-                      setShowPassword(
-                        !showPassword
-                      )
+                      setShowPassword(!showPassword)
                     }
                     aria-label={
                       showPassword
@@ -536,26 +416,18 @@ const Login = () => {
                   </button>
                 </div>
 
-                {formik.touched
-                  .password &&
-                  formik.errors
-                    .password && (
+                {formik.touched.password &&
+                  formik.errors.password && (
                     <p className="auth-login-error">
                       <i className="bi bi-exclamation-circle"></i>
-
-                      {
-                        formik.errors
-                          .password
-                      }
+                      {formik.errors.password}
                     </p>
                   )}
 
                 <div className="auth-login-forgot-row">
                   <button
                     type="button"
-                    onClick={
-                      goToForgotPassword
-                    }
+                    onClick={goToForgotPassword}
                   >
                     Forgot password?
                   </button>
@@ -578,10 +450,7 @@ const Login = () => {
                   </>
                 ) : (
                   <>
-                    <span>
-                      Sign in to Vibely
-                    </span>
-
+                    <span>Sign in to Vibely</span>
                     <i className="bi bi-arrow-right"></i>
                   </>
                 )}
@@ -600,18 +469,11 @@ const Login = () => {
               </div>
 
               <div>
-                <span>
-                  NEW TO VIBELY?
-                </span>
-
-                <h3>
-                  Start your experience
-                </h3>
-
+                <span>NEW TO VIBELY?</span>
+                <h3>Start your experience</h3>
                 <p>
-                  Create one account for
-                  events, apartments and
-                  food.
+                  Create one account for events,
+                  apartments and food.
                 </p>
               </div>
             </div>
@@ -622,16 +484,13 @@ const Login = () => {
               onClick={goToSignup}
             >
               Create an account
-
               <i className="bi bi-arrow-up-right"></i>
             </button>
 
             <div className="auth-login-secure">
               <i className="bi bi-shield-check"></i>
-
               <span>
-                Secure access to your
-                Vibely account
+                Secure access to your Vibely account
               </span>
             </div>
           </div>
@@ -639,9 +498,7 @@ const Login = () => {
       </section>
 
       <div className="auth-login-bottom">
-        <span>
-          © 2026 VIBELY
-        </span>
+        <span>© 2026 VIBELY</span>
 
         <div>
           <span>CREATE.</span>
