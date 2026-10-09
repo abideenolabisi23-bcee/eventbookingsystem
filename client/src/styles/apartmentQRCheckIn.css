@@ -1481,3 +1481,30 @@
     padding: 19px 16px;
   }
 }
+
+.apartment-qr-reader {
+  width: 100%;
+  min-height: 300px;
+  overflow: hidden;
+  position: relative;
+}
+
+.apartment-qr-reader video {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 420px;
+  object-fit: contain !important;
+  display: block;
+}
+
+.apartment-qr-reader canvas {
+  max-width: 100%;
+}
+
+.apartment-camera-area.active {
+  overflow: hidden;
+}
+
+.apartment-camera-area.active .apartment-qr-reader {
+  display: block;
+}

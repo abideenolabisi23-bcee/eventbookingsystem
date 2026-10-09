@@ -66,28 +66,25 @@ const ApartmentQRCheckIn = () => {
     localStorage.getItem("firstname") || "Organizer";
 
   const stopScanner = async () => {
+    const stopScanner = async () => {
+  const scanner = scannerRef.current;
+
+  scannerRef.current = null;
+
+  if (scanner) {
     try {
-      if (
-        scannerRef.current &&
-        scannerRef.current.isScanning
-      ) {
-        await scannerRef.current.stop();
+      if (scanner.isScanning) {
+        await scanner.stop();
       }
 
-      if (scannerRef.current) {
-        try {
-          await scannerRef.current.clear();
-        } catch {
-          scannerRef.current = null;
-        }
-      }
-    } catch {
-      scannerRef.current = null;
-    } finally {
-      scannerRef.current = null;
-      setCameraStarted(false);
+      await scanner.clear();
+    } catch (error) {
+      console.error("Camera cleanup failed:", error);
     }
-  };
+  }
+
+  setCameraStarted(false);
+};
 
   useEffect(() => {
     const loadCameras = async () => {
@@ -229,46 +226,113 @@ const ApartmentQRCheckIn = () => {
   };
 
   const startScanner = async () => {
-    if (
-      cameraStarted ||
-      startingCamera
-    ) {
-      return;
+    const startScanner = async () => {
+  if (cameraStarted || startingCamera || scannerRef.current) {
+    return;
+  }
+
+  resetResult();
+  processingRef.current = false;
+
+  let scanner = null;
+
+  try {
+    setStartingCamera(true);
+
+    const devices = await Html5Qrcode.getCameras();
+
+    if (!devices.length) {
+      throw new Error("No camera was found on this device.");
     }
 
-    resetResult();
+    setCameras(devices);
 
-    try {
-      setStartingCamera(true);
+    const preferredCamera =
+      devices.find((device) => device.id === selectedCamera) ||
+      devices.find((device) =>
+        /back|rear|environment/i.test(device.label)
+      ) ||
+      devices[0];
 
-      let cameraId = selectedCamera;
+    setSelectedCamera(preferredCamera.id);
 
-      if (!cameraId) {
-        const devices =
-          await Html5Qrcode.getCameras();
+    scanner = new Html5Qrcode(
+      "apartment-organizer-qr-reader",
+      {
+        verbose: false
+      }
+    );
 
-        setCameras(devices || []);
+    scannerRef.current = scanner;
 
-        if (
-          !devices ||
-          devices.length === 0
-        ) {
-          throw new Error(
-            "No camera was found on this device."
+    await scanner.start(
+      preferredCamera.id,
+      {
+        fps: 10,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const size = Math.max(
+            100,
+            Math.floor(
+              Math.min(viewfinderWidth, viewfinderHeight) * 0.7
+            )
           );
+
+          return {
+            width: size,
+            height: size
+          };
+        },
+        disableFlip: false
+      },
+      async (decodedText) => {
+        if (processingRef.current) {
+          return;
         }
 
-        const preferredCamera =
-          devices.find((camera) =>
-            /back|rear|environment/i.test(
-              camera.label
-            )
-          ) || devices[devices.length - 1];
+        const scannedValue = String(decodedText || "").trim();
 
-        cameraId = preferredCamera.id;
+        if (!scannedValue) {
+          return;
+        }
 
-        setSelectedCamera(cameraId);
+        processingRef.current = true;
+
+        await stopScanner();
+
+        await validateTicket(scannedValue, true);
+      },
+      () => {}
+    );
+
+    setCameraStarted(true);
+  } catch (error) {
+    console.error("Apartment camera error:", error);
+
+    setMessage(
+      error.message ||
+        "Unable to start the camera. Check your camera permissions."
+    );
+
+    setMessageType("error");
+
+    if (scanner) {
+      try {
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
+
+        await scanner.clear();
+      } catch {
+        console.error("Unable to release camera.");
       }
+    }
+
+    scannerRef.current = null;
+    setCameraStarted(false);
+  } finally {
+    setStartingCamera(false);
+  }
+};
 
       const scanner =
         new Html5Qrcode(
