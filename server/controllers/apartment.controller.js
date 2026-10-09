@@ -680,6 +680,7 @@ const toggleApartmentAvailability = async (req, res) => {
   }
 };
 
+
 const searchAvailableApartments = async (req, res) => {
   try {
     const {
@@ -690,234 +691,114 @@ const searchAvailableApartments = async (req, res) => {
       expectedCheckInTime
     } = req.query;
 
-
-    // ==========================================
-    // VALIDATE STAY TYPE
-    // ==========================================
-
-    if (
-      !["day_use", "overnight"].includes(
-        stayType
-      )
-    ) {
+    if (!["day_use", "overnight"].includes(stayType)) {
       return res.status(400).send({
-        message:
-          "Stay type must be day_use or overnight"
+        message: "Stay type must be day_use or overnight"
       });
     }
 
-
-    // ==========================================
-    // VALIDATE DATES
-    // ==========================================
-
-    const checkIn =
-      new Date(checkInDate);
-
-    const checkOut =
-      new Date(checkOutDate);
-
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
 
     if (
-      isNaN(checkIn.getTime()) ||
-      isNaN(checkOut.getTime())
+      Number.isNaN(checkIn.getTime()) ||
+      Number.isNaN(checkOut.getTime())
     ) {
       return res.status(400).send({
-        message:
-          "Invalid check-in or check-out date"
+        message: "Invalid check-in or check-out date"
       });
     }
 
+    const units = Number(numberOfUnits);
 
-    // ==========================================
-    // VALIDATE NUMBER OF ROOMS
-    // ==========================================
-
-    const units =
-      Number(numberOfUnits);
-
-
-    if (
-      !Number.isInteger(units) ||
-      units < 1
-    ) {
+    if (!Number.isInteger(units) || units < 1) {
       return res.status(400).send({
-        message:
-          "Number of rooms must be at least 1"
+        message: "Number of rooms must be at least 1"
       });
     }
-
-
-    // ==========================================
-    // DAY USE VALIDATION
-    // ==========================================
 
     if (stayType === "day_use") {
-
-      if (
-        checkIn.toDateString() !==
-        checkOut.toDateString()
-      ) {
+      if (checkIn.toDateString() !== checkOut.toDateString()) {
         return res.status(400).send({
-          message:
-            "Day use check-in and check-out must be on the same date"
+          message: "Day use check-in and check-out must be on the same date"
         });
       }
     }
 
-
-    // ==========================================
-    // OVERNIGHT VALIDATION
-    // ==========================================
-
     if (stayType === "overnight") {
-
       if (checkOut <= checkIn) {
         return res.status(400).send({
-          message:
-            "Check-out date must be after check-in date"
+          message: "Check-out date must be after check-in date"
         });
       }
+    }
 
-
-      if (!expectedCheckInTime) {
-        return res.status(400).send({
-          message:
-            "Expected check-in time is required for overnight stay"
-        });
-      }
-
-
-      // Example:
-      // 14:00 = 2 PM
-
+    if (expectedCheckInTime) {
       const timePattern =
         /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-
-      if (
-        !timePattern.test(
-          expectedCheckInTime
-        )
-      ) {
+      if (!timePattern.test(expectedCheckInTime)) {
         return res.status(400).send({
-          message:
-            "Expected check-in time must be in HH:MM format, for example 14:00"
+          message: "Expected check-in time must be in HH:MM format"
         });
       }
 
+      const [hours] = expectedCheckInTime
+        .split(":")
+        .map(Number);
 
-      const [hours] =
-        expectedCheckInTime
-          .split(":")
-          .map(Number);
-
-
-      // Overnight normal check-in
-      // cannot be before 12 PM
-
-      if (hours < 12) {
+      if (stayType === "overnight" && hours < 12) {
         return res.status(400).send({
-          message:
-            "Overnight check-in starts from 12:00 PM"
+          message: "Overnight check-in starts from 12:00 PM"
+        });
+      }
+
+      if (stayType === "day_use" && hours >= 18) {
+        return res.status(400).send({
+          message: "Day use check-in must be before 6:00 PM"
         });
       }
     }
 
-
-    // ==========================================
-    // GET ENABLED APARTMENTS
-    // ==========================================
-
-    const apartments =
-      await ApartmentModel.find({
-        isAvailable: true
-      }).sort({
-        pricePerNight: 1
-      });
-
+    const apartments = await ApartmentModel.find({
+      isAvailable: true
+    }).sort({
+      pricePerNight: 1
+    });
 
     const availableApartments = [];
 
-
-    // ==========================================
-    // CHECK EACH APARTMENT
-    // ==========================================
-
     for (const apartment of apartments) {
-
-      const {
-        availableUnits
-      } =
+      const { availableUnits } =
         await getApartmentAvailability({
-          apartmentId:
-            apartment._id,
-
-          totalUnits:
-            apartment.totalUnits,
-
+          apartmentId: apartment._id,
+          totalUnits: apartment.totalUnits,
           stayType,
-
-          checkInDate:
-            checkIn,
-
-          checkOutDate:
-            checkOut,
-
-          expectedCheckInTime:
-            stayType === "overnight"
-              ? expectedCheckInTime
-              : null
+          checkInDate: checkIn,
+          checkOutDate: checkOut,
+          expectedCheckInTime: expectedCheckInTime || null
         });
 
-
-      // ========================================
-      // ONLY RETURN APARTMENTS THAT HAVE
-      // ENOUGH ROOMS
-      // ========================================
-
-      if (
-        availableUnits >= units
-      ) {
-
+      if (availableUnits >= units) {
         availableApartments.push({
           ...apartment.toObject(),
-
           availableUnits
         });
       }
     }
 
-
-    // ==========================================
-    // SUCCESS
-    // ==========================================
-
     return res.status(200).send({
-      message:
-        "Available apartments fetched successfully",
-
-      requestedRooms:
-        units,
-
-      data:
-        availableApartments
+      message: "Available apartments fetched successfully",
+      requestedRooms: units,
+      data: availableApartments
     });
 
   } catch (error) {
-
-    console.log(
-      "SEARCH AVAILABLE APARTMENTS ERROR:",
-      error
-    );
-
+    console.log("SEARCH AVAILABLE APARTMENTS ERROR:", error);
 
     return res.status(500).send({
-      message:
-        "Cannot search apartment availability at this time",
-
-      error:
-        error.message
+      message: "Cannot search apartment availability at this time",
+      error: error.message
     });
   }
 };

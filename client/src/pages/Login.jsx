@@ -99,15 +99,15 @@ const Login = () => {
           return;
         }
 
-        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("userAccessToken", accessToken);
 
-        if (refreshToken) {
-          localStorage.setItem("refreshToken", refreshToken);
-        } else {
-          localStorage.removeItem("refreshToken");
-        }
+if (refreshToken) {
+  localStorage.setItem("userRefreshToken", refreshToken);
+} else {
+  localStorage.removeItem("userRefreshToken");
+}
 
-        localStorage.setItem("role", "user");
+localStorage.setItem("userRole", "user");
 
         setNotification({
           type: "success",

@@ -24,7 +24,7 @@ const ApartmentPaymentCallback = () => {
   useEffect(() => {
     const verifyPayment = async () => {
       const accessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("userAccessToken");
 
       const reference =
         searchParams.get("reference") ||
@@ -65,16 +65,36 @@ const ApartmentPaymentCallback = () => {
         const responseData =
           response.data.data || {};
 
-        setBooking(
-          responseData.booking || null
-        );
+       const payment = responseData.payment;
+const confirmedBooking = responseData.booking;
 
-        setStatus("success");
-
-        setMessage(
-          response.data.message ||
-          "Your apartment payment was confirmed successfully."
-        );
+if (
+  payment?.status === "paid" &&
+  confirmedBooking?.paymentStatus === "paid" &&
+  confirmedBooking?.bookingStatus === "confirmed"
+) {
+  setBooking(confirmedBooking);
+  setStatus("success");
+  setMessage(
+    "Your apartment payment is confirmed and your booking is ready!"
+  );
+} else if (
+  payment?.refundStatus === "pending" ||
+  payment?.refundStatus === "refunded" ||
+  payment?.status === "refunded"
+) {
+  setStatus("refund");
+  setMessage(
+    response.data.message ||
+    "Your payment has refund activity. Please check your refund status."
+  );
+} else {
+  setStatus("pending");
+  setMessage(
+    response.data.message ||
+    "Your apartment payment is still being confirmed. Please do not pay again."
+  );
+}
       } catch (error) {
         console.log(
           "APARTMENT PAYMENT VERIFY ERROR:",

@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
+const getPaymentCallbackUrl = require("../utils/paymentCallback");
 const crypto = require("crypto");
 const FoodModel = require("../models/food.model");
 const FoodOrderModel = require("../models/foodOrder.model");
 const FoodPaymentModel = require("../models/foodPayment.model");
 const refundFoodPayment = require("../utils/refundFoodPayment");
-
 
 
 const checkOrderStock = async (order) => {
@@ -152,19 +152,11 @@ const deductFoodStock = async (order) => {
   }
 };
 
-const confirmFoodPayment = async (
-  reference,
-  paystackData
-) => {
+const confirmFoodPayment = async (reference, paystackData) => {
   try {
-    // ==========================================
-    // FIND PAYMENT
-    // ==========================================
-
-    let payment =
-      await FoodPaymentModel.findOne({
-        reference
-      });
+    let payment = await FoodPaymentModel.findOne({
+      reference
+    });
 
     if (!payment) {
       return {
@@ -174,14 +166,9 @@ const confirmFoodPayment = async (
       };
     }
 
-    // ==========================================
-    // FIND ORDER
-    // ==========================================
-
-    let order =
-      await FoodOrderModel.findById(
-        payment.order
-      );
+    let order = await FoodOrderModel.findById(
+      payment.order
+    );
 
     if (!order) {
       return {
@@ -191,10 +178,6 @@ const confirmFoodPayment = async (
       };
     }
 
-    // ==========================================
-    // ALREADY COMPLETED
-    // ==========================================
-
     if (
       payment.status === "paid" &&
       order.paymentStatus === "paid"
@@ -202,16 +185,11 @@ const confirmFoodPayment = async (
       return {
         success: true,
         statusCode: 200,
-        message:
-          "Food payment already confirmed",
+        message: "Food payment already confirmed",
         order,
         payment
       };
     }
-
-    // ==========================================
-    // REFUND ALREADY STARTED
-    // ==========================================
 
     if (
       payment.status === "refund_pending" ||
@@ -220,99 +198,118 @@ const confirmFoodPayment = async (
       return {
         success: false,
         statusCode: 409,
-        message:
-          "This payment is already in the refund process",
+        message: "This payment is already in the refund process",
         order,
         payment
       };
     }
 
-    // ==========================================
-    // PAYSTACK MUST SAY SUCCESS
-    // ==========================================
-
     if (paystackData.status !== "success") {
-      payment.status = "failed";
+      if (
+        paystackData.status === "failed" ||
+        paystackData.status === "abandoned" ||
+        paystackData.status === "reversed"
+      ) {
+        const failedPayment =
+          await FoodPaymentModel.findOneAndUpdate(
+            {
+              _id: payment._id,
+              status: "pending"
+            },
+            {
+              $set: {
+                status: "failed"
+              }
+            },
+            {
+              returnDocument: "after"
+            }
+          );
 
-      await payment.save();
+        if (failedPayment) {
+          await FoodOrderModel.updateOne(
+            {
+              _id: order._id,
+              paymentStatus: "pending"
+            },
+            {
+              $set: {
+                paymentStatus: "failed"
+              }
+            }
+          );
+        }
 
-      order.paymentStatus = "failed";
-
-      await order.save();
+        return {
+          success: false,
+          statusCode: 400,
+          message: "Food payment was not successful"
+        };
+      }
 
       return {
         success: false,
-        statusCode: 400,
+        statusCode: 202,
+        paymentRequiresAttention: true,
         message:
-          "Payment was not successful"
+          "Food payment is still pending confirmation. Please do not pay again.",
+        order,
+        payment
       };
     }
 
-    // ==========================================
-    // VERIFY AMOUNT
-    // ==========================================
-
-    const expectedAmount =
-      Math.round(payment.amount * 100);
+    const expectedAmount = Math.round(
+      payment.amount * 100
+    );
 
     if (
-      Number(paystackData.amount) !==
-      expectedAmount
+      Number(paystackData.amount) !== expectedAmount
     ) {
       return {
         success: false,
         statusCode: 409,
         paymentRequiresAttention: true,
         message:
-          "Paid amount does not match the expected food order amount"
+          "Paid amount does not match the expected food order amount",
+        order,
+        payment
       };
     }
 
-    // ==========================================
-    // ATOMIC PROCESSING LOCK
-    // ==========================================
-    //
-    // Only ONE request can change:
-    //
-    // pending -> processing
-    //
-    // If webhook gets here first,
-    // /verify cannot process the same payment.
-    //
-    // If /verify gets here first,
-    // webhook cannot process it again.
-    // ==========================================
-
     const lockedPayment =
-      await FoodPaymentModel.findOneAndUpdate(
-        {
-          _id: payment._id,
-          status: "pending"
-        },
-        {
-          $set: {
-            status: "processing"
-          }
-        },
-        {
-          returnDocument: "after"
-        }
-      );
-
-    // ==========================================
-    // ANOTHER REQUEST ALREADY GOT THE LOCK
-    // ==========================================
+  await FoodPaymentModel.findOneAndUpdate(
+    {
+      _id: payment._id,
+      status: "pending"
+    },
+    {
+      $set: {
+        status: "processing",
+        processingStartedAt: new Date()
+      }
+    },
+    {
+      returnDocument: "after"
+    }
+  );
 
     if (!lockedPayment) {
-      payment =
-        await FoodPaymentModel.findById(
-          payment._id
-        );
+      payment = await FoodPaymentModel.findById(
+        payment._id
+      );
 
-      order =
-        await FoodOrderModel.findById(
-          order._id
-        );
+      order = await FoodOrderModel.findById(
+        order._id
+      );
+
+      if (!payment || !order) {
+        return {
+          success: false,
+          statusCode: 404,
+          message:
+            "Food payment or order could not be found"
+        };
+      }
 
       if (
         payment.status === "paid" &&
@@ -321,16 +318,14 @@ const confirmFoodPayment = async (
         return {
           success: true,
           statusCode: 200,
-          message:
-            "Food payment already confirmed",
+          message: "Food payment already confirmed",
           order,
           payment
         };
       }
 
       if (
-        payment.status ===
-          "refund_pending" ||
+        payment.status === "refund_pending" ||
         payment.status === "refunded"
       ) {
         return {
@@ -366,21 +361,9 @@ const confirmFoodPayment = async (
 
     payment = lockedPayment;
 
-    // ==========================================
-    // DEDUCT STOCK
-    // ==========================================
-
-    const stockResult =
-      await deductFoodStock(order);
-
-    // ==========================================
-    // CUSTOMER PAID BUT STOCK IS GONE
-    // ==========================================
+    const stockResult = await deductFoodStock(order);
 
     if (!stockResult.success) {
-      // Paystack collected the customer's
-      // money, so record payment as paid first.
-
       payment.status = "paid";
       payment.paidAt = new Date();
 
@@ -391,19 +374,13 @@ const confirmFoodPayment = async (
 
       await order.save();
 
-      // ========================================
-      // AUTOMATIC FULL REFUND
-      // ========================================
-
-      const refundResult =
-        await refundFoodPayment(
-          payment,
-          `Food unavailable after payment: ${stockResult.message}`
-        );
+      const refundResult = await refundFoodPayment(
+        payment,
+        `Food unavailable after payment: ${stockResult.message}`
+      );
 
       if (refundResult.success) {
-        order.paymentStatus =
-          "refund_pending";
+        order.paymentStatus = "refund_pending";
 
         await order.save();
 
@@ -411,10 +388,8 @@ const confirmFoodPayment = async (
           success: false,
           statusCode: 409,
           refundInitiated: true,
-
           message:
             `${stockResult.message}. Payment was received, but the order cannot be fulfilled. A full refund has been initiated.`,
-
           order,
           payment: refundResult.payment
         };
@@ -424,46 +399,31 @@ const confirmFoodPayment = async (
         success: false,
         statusCode: 500,
         refundRequiresAttention: true,
-
         message:
           `${stockResult.message}. Payment was received, but the automatic refund could not be initiated.`,
-
         order,
         payment
       };
     }
 
-    // ==========================================
-    // GENERATE PICKUP CODE
-    // ==========================================
-
-    let pickupCode =
-      order.pickupCode;
+    let pickupCode = order.pickupCode;
 
     if (!pickupCode) {
       let codeExists = true;
 
       while (codeExists) {
-        pickupCode =
-          `FOOD-${Math.floor(
-            100000 +
-              Math.random() * 900000
-          )}`;
+        pickupCode = `FOOD-${Math.floor(
+          100000 + Math.random() * 900000
+        )}`;
 
-        codeExists =
-          await FoodOrderModel.exists({
-            pickupCode
-          });
+        codeExists = await FoodOrderModel.exists({
+          pickupCode
+        });
       }
     }
 
-    // ==========================================
-    // PAYMENT SUCCESSFUL
-    // ==========================================
-
     payment.status = "paid";
-    payment.paidAt =
-      payment.paidAt || new Date();
+    payment.paidAt = payment.paidAt || new Date();
 
     await payment.save();
 
@@ -475,19 +435,16 @@ const confirmFoodPayment = async (
     return {
       success: true,
       statusCode: 200,
-      message:
-        "Food payment confirmed successfully",
+      message: "Food payment confirmed successfully",
       order,
       payment
     };
-
   } catch (error) {
-    console.log(
+    console.error(
       "CONFIRM FOOD PAYMENT ERROR:",
       error
     );
 
-    
     return {
       success: false,
       statusCode: 500,
@@ -497,6 +454,7 @@ const confirmFoodPayment = async (
     };
   }
 };
+
 
 const initializeFoodPayment = async (
   req,
@@ -756,8 +714,13 @@ const initializeFoodPayment = async (
 
   reference,
 
-  callback_url:
-    "https://eventbookingsystem-gkh7.vercel.app/food-payment/callback",
+  // callback_url:
+  //   "https://eventbookingsystem-gkh7.vercel.app/food-payment/callback",
+
+  callback_url: getPaymentCallbackUrl(
+  req,
+  "/food-payment/callback"
+),
 
   metadata: {
     type: "food",
@@ -825,114 +788,75 @@ const initializeFoodPayment = async (
   }
 };
 
-const verifyFoodPayment = async (
-  req,
-  res
-) => {
+const verifyFoodPayment = async (req, res) => {
   try {
-
     const { reference } = req.params;
 
-
-    const payment =
-      await FoodPaymentModel.findOne({
-        reference
-      });
-
-
-    if (!payment) {
-      return res.status(404).send({
-        message:
-          "Food payment not found"
+    if (!reference) {
+      return res.status(400).send({
+        message: "Payment reference is required"
       });
     }
 
+    const payment = await FoodPaymentModel.findOne({
+      reference
+    });
+
+    if (!payment) {
+      return res.status(404).send({
+        message: "Food payment not found"
+      });
+    }
 
     if (
       payment.user.toString() !==
       req.user.id.toString()
     ) {
       return res.status(403).send({
-        message:
-          "You are not authorized to verify this payment"
+        message: "You are not authorized to verify this payment"
       });
     }
 
+    if (payment.status === "paid") {
+      const order = await FoodOrderModel.findById(
+        payment.order
+      );
 
-    // =====================================
-    // ALREADY PAID
-    // =====================================
-
-   // =====================================
-// ALREADY PAID
-// =====================================
-
-if (payment.status === "paid") {
-
-  const order =
-    await FoodOrderModel.findById(
-      payment.order
-    );
-
-  if (!order) {
-    return res.status(404).send({
-      message: "Food order not found"
-    });
-  }
-
-  // =====================================
-  // INCONSISTENT REFUND STATE
-  // =====================================
-
-  if (
-    order.paymentStatus === "refunded" ||
-    order.paymentStatus === "refund_pending"
-  ) {
-    return res.status(409).send({
-      message:
-        "Food payment and order refund status are inconsistent. Please verify the refund.",
-
-      refundRequiresReconciliation: true,
-
-      data: {
-        order,
-        payment
+      if (!order) {
+        return res.status(404).send({
+          message: "Food order not found"
+        });
       }
-    });
-  }
 
-  return res.status(200).send({
-    message:
-      "Food payment already confirmed",
+      if (
+        order.paymentStatus === "refunded" ||
+        order.paymentStatus === "refund_pending"
+      ) {
+        return res.status(409).send({
+          message:
+            "Food payment and order refund status are inconsistent. Please verify the refund.",
+          refundRequiresReconciliation: true,
+          data: {
+            order,
+            payment
+          }
+        });
+      }
 
-    data: {
-      order,
-      payment
-    }
-  });
-}
-
-
-    // =====================================
-    // REFUND PROCESS
-    // =====================================
-
-    if (
-      payment.status ===
-        "refund_pending" ||
-      payment.status === "refunded"
-    ) {
-
-      const order =
-        await FoodOrderModel.findById(
-          payment.order
-        );
-
+      if (order.paymentStatus !== "paid") {
+        return res.status(409).send({
+          message:
+            "Payment is marked as paid, but the food order has not been confirmed. Please do not pay again.",
+          paymentRequiresAttention: true,
+          data: {
+            order,
+            payment
+          }
+        });
+      }
 
       return res.status(200).send({
-        message:
-          "Food payment is in the refund process",
-
+        message: "Food payment already confirmed",
         data: {
           order,
           payment
@@ -940,30 +864,40 @@ if (payment.status === "paid") {
       });
     }
 
-
-    // =====================================
-    // VERIFY WITH PAYSTACK
-    // =====================================
-
-    const paystackResponse =
-      await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(
-          reference
-        )}`,
-        {
-          method: "GET",
-
-          headers: {
-            Authorization:
-              `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-          }
-        }
+    if (
+      payment.status === "refund_pending" ||
+      payment.status === "refunded"
+    ) {
+      const order = await FoodOrderModel.findById(
+        payment.order
       );
 
+      return res.status(200).send({
+        message: "Food payment is in the refund process",
+        data: {
+          order,
+          payment
+        }
+      });
+    }
 
-    const paystackResult =
-      await paystackResponse.json();
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      return res.status(500).send({
+        message: "Food payment service is not configured"
+      });
+    }
 
+    const paystackResponse = await fetch(
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+        }
+      }
+    );
+
+    const paystackResult = await paystackResponse.json();
 
     if (
       !paystackResponse.ok ||
@@ -976,49 +910,42 @@ if (payment.status === "paid") {
       });
     }
 
+    const result = await confirmFoodPayment(
+      reference,
+      paystackResult.data
+    );
 
-    const result =
-      await confirmFoodPayment(
-        reference,
-        paystackResult.data
-      );
+    return res.status(result.statusCode).send({
+      message: result.message,
 
+      ...(result.order && {
+        data: {
+          order: result.order,
+          payment: result.payment
+        }
+      }),
 
-    return res
-      .status(result.statusCode)
-      .send({
-        message: result.message,
+      ...(result.refundInitiated && {
+        refundInitiated: true
+      }),
 
-        ...(result.order && {
-          data: {
-            order: result.order,
-            payment: result.payment
-          }
-        }),
+      ...(result.refundRequiresAttention && {
+        refundRequiresAttention: true
+      }),
 
-        ...(result.refundInitiated && {
-          refundInitiated: true
-        }),
-
-        ...(result.refundRequiresAttention && {
-          refundRequiresAttention: true
-        }),
-
-        ...(result.paymentRequiresAttention && {
-          paymentRequiresAttention: true
-        })
-      });
-
+      ...(result.paymentRequiresAttention && {
+        paymentRequiresAttention: true
+      })
+    });
   } catch (error) {
-
-    console.log(error);
+    console.error("VERIFY FOOD PAYMENT ERROR:", error);
 
     return res.status(500).send({
-      message:
-        "Cannot verify food payment at this time"
+      message: "Cannot verify food payment at this time"
     });
   }
 };
+
 
 const foodPaymentWebhook = async (req, res) => {
   try {

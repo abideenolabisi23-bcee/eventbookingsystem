@@ -23,7 +23,7 @@ const FoodPaymentCallback = () => {
   useEffect(() => {
     const verifyPayment = async () => {
       const accessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("userAccessToken");
 
       const reference =
         searchParams.get("reference") ||
@@ -62,14 +62,35 @@ const FoodPaymentCallback = () => {
         const responseData =
           response.data.data || {};
 
-        setOrder(responseData.order || null);
+        const payment = responseData.payment;
+const verifiedOrder = responseData.order;
 
-        setStatus("success");
-
-        setMessage(
-          response.data.message ||
-          "Your food payment was confirmed successfully."
-        );
+if (
+  payment?.status === "paid" &&
+  verifiedOrder?.paymentStatus === "paid"
+) {
+  setOrder(verifiedOrder);
+  setStatus("success");
+  setMessage(
+    "Your food payment was confirmed successfully!"
+  );
+} else if (
+  payment?.status === "refunded" ||
+  payment?.refundStatus === "pending" ||
+  payment?.refundStatus === "refunded"
+) {
+  setStatus("refund");
+  setMessage(
+    response.data.message ||
+    "Your payment has refund activity. Please check your refund status."
+  );
+} else {
+  setStatus("pending");
+  setMessage(
+    response.data.message ||
+    "Your food payment is still being confirmed. Please do not pay again."
+  );
+}
       } catch (error) {
         console.log(
           "FOOD PAYMENT VERIFY ERROR:",

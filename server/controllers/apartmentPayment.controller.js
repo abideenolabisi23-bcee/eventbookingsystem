@@ -6,6 +6,7 @@ const ApartmentPaymentModel = require("../models/apartmentPayment.model");
 const ApartmentTicketModel = require("../models/apartmentTicket.model");
 const ApartmentModel = require("../models/apartment.model");
 const UserModel = require("../models/user.model");
+const getPaymentCallbackUrl = require("../utils/paymentCallback");
 
 const {
   getApartmentAvailability
@@ -366,9 +367,9 @@ const initializeApartmentPayment = async (req, res) => {
 
     const paymentReference = getPaymentReference();
 
-    const callbackUrl =
-      process.env.APARTMENT_PAYMENT_CALLBACK_URL ||
-      "https://eventbookingsystem-gkh7.vercel.app/apartment-payment/callback";
+    // const callbackUrl =
+    //   process.env.APARTMENT_PAYMENT_CALLBACK_URL ||
+    //   "https://eventbookingsystem-gkh7.vercel.app/apartment-payment/callback";
 
     const { ok, result } = await paystackRequest(
       "/transaction/initialize",
@@ -379,7 +380,10 @@ const initializeApartmentPayment = async (req, res) => {
           amount: Math.round(amount * 100),
           currency: "NGN",
           reference: paymentReference,
-          callback_url: callbackUrl
+callback_url: getPaymentCallbackUrl(
+  req,
+  "/apartment-payment/callback"
+)
         })
       }
     );

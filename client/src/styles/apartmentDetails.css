@@ -1010,3 +1010,2348 @@
     right: 15px;
   }
 }
+
+@import url("https\://fonts.googleapis.com/css2?family=DM+Sans:wght\@400;500;600;700;800&family=Playfair+Display:wght\@500;600;700&display=swap");
+
+
+
+.apartment-details-page {
+
+  min-height: 100vh;
+
+  padding: 35px 0 100px;
+
+  background: #fffdfc;
+
+  color: #2d1018;
+
+  font-family: "DM Sans", sans-serif;
+
+}
+
+
+
+.apartment-back-row {
+
+  margin-bottom: 30px;
+
+}
+
+
+
+.apartment-back-row a {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color: #68001c;
+
+  text-decoration: none;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+}
+
+
+
+.apartment-details-header {
+
+  margin-bottom: 38px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-end;
+
+  gap: 30px;
+
+}
+
+
+
+.details-type {
+
+  margin-bottom: 10px;
+
+  color: #68001c;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.7px;
+
+  text-transform: uppercase;
+
+}
+
+
+
+.apartment-details-header h1 {
+
+  max-width: 750px;
+
+  margin: 0 0 12px;
+
+  color: #2d1018;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: clamp(38px, 5vw, 58px);
+
+  font-weight: 700;
+
+  letter-spacing: -1.5px;
+
+}
+
+
+
+.details-location {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #816a70;
+
+  font-size: 14px;
+
+}
+
+
+
+.details-location i {
+
+  color: #68001c;
+
+}
+
+
+
+.details-header-price {
+
+  flex-shrink: 0;
+
+  text-align: right;
+
+}
+
+
+
+.details-header-price span,
+
+.details-header-price small {
+
+  display: block;
+
+  color: #8c747a;
+
+  font-size: 12px;
+
+}
+
+
+
+.details-header-price strong {
+
+  display: block;
+
+  margin: 2px 0;
+
+  color: #4b0013;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 29px;
+
+}
+
+
+
+.customer-apartment-gallery-section {
+
+  margin: 0 0 65px;
+
+}
+
+
+
+.customer-gallery-heading {
+
+  margin-bottom: 24px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 40px;
+
+}
+
+
+
+.customer-gallery-heading > div > span {
+
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #9b5265;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 2.3px;
+
+}
+
+
+
+.customer-gallery-heading h2 {
+
+  margin: 0;
+
+  color: #4b0013;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 36px;
+
+  line-height: 1.15;
+
+}
+
+
+
+.customer-gallery-heading p {
+
+  max-width: 430px;
+
+  margin: 0;
+
+  color: #80656d;
+
+  font-size: 13px;
+
+  line-height: 1.7;
+
+  text-align: right;
+
+}
+
+
+
+.customer-apartment-gallery {
+
+  height: 620px;
+
+  display: grid;
+
+  grid-template-columns:
+
+    minmax(0, 1.6fr)
+
+    minmax(0, 1fr)
+
+    minmax(0, 1fr);
+
+  grid-template-rows: repeat(3, 1fr);
+
+  gap: 11px;
+
+}
+
+
+
+.customer-gallery-image {
+
+  position: relative;
+
+  min-width: 0;
+
+  min-height: 0;
+
+  padding: 0;
+
+  overflow: hidden;
+
+  border: 0;
+
+  border-radius: 14px;
+
+  background: #f4dde2;
+
+  cursor: pointer;
+
+}
+
+
+
+.customer-gallery-image-0 {
+
+  grid-column: 1;
+
+  grid-row: 1 / 4;
+
+  border-radius: 24px 14px 14px 24px;
+
+}
+
+
+
+.customer-gallery-image-1 {
+
+  grid-column: 2;
+
+  grid-row: 1;
+
+}
+
+
+
+.customer-gallery-image-2 {
+
+  grid-column: 3;
+
+  grid-row: 1;
+
+  border-radius: 14px 24px 14px 14px;
+
+}
+
+
+
+.customer-gallery-image-3 {
+
+  grid-column: 2;
+
+  grid-row: 2;
+
+}
+
+
+
+.customer-gallery-image-4 {
+
+  grid-column: 3;
+
+  grid-row: 2;
+
+}
+
+
+
+.customer-gallery-image-5 {
+
+  grid-column: 2;
+
+  grid-row: 3;
+
+}
+
+
+
+.customer-gallery-image-6 {
+
+  grid-column: 3;
+
+  grid-row: 3;
+
+  border-radius: 14px 14px 24px 14px;
+
+}
+
+
+
+.customer-gallery-image img {
+
+  width: 100%;
+
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  transition:
+
+    transform 0.55s ease,
+
+    filter 0.35s ease;
+
+}
+
+
+
+.customer-gallery-image:hover img {
+
+  transform: scale(1.055);
+
+}
+
+
+
+.customer-gallery-shade {
+
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(
+
+    180deg,
+
+    rgba(31, 0, 8, 0.01) 40%,
+
+    rgba(31, 0, 8, 0.72) 100%
+
+  );
+
+  pointer-events: none;
+
+}
+
+
+
+.customer-gallery-name {
+
+  position: absolute;
+
+  z-index: 2;
+
+  left: 17px;
+
+  bottom: 15px;
+
+  text-align: left;
+
+  color: #ffffff;
+
+}
+
+
+
+.customer-gallery-name span {
+
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #f7dce3;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+
+}
+
+
+
+.customer-gallery-name strong {
+
+  display: block;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+}
+
+
+
+.customer-gallery-image-0
+
+  .customer-gallery-name {
+
+  left: 25px;
+
+  bottom: 24px;
+
+}
+
+
+
+.customer-gallery-image-0
+
+  .customer-gallery-name strong {
+
+  font-size: 24px;
+
+}
+
+
+
+.customer-gallery-expand {
+
+  position: absolute;
+
+  z-index: 3;
+
+  top: 14px;
+
+  right: 14px;
+
+  width: 34px;
+
+  height: 34px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.92);
+
+  color: #68001c;
+
+  font-size: 12px;
+
+  opacity: 0;
+
+  transform: translateY(-5px);
+
+  transition: 0.25s ease;
+
+}
+
+
+
+.customer-gallery-image:hover
+
+  .customer-gallery-expand {
+
+  opacity: 1;
+
+  transform: translateY(0);
+
+}
+
+
+
+.customer-gallery-empty {
+
+  min-height: 400px;
+
+  padding: 50px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border: 1px dashed #dbbdc5;
+
+  border-radius: 24px;
+
+  background: #fff7f9;
+
+  text-align: center;
+
+}
+
+
+
+.customer-gallery-empty i {
+
+  margin-bottom: 15px;
+
+  color: #68001c;
+
+  font-size: 42px;
+
+}
+
+
+
+.customer-gallery-empty h3 {
+
+  margin: 0 0 8px;
+
+  color: #4b0013;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 25px;
+
+}
+
+
+
+.customer-gallery-empty p {
+
+  margin: 0;
+
+  color: #80656d;
+
+  font-size: 13px;
+
+}
+
+
+
+.apartment-details-layout {
+
+  display: grid;
+
+  grid-template-columns:
+
+    minmax(0, 1.5fr)
+
+    minmax(330px, 0.75fr);
+
+  gap: 55px;
+
+  align-items: start;
+
+}
+
+
+
+.apartment-information {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 25px;
+
+}
+
+
+
+.apartment-information-card {
+
+  padding: 30px;
+
+  background: #ffffff;
+
+  border: 1px solid #f0e4e7;
+
+  border-radius: 20px;
+
+}
+
+
+
+.details-small-heading {
+
+  color: #68001c;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.7px;
+
+}
+
+
+
+.apartment-information-card h2 {
+
+  margin: 8px 0 13px;
+
+  color: #32131c;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 25px;
+
+  font-weight: 700;
+
+}
+
+
+
+.apartment-information-card > p {
+
+  margin: 0;
+
+  color: #7c666c;
+
+  line-height: 1.8;
+
+}
+
+
+
+.stay-option-grid {
+
+  margin-top: 22px;
+
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 15px;
+
+}
+
+
+
+.stay-option-card {
+
+  padding: 20px;
+
+  display: flex;
+
+  gap: 15px;
+
+  background: #fff9fa;
+
+  border: 1px solid #f0dfe3;
+
+  border-radius: 15px;
+
+}
+
+
+
+.stay-option-icon {
+
+  width: 45px;
+
+  height: 45px;
+
+  flex-shrink: 0;
+
+  display: grid;
+
+  place-items: center;
+
+  background: #f6dfe4;
+
+  color: #68001c;
+
+  border-radius: 12px;
+
+  font-size: 19px;
+
+}
+
+
+
+.stay-option-card h3 {
+
+  margin: 0 0 5px;
+
+  color: #35141d;
+
+  font-size: 16px;
+
+}
+
+
+
+.stay-option-card p {
+
+  margin: 0 0 10px;
+
+  color: #856e74;
+
+  font-size: 12px;
+
+}
+
+
+
+.stay-option-card strong {
+
+  color: #4b0013;
+
+}
+
+
+
+.stay-option-card small {
+
+  color: #8b747a;
+
+  font-weight: 500;
+
+}
+
+
+
+.apartment-detail-items {
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 20px;
+
+}
+
+
+
+.apartment-detail-items > div {
+
+  min-width: 130px;
+
+  padding: 17px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  background: #fff8f9;
+
+  border-radius: 13px;
+
+}
+
+
+
+.apartment-detail-items i {
+
+  color: #68001c;
+
+  font-size: 22px;
+
+}
+
+
+
+.apartment-detail-items span {
+
+  display: flex;
+
+  flex-direction: column;
+
+  color: #846d73;
+
+  font-size: 11px;
+
+}
+
+
+
+.apartment-detail-items strong {
+
+  color: #35141d;
+
+  font-size: 16px;
+
+}
+
+
+
+.apartment-amenities-list {
+
+  margin-top: 20px;
+
+  display: grid;
+
+  grid-template-columns: repeat(
+
+    2,
+
+    minmax(0, 1fr)
+
+  );
+
+  gap: 12px;
+
+}
+
+
+
+.apartment-amenity-item {
+
+  min-height: 48px;
+
+  padding: 10px 14px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  border-radius: 11px;
+
+  background: #fff8f9;
+
+  color: #684f56;
+
+  font-size: 13px;
+
+}
+
+
+
+.apartment-amenity-item i {
+
+  width: 26px;
+
+  height: 26px;
+
+  flex-shrink: 0;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #f4dde2;
+
+  color: #68001c;
+
+  font-size: 14px;
+
+}
+
+
+
+.apartment-booking-wrapper {
+
+  position: sticky;
+
+  top: 100px;
+
+}
+
+
+
+.apartment-booking-card {
+
+  padding: 28px;
+
+  background: #ffffff;
+
+  border: 1px solid #ead9de;
+
+  border-radius: 22px;
+
+  box-shadow: 0 18px 55px rgba(75, 0, 19, 0.09);
+
+}
+
+
+
+.booking-card-heading {
+
+  margin-bottom: 25px;
+
+}
+
+
+
+.booking-card-heading > span {
+
+  color: #68001c;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.6px;
+
+}
+
+
+
+.booking-card-heading h2 {
+
+  margin: 6px 0;
+
+  color: #32131c;
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 23px;
+
+  font-weight: 700;
+
+}
+
+
+
+.booking-card-heading p {
+
+  margin: 0;
+
+  color: #897279;
+
+  font-size: 13px;
+
+}
+
+
+
+.booking-field {
+
+  margin-bottom: 19px;
+
+}
+
+
+
+.booking-field label {
+
+  margin-bottom: 8px;
+
+  display: block;
+
+  color: #4b343a;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+}
+
+
+
+.booking-field label span {
+
+  color: #a58e94;
+
+  font-weight: 500;
+
+}
+
+
+
+.booking-field input {
+
+  width: 100%;
+
+  height: 48px;
+
+  box-sizing: border-box;
+
+  padding: 0 13px;
+
+  border: 1px solid #e7d8dc;
+
+  border-radius: 10px;
+
+  outline: none;
+
+  color: #35141d;
+
+  background: #fffdfd;
+
+  font-family: inherit;
+
+}
+
+
+
+.booking-field input:focus {
+
+  border-color: #68001c;
+
+  box-shadow: 0 0 0 3px rgba(104, 0, 28, 0.05);
+
+}
+
+
+
+.stay-type-buttons {
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 9px;
+
+}
+
+
+
+.stay-type-buttons button {
+
+  height: 48px;
+
+  border: 1px solid #ead9de;
+
+  border-radius: 10px;
+
+  background: #fffafa;
+
+  color: #6f575d;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+}
+
+
+
+.stay-type-buttons button i {
+
+  margin-right: 6px;
+
+}
+
+
+
+.stay-type-buttons button.active {
+
+  border-color: #68001c;
+
+  background: #68001c;
+
+  color: #ffffff;
+
+}
+
+
+
+.booking-date-grid {
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+}
+
+
+
+.unit-selector {
+
+  height: 48px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  border: 1px solid #e7d8dc;
+
+  border-radius: 10px;
+
+}
+
+
+
+.unit-selector button {
+
+  width: 48px;
+
+  height: 100%;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #68001c;
+
+  font-size: 22px;
+
+  cursor: pointer;
+
+}
+
+
+
+.unit-selector span {
+
+  font-weight: 800;
+
+}
+
+
+
+.booking-summary {
+
+  margin: 25px 0 20px;
+
+  padding: 18px;
+
+  background: #fff7f8;
+
+  border-radius: 13px;
+
+}
+
+
+
+.booking-summary > div {
+
+  margin-bottom: 9px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  color: #755e64;
+
+  font-size: 12px;
+
+}
+
+
+
+.booking-summary > div:last-child {
+
+  margin-bottom: 0;
+
+}
+
+
+
+.booking-summary strong {
+
+  color: #3b1721;
+
+}
+
+
+
+.booking-summary .booking-total {
+
+  margin-top: 13px;
+
+  padding-top: 13px;
+
+  border-top: 1px solid #ead9de;
+
+  align-items: center;
+
+}
+
+
+
+.booking-total strong {
+
+  color: #68001c;
+
+  font-size: 19px;
+
+}
+
+
+
+.apartment-booking-error,
+
+.apartment-not-available {
+
+  margin-bottom: 18px;
+
+  padding: 12px 14px;
+
+  border-radius: 9px;
+
+  font-size: 12px;
+
+}
+
+
+
+.apartment-booking-error {
+
+  display: flex;
+
+  gap: 7px;
+
+  background: #fff0f1;
+
+  color: #a2192d;
+
+}
+
+
+
+.apartment-not-available {
+
+  background: #f6dfe4;
+
+  color: #68001c;
+
+  font-weight: 700;
+
+}
+
+
+
+.book-apartment-button {
+
+  width: 100%;
+
+  min-height: 52px;
+
+  border: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 9px;
+
+  background: #4b0013;
+
+  color: #ffffff;
+
+  border-radius: 11px;
+
+  font-family: inherit;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+}
+
+
+
+.book-apartment-button:hover:not(:disabled) {
+
+  background: #7c0023;
+
+}
+
+
+
+.book-apartment-button:disabled {
+
+  opacity: 0.65;
+
+  cursor: not-allowed;
+
+}
+
+
+
+.booking-security {
+
+  margin: 14px 0 0;
+
+  display: flex;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  color: #907980;
+
+  font-size: 10px;
+
+}
+
+
+
+.booking-security i {
+
+  color: #68001c;
+
+}
+
+
+
+.booking-button-loader {
+
+  width: 17px;
+
+  height: 17px;
+
+  border: 2px solid rgba(255, 255, 255, 0.4);
+
+  border-top-color: #ffffff;
+
+  border-radius: 50%;
+
+  animation: apartmentButtonSpin 0.7s linear infinite;
+
+}
+
+
+
+@keyframes apartmentButtonSpin {
+
+  to {
+
+    transform: rotate(360deg);
+
+  }
+
+}
+
+
+
+.apartment-details-state {
+
+  min-height: 75vh;
+
+  padding: 50px 20px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+
+}
+
+
+
+.apartment-details-loader {
+
+  width: 45px;
+
+  height: 45px;
+
+  margin-bottom: 18px;
+
+  border: 4px solid #f2dce2;
+
+  border-top-color: #68001c;
+
+  border-radius: 50%;
+
+  animation: apartmentButtonSpin 0.8s linear infinite;
+
+}
+
+
+
+.details-state-icon {
+
+  width: 70px;
+
+  height: 70px;
+
+  margin-bottom: 17px;
+
+  display: grid;
+
+  place-items: center;
+
+  background: #fff0f3;
+
+  color: #68001c;
+
+  border-radius: 50%;
+
+  font-size: 28px;
+
+}
+
+
+
+.apartment-details-state h3 {
+
+  margin: 0 0 8px;
+
+  color: #35141d;
+
+}
+
+
+
+.apartment-details-state p {
+
+  color: #80696f;
+
+}
+
+
+
+.apartment-details-state a {
+
+  margin-top: 15px;
+
+  padding: 11px 18px;
+
+  background: #4b0013;
+
+  color: #ffffff;
+
+  border-radius: 9px;
+
+  text-decoration: none;
+
+}
+
+
+
+.apartment-lightbox {
+
+  position: fixed;
+
+  z-index: 99999;
+
+  inset: 0;
+
+  padding: 40px 90px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: rgba(22, 4, 9, 0.96);
+
+  backdrop-filter: blur(8px);
+
+}
+
+
+
+.lightbox-content {
+
+  width: min(1050px, 85vw);
+
+  max-height: 90vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+}
+
+
+
+.lightbox-content img {
+
+  width: 100%;
+
+  max-height: 76vh;
+
+  display: block;
+
+  object-fit: contain;
+
+  border-radius: 16px;
+
+}
+
+
+
+.lightbox-caption {
+
+  padding: 17px 4px 0;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 25px;
+
+  color: #ffffff;
+
+}
+
+
+
+.lightbox-caption span {
+
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #dcb7c0;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+
+}
+
+
+
+.lightbox-caption strong {
+
+  font-family: "Playfair Display", serif;
+
+  font-size: 21px;
+
+}
+
+
+
+.lightbox-caption p {
+
+  margin: 0;
+
+  color: #d7c5ca;
+
+  font-size: 12px;
+
+}
+
+
+
+.lightbox-close {
+
+  position: absolute;
+
+  top: 25px;
+
+  right: 30px;
+
+  width: 44px;
+
+  height: 44px;
+
+  display: grid;
+
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  color: #ffffff;
+
+  font-size: 17px;
+
+  cursor: pointer;
+
+}
+
+
+
+.lightbox-arrow {
+
+  position: absolute;
+
+  top: 50%;
+
+  width: 50px;
+
+  height: 50px;
+
+  display: grid;
+
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.09);
+
+  color: #ffffff;
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+  transform: translateY(-50%);
+
+}
+
+
+
+.lightbox-arrow-left {
+
+  left: 28px;
+
+}
+
+
+
+.lightbox-arrow-right {
+
+  right: 28px;
+
+}
+
+
+
+.lightbox-close:hover,
+
+.lightbox-arrow:hover {
+
+  background: #ffffff;
+
+  color: #4b0013;
+
+}
+
+
+
+@media (max-width: 1100px) {
+
+  .customer-apartment-gallery {
+
+    height: 550px;
+
+  }
+
+
+
+  .apartment-details-layout {
+
+    grid-template-columns:
+
+      minmax(0, 1.3fr)
+
+      minmax(310px, 0.8fr);
+
+    gap: 35px;
+
+  }
+
+}
+
+
+
+@media (max-width: 992px) {
+
+  .customer-apartment-gallery {
+
+    height: auto;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    grid-template-rows: auto;
+
+  }
+
+
+
+  .customer-gallery-image,
+
+  .customer-gallery-image-0,
+
+  .customer-gallery-image-1,
+
+  .customer-gallery-image-2,
+
+  .customer-gallery-image-3,
+
+  .customer-gallery-image-4,
+
+  .customer-gallery-image-5,
+
+  .customer-gallery-image-6 {
+
+    grid-column: auto;
+
+    grid-row: auto;
+
+    height: 250px;
+
+    border-radius: 15px;
+
+  }
+
+
+
+  .customer-gallery-image-0 {
+
+    grid-column: 1 / -1;
+
+    height: 420px;
+
+  }
+
+
+
+  .apartment-details-layout {
+
+    grid-template-columns: 1fr;
+
+  }
+
+
+
+  .apartment-booking-wrapper {
+
+    position: static;
+
+  }
+
+}
+
+
+
+@media (max-width: 768px) {
+
+  .apartment-details-page {
+
+    padding-top: 25px;
+
+  }
+
+
+
+  .apartment-details-header {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+  }
+
+
+
+  .details-header-price {
+
+    text-align: left;
+
+  }
+
+
+
+  .customer-gallery-heading {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+  }
+
+
+
+  .customer-gallery-heading h2 {
+
+    font-size: 30px;
+
+  }
+
+
+
+  .customer-gallery-heading p {
+
+    text-align: left;
+
+  }
+
+
+
+  .stay-option-grid {
+
+    grid-template-columns: 1fr;
+
+  }
+
+
+
+  .apartment-lightbox {
+
+    padding: 70px 55px;
+
+  }
+
+
+
+  .lightbox-arrow {
+
+    width: 42px;
+
+    height: 42px;
+
+  }
+
+
+
+  .lightbox-arrow-left {
+
+    left: 8px;
+
+  }
+
+
+
+  .lightbox-arrow-right {
+
+    right: 8px;
+
+  }
+
+}
+
+
+
+@media (max-width: 600px) {
+
+  .customer-apartment-gallery {
+
+    grid-template-columns: 1fr;
+
+  }
+
+
+
+  .customer-gallery-image,
+
+  .customer-gallery-image-0,
+
+  .customer-gallery-image-1,
+
+  .customer-gallery-image-2,
+
+  .customer-gallery-image-3,
+
+  .customer-gallery-image-4,
+
+  .customer-gallery-image-5,
+
+  .customer-gallery-image-6 {
+
+    grid-column: auto;
+
+    height: 245px;
+
+  }
+
+
+
+  .customer-gallery-image-0 {
+
+    height: 330px;
+
+  }
+
+
+
+  .apartment-amenities-list {
+
+    grid-template-columns: 1fr;
+
+  }
+
+
+
+  .lightbox-caption {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+  }
+
+}
+
+
+
+@media (max-width: 480px) {
+
+  .apartment-information-card,
+
+  .apartment-booking-card {
+
+    padding: 20px;
+
+  }
+
+
+
+  .booking-date-grid {
+
+    grid-template-columns: 1fr;
+
+  }
+
+
+
+  .apartment-details-header h1 {
+
+    font-size: 34px;
+
+  }
+
+
+
+  .customer-gallery-image,
+
+  .customer-gallery-image-0 {
+
+    height: 235px;
+
+  }
+
+
+
+  .customer-gallery-name strong {
+
+    font-size: 15px;
+
+  }
+
+
+
+  .apartment-lightbox {
+
+    padding: 70px 40px;
+
+  }
+
+
+
+  .lightbox-close {
+
+    top: 15px;
+
+    right: 15px;
+
+  }
+
+}
+
+/* Vibely signature luxury styling */
+.apartment-details-page {
+  --vibely-burgundy: #620d2d;
+  --vibely-wine: #400a20;
+  --vibely-blush: #f7dce5;
+  --vibely-rose: #b86b85;
+  --vibely-ink: #321725;
+  --vibely-muted: #866c78;
+  background:
+    radial-gradient(ellipse 65% 22% at 95% 0%, rgba(247, 220, 229, .65), transparent 75%),
+    linear-gradient(180deg, #fff9fb 0%, #fff 34%, #fff8fa 100%);
+  color: var(--vibely-ink);
+}
+.apartment-details-header {
+  position: relative;
+  padding: 30px 35px;
+  border: 1px solid #f2dfe5;
+  border-radius: 26px;
+  background: linear-gradient(120deg, #fff 55%, #fff0f5);
+  box-shadow: 0 16px 45px rgba(75, 0, 19, .045);
+}
+.apartment-details-header h1 {
+  color: var(--vibely-wine);
+  line-height: 1.08;
+}
+.details-type {
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fbe6ed;
+  color: var(--vibely-burgundy);
+}
+.details-header-price {
+  padding: 15px 20px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #f0dce3;
+}
+.details-header-price strong { color: var(--vibely-burgundy); }
+.customer-gallery-heading h2 { color: var(--vibely-wine); }
+.customer-apartment-gallery { gap: 13px; }
+.customer-gallery-image {
+  border-radius: 19px;
+  box-shadow: 0 12px 30px rgba(65, 11, 33, .09);
+}
+.customer-gallery-image:focus-visible,
+.stay-type-buttons button:focus-visible,
+.unit-selector button:focus-visible,
+.book-apartment-button:focus-visible {
+  outline: 3px solid #d58da7;
+  outline-offset: 3px;
+}
+.apartment-information-card {
+  border: 1px solid #f1e0e6;
+  border-radius: 24px;
+  padding: 33px;
+  box-shadow: 0 12px 38px rgba(68, 12, 34, .035);
+}
+.apartment-information-card h2 { color: var(--vibely-wine); }
+.stay-option-card {
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff9fb, #fff0f5);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.stay-option-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(85, 15, 40, .07);
+}
+.stay-option-icon {
+  background: #f6d7e2;
+  border-radius: 14px;
+}
+.apartment-detail-items > div,
+.apartment-amenity-item { background: #fff5f8; }
+.apartment-booking-wrapper { top: 105px; }
+.apartment-booking-card {
+  position: relative;
+  overflow: hidden;
+  padding: 0 28px 28px;
+  border: 1px solid #eed4de;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 25px 75px rgba(77, 9, 36, .15);
+}
+.apartment-booking-card::before {
+  content: '';
+  display: block;
+  height: 7px;
+  margin: 0 -28px 0;
+  background: linear-gradient(90deg, #4a0922, #9e3e61 60%, #f4c7d7);
+}
+.booking-card-heading {
+  margin: 0 -28px 25px;
+  padding: 28px 28px 24px;
+  background: linear-gradient(145deg, #fff4f8, #fff 85%);
+  border-bottom: 1px solid #f3e1e7;
+}
+.booking-card-heading > span {
+  display: inline-block;
+  padding: 7px 11px;
+  border-radius: 99px;
+  background: #f8dfe8;
+  color: #7d2043;
+  letter-spacing: 1.7px;
+}
+.booking-card-heading h2 {
+  margin: 12px 0 8px;
+  color: #470d27;
+  font-size: clamp(24px, 2.4vw, 30px);
+  line-height: 1.2;
+}
+.booking-card-heading p { line-height: 1.65; }
+.booking-field { margin-bottom: 21px; }
+.booking-field label {
+  margin-bottom: 10px;
+  color: #48283a;
+  font-size: 12px;
+  letter-spacing: .15px;
+}
+.booking-field input {
+  height: 52px;
+  padding: 0 15px;
+  border: 1px solid #e9d4dd;
+  border-radius: 13px;
+  background: #fffafd;
+  color: #482036;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  color-scheme: light;
+}
+.booking-field input:hover { border-color: #ce9aae; }
+.booking-field input:focus {
+  border-color: #9b4162;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(184, 107, 133, .14);
+}
+.stay-type-buttons { gap: 11px; }
+.stay-type-buttons button {
+  min-height: 56px;
+  height: auto;
+  padding: 12px 10px;
+  border: 1px solid #ecd3dd;
+  border-radius: 14px;
+  background: #fff7fa;
+  color: #7e4b61;
+  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+.stay-type-buttons button:hover { border-color: #b86b85; transform: translateY(-1px); }
+.stay-type-buttons button.active {
+  border-color: #620d2d;
+  background: linear-gradient(135deg, #570b28, #873552);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(98, 13, 45, .2);
+}
+.booking-date-grid { gap: 12px; }
+.unit-selector {
+  height: 54px;
+  padding: 4px;
+  border: 1px solid #e9d4dd;
+  border-radius: 14px;
+  background: #fffafd;
+}
+.unit-selector button {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: #f9e5ec;
+  color: #620d2d;
+  transition: background .2s ease, color .2s ease;
+}
+.unit-selector button:hover { background: #620d2d; color: #fff; }
+.unit-selector span { font-size: 16px; color: #4a1029; }
+.booking-summary {
+  margin: 26px 0 20px;
+  padding: 22px;
+  border: 1px solid #efd9e2;
+  border-radius: 19px;
+  background: linear-gradient(145deg, #fff3f7, #fff9fb);
+}
+.booking-summary > div { margin-bottom: 14px; font-size: 13px; }
+.booking-summary .booking-total {
+  margin-top: 17px;
+  padding-top: 19px;
+  border-top: 1px dashed #d9adbe;
+}
+.booking-total span { font-weight: 700; color: #5b2840; }
+.booking-total strong {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(23px, 2.4vw, 29px);
+  color: #620d2d;
+}
+.book-apartment-button {
+  min-height: 58px;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #4a0922, #7e2447);
+  font-size: 14px;
+  letter-spacing: .15px;
+  box-shadow: 0 13px 25px rgba(90, 13, 43, .22);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.book-apartment-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(105deg, #6b1536, #a54b6b);
+  box-shadow: 0 17px 30px rgba(90, 13, 43, .26);
+}
+.booking-security { margin-top: 18px; font-size: 11px; }
+.apartment-booking-error { border: 1px solid #f4c6d1; line-height: 1.5; }
+@media (max-width: 992px) {
+  .apartment-booking-wrapper { position: static; }
+  .apartment-booking-card { max-width: 640px; margin: 0 auto; }
+}
+@media (max-width: 768px) {
+  .apartment-details-header { padding: 25px; }
+  .details-header-price { width: 100%; text-align: left; box-sizing: border-box; }
+  .customer-gallery-heading { gap: 14px; }
+}
+@media (max-width: 480px) {
+  .apartment-details-header { padding: 20px; border-radius: 19px; }
+  .apartment-booking-card { padding: 0 19px 22px; border-radius: 20px; }
+  .apartment-booking-card::before { margin: 0 -19px; }
+  .booking-card-heading { margin: 0 -19px 22px; padding: 24px 19px 20px; }
+  .apartment-information-card { padding: 22px; }
+  .booking-date-grid { grid-template-columns: 1fr; }
+  .booking-summary { padding: 18px; }
+  .booking-total strong { font-size: 23px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .apartment-details-page *, .apartment-details-page *::before,
+  .apartment-details-page *::after { transition-duration: .01ms !important; }
+}
+
+
+.customer-apartment-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: none;
+  gap: 14px;
+  height: auto;
+}
+
+.customer-gallery-image,
+.customer-gallery-image-0,
+.customer-gallery-image-1,
+.customer-gallery-image-2,
+.customer-gallery-image-3,
+.customer-gallery-image-4,
+.customer-gallery-image-5,
+.customer-gallery-image-6 {
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+  height: 185px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.customer-gallery-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.customer-gallery-image:hover img {
+  transform: scale(1.06);
+}
+
+.customer-gallery-name {
+  left: 14px;
+  bottom: 13px;
+}
+
+.customer-gallery-name strong,
+.customer-gallery-image-0 .customer-gallery-name strong {
+  font-size: 14px;
+}
+
+.customer-gallery-image-0 .customer-gallery-name {
+  left: 14px;
+  bottom: 13px;
+}
+
+.customer-gallery-expand {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 992px) {
+  .customer-apartment-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .customer-gallery-image,
+  .customer-gallery-image-0,
+  .customer-gallery-image-1,
+  .customer-gallery-image-2,
+  .customer-gallery-image-3,
+  .customer-gallery-image-4,
+  .customer-gallery-image-5,
+  .customer-gallery-image-6 {
+    height: 175px;
+  }
+}
+
+@media (max-width: 600px) {
+  .customer-apartment-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .customer-gallery-image,
+  .customer-gallery-image-0,
+  .customer-gallery-image-1,
+  .customer-gallery-image-2,
+  .customer-gallery-image-3,
+  .customer-gallery-image-4,
+  .customer-gallery-image-5,
+  .customer-gallery-image-6 {
+    height: 145px;
+  }
+}

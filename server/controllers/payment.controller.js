@@ -1,3 +1,4 @@
+const getPaymentCallbackUrl = require("../utils/paymentCallback");
 const BookingModel = require("../models/booking.model");
 const TicketModel = require("../models/ticket.model");
 const PaymentModel = require("../models/payment.model");
@@ -29,7 +30,6 @@ const {
   confirmEventPayment: confirmMultipleCategoryPayment,
   validateBookingSelections
 } = require("../utils/eventPayment");
-
 
 const startEventRefund = async (payment, booking, reason) => {
   if (!payment?._id || !booking?._id) {
@@ -810,13 +810,15 @@ const initializePayment = async (req, res) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          email: user.email,
-          amount: amountInKobo,
-          reference: paymentReference,
-          currency: "NGN",
-          callback_url:
-            "https://eventbookingsystem-gkh7.vercel.app/event-payment/callback"
-        })
+  email: user.email,
+  amount: amountInKobo,
+  reference: paymentReference,
+  currency: "NGN",
+  callback_url: getPaymentCallbackUrl(
+    req,
+    "/event-payment/callback"
+  )
+})
       }
     );
 
@@ -1410,8 +1412,6 @@ const createApartmentTicket = async (
 
   return apartmentTicket;
 };
-
-
 
 
 const paystackWebhook = async (req, res) => {
@@ -2116,8 +2116,6 @@ const paystackWebhook = async (req, res) => {
     return res.sendStatus(500);
   }
 };
-
-
 
 
 const getMyPayments = async (req, res) => {

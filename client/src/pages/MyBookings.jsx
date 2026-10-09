@@ -66,17 +66,19 @@ export default function MyBookings() {
   const [cancelError, setCancelError] = useState("");
   const [refundNotice, setRefundNotice] = useState(null);
 
-  const goToLogin = useCallback(() => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    navigate("/login", {
-      replace: true,
-      state: { returnTo: "/my-bookings" }
-    });
-  }, [navigate]);
+const goToLogin = useCallback(() => {
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
+
+  navigate("/login", {
+    replace: true,
+    state: { returnTo: "/my-bookings" }
+  });
+}, [navigate]);
 
   const fetchBookings = useCallback(async (signal, silent = false) => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("userAccessToken");
 
     if (!token) {
       goToLogin();
@@ -214,7 +216,7 @@ export default function MyBookings() {
   const submitCancellation = async () => {
     if (!activeBooking || !canRefund || submitting) return;
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("userAccessToken");
 
     if (!token) {
       goToLogin();

@@ -11,10 +11,10 @@ const AccountMenu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const accessToken = localStorage.getItem("accessToken");
+  const accessToken = localStorage.getItem("userAccessToken");
 
   const fetchUser = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("userAccessToken");
 
     if (!token) {
       setUser(null);
@@ -40,9 +40,9 @@ const AccountMenu = () => {
       console.log("ACCOUNT MENU ERROR:", error);
 
       if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
+        localStorage.removeItem("userAccessToken");
+        localStorage.removeItem("userRefreshToken");
+        localStorage.removeItem("userRole");
         setUser(null);
       }
     } finally {
@@ -138,39 +138,39 @@ const AccountMenu = () => {
     setMenuOpen(false);
   };
 
-  const handleLogout = async () => {
-    const token = localStorage.getItem("accessToken");
-    const refreshToken =
-      localStorage.getItem("refreshToken");
+ const handleLogout = async () => {
+  const token = localStorage.getItem("userAccessToken");
+  const refreshToken =
+    localStorage.getItem("userRefreshToken");
 
-    try {
-      if (token) {
-        await axios.post(
-          "https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
-          {
-            refreshToken,
+  try {
+    if (token) {
+      await axios.post(
+        "https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
+        {
+          refreshToken,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
-    } catch (error) {
-      console.log("LOGOUT ERROR:", error);
-    } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("role");
-
-      setUser(null);
-      setMenuOpen(false);
-
-      navigate("/");
-      window.location.reload();
+        }
+      );
     }
-  };
+  } catch (error) {
+    console.log("LOGOUT ERROR:", error);
+  } finally {
+    localStorage.removeItem("userAccessToken");
+    localStorage.removeItem("userRefreshToken");
+    localStorage.removeItem("userRole");
+
+    setUser(null);
+    setMenuOpen(false);
+
+    navigate("/");
+    window.location.reload();
+  }
+};
 
   if (!accessToken) {
     return (

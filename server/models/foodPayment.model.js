@@ -43,6 +43,21 @@ const FoodPaymentSchema = new mongoose.Schema(
       default: null
     },
 
+    stockDeducted: {
+  type: Boolean,
+  default: false
+},
+
+stockDeductedAt: {
+  type: Date,
+  default: null
+},
+
+processingStartedAt: {
+  type: Date,
+  default: null
+},
+
     refundAmount: {
       type: Number,
       default: 0

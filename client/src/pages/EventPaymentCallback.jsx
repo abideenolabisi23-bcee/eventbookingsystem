@@ -9,7 +9,7 @@ const API =
   "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const getToken = () =>
-  localStorage.getItem("accessToken") ||
+  localStorage.getItem("userAccessToken") ||
   localStorage.getItem("token");
 
 export default function EventPaymentCallback() {

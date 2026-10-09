@@ -9,8 +9,7 @@ const API =
   "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const getToken = () =>
-  localStorage.getItem("accessToken") ||
-  localStorage.getItem("token");
+  localStorage.getItem("userAccessToken");
 
 const formatPrice = (amount) =>
   new Intl.NumberFormat("en-NG", {
@@ -367,6 +366,10 @@ export default function MyTickets() {
     <main className="vtickets-page">
       <div className="vtickets-container">
         <header className="vtickets-heading">
+          <Link to="/profile" className="vtickets-back-profile">
+  <i className="bi bi-arrow-left"></i>
+  Back to My Profile
+</Link>
           <Link to="/" className="vtickets-logo">
             ✦ VIBELY
           </Link>
@@ -514,117 +517,111 @@ export default function MyTickets() {
                 const image = apartmentImages[0]?.url || "";
 
                 return (
-                  <article
-                    key={item.key}
-                    className="vticket vticket-apartment"
-                  >
-                    <div className="vticket-top">
-                      <div className="vticket-topline">
-                        <span className="vticket-brand">
-                          <span>✦</span> VIBELY
-                        </span>
-                        <small>STAY PASS</small>
-                      </div>
+                  <article key={item.key} className="vticket vticket-apartment">
+  <div className="vstay-card">
+    <div className="vstay-photo">
+      {image ? (
+        <img src={image} alt={item.title} loading="lazy" />
+      ) : (
+        <div className="vstay-photo-empty">
+          <i className="bi bi-buildings"></i>
+          <span>VIBELY STAYS</span>
+        </div>
+      )}
 
-                      <span className="vticket-overline">
-                        YOUR NEXT BEAUTIFUL STAY
-                      </span>
+      <span className="vstay-photo-label">
+        <i className="bi bi-stars"></i> VIBELY STAYS
+      </span>
+    </div>
 
-                      <h2>{item.title}</h2>
+    <div className="vstay-content">
+      <div className="vstay-heading">
+        <div>
+          <span className="vstay-eyebrow">YOUR STAY RESERVATION</span>
+          <h2>{item.title}</h2>
+          <p>
+            <i className="bi bi-geo-alt"></i> {item.location}
+          </p>
+        </div>
 
-                      <span className="vticket-category">
-                        {formatStayType(booking.stayType)}
-                      </span>
+        <span className="vstay-type">
+          {formatStayType(booking.stayType)}
+        </span>
+      </div>
 
-                      <div className="vticket-details">
-                        <div>
-                          <small>CHECK-IN</small>
-                          <strong>{formatDate(booking.checkInDate)}</strong>
-                        </div>
+      <div className="vstay-dates">
+        <div>
+          <small>CHECK-IN</small>
+          <strong>{formatDate(booking.checkInDate)}</strong>
+        </div>
 
-                        <div>
-                          <small>CHECK-OUT</small>
-                          <strong>{formatDate(booking.checkOutDate)}</strong>
-                        </div>
+        <div>
+          <small>CHECK-OUT</small>
+          <strong>{formatDate(booking.checkOutDate)}</strong>
+        </div>
+      </div>
 
-                        <div>
-                          <small>LOCATION</small>
-                          <strong>{item.location}</strong>
-                        </div>
+      <div className="vstay-meta">
+        <div>
+          <small>STAY DETAILS</small>
+          <strong>
+            {booking.numberOfUnits || 1}{" "}
+            {Number(booking.numberOfUnits) === 1 ? "unit" : "units"}
+            {" · "}
+            {booking.stayType === "day_use"
+              ? "Day use"
+              : `${booking.numberOfNights || 0} nights`}
+          </strong>
+        </div>
 
-                        <div>
-                          <small>UNITS / NIGHTS</small>
-                          <strong>
-                            {booking.numberOfUnits || 1}{" "}
-                            {Number(booking.numberOfUnits) === 1
-                              ? "unit"
-                              : "units"}
-                            {" · "}
-                            {booking.stayType === "day_use"
-                              ? "Day use"
-                              : `${booking.numberOfNights || 0} nights`}
-                          </strong>
-                        </div>
-                      </div>
-                    </div>
+        <div>
+          <small>TOTAL AMOUNT</small>
+          <strong>{formatPrice(booking.totalAmount)}</strong>
+        </div>
 
-                    <div className="vticket-cut">
-                      <span />
-                      <div />
-                      <span />
-                    </div>
+        <div>
+          <small>STATUS</small>
+          <strong>{formatStatus(item.status)}</strong>
+        </div>
+      </div>
 
-                    <div className="vticket-bottom">
-                      <div className="vticket-qr-area">
-                        {apartmentQr ? (
-                          <img
-                            src={apartmentQr}
-                            alt={`QR code for ${ticket.ticketCode}`}
-                          />
-                        ) : image ? (
-                          <img
-                            src={image}
-                            alt={item.title}
-                            className="vticket-property-image"
-                          />
-                        ) : (
-                          <div className="vticket-no-qr">
-                            QR unavailable
-                          </div>
-                        )}
+      <div className="vstay-footer">
+        <span className="vstay-reference">
+          Ref: {booking.bookingReference || "—"}
+        </span>
 
-                        <div>
-                          <small>TICKET CODE</small>
-                          <strong>{ticket.ticketCode}</strong>
+        <button
+          type="button"
+          className="vstay-details-btn"
+          onClick={() => setSelectedItem(item)}
+        >
+          View Stay Details
+          <i className="bi bi-arrow-up-right"></i>
+        </button>
+      </div>
+    </div>
 
-                          <span
-                            className={`vticket-status ${
-                              item.status === "upcoming" ||
-                              item.status === "valid"
-                                ? "valid"
-                                : "inactive"
-                            }`}
-                          >
-                            {formatStatus(item.status)}
-                          </span>
+    <div className="vstay-qr-panel">
+      <span className="vstay-qr-heading">YOUR STAY PASS</span>
 
-                          <small>BOOKING REFERENCE</small>
-                          <strong>{booking.bookingReference || "—"}</strong>
+      <div className="vstay-qr-image">
+        {apartmentQr ? (
+          <img
+            src={apartmentQr}
+            alt={`QR code for ${ticket.ticketCode}`}
+          />
+        ) : (
+          <span>QR unavailable</span>
+        )}
+      </div>
 
-                          <small>TOTAL PAID</small>
-                          <strong>{formatPrice(booking.totalAmount)}</strong>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="vticket-download"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        View apartment details ↗
-                      </button>
-                    </div>
-                  </article>
+      <small>TICKET CODE</small>
+      <strong className="vstay-ticket-code">
+        {ticket.ticketCode}
+      </strong>
+    </div>
+  </div>
+</article>
                 );
               }
 
@@ -632,9 +629,22 @@ export default function MyTickets() {
               const event = ticket.event || {};
               const booking = ticket.booking || {};
 
+              const eventImage = getImage(
+  event.images ||
+  event.image ||
+  event.banner ||
+  event.coverImage ||
+  event.poster ||
+  event.thumbnail
+);
               return (
-                <article key={item.key} className="vticket">
+                <article key={item.key} className="vticket vticket-event">
                   <div className="vticket-top">
+                    {eventImage && (
+  <div className="vticket-event-photo">
+    <img src={eventImage} alt={item.title} loading="lazy" />
+  </div>
+)}
                     <div className="vticket-topline">
                       <span className="vticket-brand">
                         <span>✦</span> VIBELY
@@ -654,6 +664,22 @@ export default function MyTickets() {
 
                     <div className="vticket-details">
                       <div>
+  <small>AMOUNT</small>
+  <strong>{formatPrice(ticket.ticketPrice)}</strong>
+</div>
+
+<div>
+  <small>STATUS</small>
+  <strong>{formatStatus(ticket.status)}</strong>
+</div>
+
+{booking.bookingReference && (
+  <div>
+    <small>BOOKING REFERENCE</small>
+    <strong>{booking.bookingReference}</strong>
+  </div>
+)}
+                      <div>
                         <small>DATE & TIME</small>
                         <strong>{formatDate(event.date, true)}</strong>
                       </div>
@@ -663,6 +689,14 @@ export default function MyTickets() {
                         <strong>{item.location}</strong>
                       </div>
                     </div>
+
+                     <button
+                      type="button"
+                      className="vticket-download"
+                      onClick={() => setSelectedItem(item)}
+                    >
+                      View ticket details ↗
+                    </button>
                   </div>
 
                   <div className="vticket-cut">
@@ -672,44 +706,27 @@ export default function MyTickets() {
                   </div>
 
                   <div className="vticket-bottom">
-                    <div className="vticket-qr-area">
-                      {ticket.qrCode ? (
-                        <img
-                          src={ticket.qrCode}
-                          alt={`QR code for ${ticket.ticketCode}`}
-                        />
-                      ) : (
-                        <div className="vticket-no-qr">
-                          QR unavailable
-                        </div>
-                      )}
+                    
+                   <div className="vticket-qr-area">
+  {ticket.qrCode ? (
+    <img
+      src={ticket.qrCode}
+      alt={`QR code for ${ticket.ticketCode}`}
+      className="vticket-bold-qr"
+    />
+  ) : (
+    <div className="vticket-no-qr">
+      QR unavailable
+    </div>
+  )}
 
-                      <div>
-                        <small>TICKET CODE</small>
-                        <strong>{ticket.ticketCode}</strong>
+  <div className="vticket-qr-code">
+    <small>TICKET CODE</small>
+    <strong>{ticket.ticketCode}</strong>
+  </div>
+</div>
 
-                        <span
-                          className={`vticket-status ${
-                            ticket.status === "valid"
-                              ? "valid"
-                              : "inactive"
-                          }`}
-                        >
-                          {formatStatus(ticket.status)}
-                        </span>
-
-                        <small>PRICE</small>
-                        <strong>{formatPrice(ticket.ticketPrice)}</strong>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="vticket-download"
-                      onClick={() => setSelectedItem(item)}
-                    >
-                      View ticket details ↗
-                    </button>
+                   
 
                     {booking.bookingReference && (
                       <p className="vticket-booking-ref">

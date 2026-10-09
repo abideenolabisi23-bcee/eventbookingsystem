@@ -77,7 +77,7 @@ const ChangePassword = () => {
     }
 
     const accessToken =
-      localStorage.getItem("accessToken");
+      localStorage.getItem("userAccessToken");
 
     if (!accessToken) {
       navigate("/login", {
@@ -110,35 +110,33 @@ const ChangePassword = () => {
         confirmPassword: "",
       });
 
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userAccessToken");
+localStorage.removeItem("userRefreshToken");
+localStorage.removeItem("userRole");
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
+setTimeout(() => {
+  navigate("/login", { replace: true });
+}, 1500);
     } catch (error) {
       console.log(
         "CHANGE PASSWORD ERROR:",
         error
       );
 
-      if (error.response?.status === 401) {
-        localStorage.removeItem(
-          "accessToken"
-        );
+    if (error.response?.status === 401) {
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
 
-        localStorage.removeItem(
-          "refreshToken"
-        );
+  navigate("/login", {
+    replace: true,
+    state: {
+      returnTo: "/change-password",
+    },
+  });
 
-        navigate("/login", {
-          state: {
-            returnTo: "/change-password",
-          },
-        });
-
-        return;
-      }
+  return;
+}
 
       setError(
         error.response?.data?.message ||

@@ -19,7 +19,7 @@ const MyFoodOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       const accessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("userAccessToken");
 
       if (!accessToken) {
         navigate("/login", {
@@ -51,18 +51,19 @@ const MyFoodOrders = () => {
           error
         );
 
-        if (error.response?.status === 401) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
+      if (error.response?.status === 401) {
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
 
-          navigate("/login", {
-            state: {
-              returnTo: "/my-food-orders",
-            },
-          });
+  navigate("/login", {
+    state: {
+      returnTo: "/my-food-orders",
+    },
+  });
 
-          return;
-        }
+  return;
+}
 
         setError(
           error.response?.data?.message ||

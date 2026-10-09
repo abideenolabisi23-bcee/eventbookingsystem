@@ -1,10 +1,11 @@
+
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 const UserProtectedRoute = () => {
   const location = useLocation();
 
-  const accessToken = localStorage.getItem("accessToken");
-  const role = localStorage.getItem("role");
+  const accessToken = localStorage.getItem("userAccessToken");
+  const role = localStorage.getItem("userRole");
 
   if (!accessToken || role !== "user") {
     return (

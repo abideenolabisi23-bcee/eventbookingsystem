@@ -137,7 +137,7 @@ const ApartmentDetails = () => {
     setBookingError("");
 
     const accessToken =
-      localStorage.getItem("accessToken");
+      localStorage.getItem("userAccessToken");
 
     if (!accessToken) {
       navigate("/login", {
@@ -264,29 +264,31 @@ const ApartmentDetails = () => {
         "APARTMENT BOOKING ERROR:",
         error
       );
+if (error.response?.status === 401) {
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
 
-      if (error.response?.status === 401) {
-        localStorage.removeItem(
-          "accessToken"
-        );
-
-        localStorage.removeItem(
-          "refreshToken"
-        );
-
-        navigate("/login", {
-          state: {
-            returnTo: `/apartments/${id}`
-          }
-        });
-
-        return;
+  navigate("/login", {
+    state: {
+      returnTo: `/apartments/${id}`,
+      notification: {
+        type: "error",
+        title: "Session expired",
+        message: "Please sign in again to continue your booking."
       }
+    }
+  });
+
+  return;
+}
 
       setBookingError(
-        error.response?.data?.message ||
+  error.response?.status === 409
+    ? "Room occupied"
+    : error.response?.data?.message ||
         "Cannot complete apartment booking at this time."
-      );
+);
     } finally {
       setBookingLoading(false);
     }
@@ -639,11 +641,8 @@ const ApartmentDetails = () => {
                       <i className="bi bi-building"></i>
 
                       <span>
-                        <strong>
-                          {apartment.totalUnits}
-                        </strong>
-
-                        Rooms Available
+                        <strong>{apartment.totalUnits}</strong>
+Total Rooms
                       </span>
                     </div>
                   )}
@@ -834,18 +833,18 @@ const ApartmentDetails = () => {
                     </span>
 
                     <button
-                      type="button"
-                      onClick={() =>
-                        setNumberOfUnits(
-                          (current) =>
-                            Number(
-                              current
-                            ) + 1
-                        )
-                      }
-                    >
-                      +
-                    </button>
+  type="button"
+  onClick={() =>
+    setNumberOfUnits((current) =>
+      Math.min(
+        apartment.totalUnits,
+        Number(current) + 1
+      )
+    )
+  }
+>
+  +
+</button>
                   </div>
                 </div>
 

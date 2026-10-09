@@ -1,19 +1,12 @@
+const mongoose = require("mongoose");
 const ApartmentBookingModel =
   require("../models/apartmentBooking.model");
 
 
-// ==========================================
-// GET THE OCCUPANCY PERIOD OF A BOOKING
-// ==========================================
 
 const getBookingWindow = (booking) => {
   let start;
   let end;
-
-
-  // ==========================================
-  // DAY USE
-  // ==========================================
 
   if (booking.stayType === "day_use") {
 
@@ -22,12 +15,11 @@ const getBookingWindow = (booking) => {
       booking.checkInDate
     );
 
-    start.setHours(
-      8,
-      0,
-      0,
-      0
-    );
+  const [hours, minutes] = (
+  booking.expectedCheckInTime || "08:00"
+).split(":").map(Number);
+
+start.setHours(hours, minutes, 0, 0);
 
 
     // ========================================
@@ -150,18 +142,9 @@ const getBookingWindow = (booking) => {
         0
       );
 
-    } else {
-
-      // Default earliest overnight
-      // check-in is 12 PM.
-
-      start.setHours(
-        12,
-        0,
-        0,
-        0
-      );
-    }
+   } else {
+  start.setHours(0, 0, 0, 0);
+}
 
 
     // ========================================
@@ -253,10 +236,6 @@ const getBookingWindow = (booking) => {
 };
 
 
-// ==========================================
-// CALCULATE AVAILABLE ROOMS
-// ==========================================
-
 const getApartmentAvailability = async ({
   apartmentId,
   totalUnits,
@@ -264,7 +243,8 @@ const getApartmentAvailability = async ({
   checkInDate,
   checkOutDate,
   expectedCheckInTime = null,
-  excludeBookingId = null
+  excludeBookingId = null,
+  session = null
 }) => {
 
   // ========================================
@@ -336,11 +316,8 @@ const getApartmentAvailability = async ({
   }
 
 
-  const bookings =
-    await ApartmentBookingModel.find(
-      query
-    );
-
+  const bookings = await ApartmentBookingModel.find(query)
+  .session(session);
 
   // ========================================
   // CREATE OCCUPANCY TIMELINE

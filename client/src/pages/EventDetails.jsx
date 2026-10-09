@@ -241,12 +241,12 @@ const EventDetails = () => {
       return;
     }
 
-    const accessToken = localStorage.getItem("accessToken");
+   const accessToken = localStorage.getItem("userAccessToken");
 
-    if (!accessToken) {
-      setShowAuthPrompt(true);
-      return;
-    }
+if (!accessToken) {
+  setShowAuthPrompt(true);
+  return;
+}
 
     try {
       setBookingLoading(true);

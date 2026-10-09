@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+const ApartmentBookingLockModel = require("../models/apartmentBookingLock.model");
 const ApartmentModel = require("../models/apartment.model");
 const ApartmentBookingModel = require("../models/apartmentBooking.model");
 const {
@@ -17,14 +19,13 @@ const createApartmentBooking = async (req, res) => {
       expectedCheckInTime
     } = req.body;
 
-    // ==========================================
-    // FIND APARTMENT
-    // ==========================================
+    if (!mongoose.isValidObjectId(apartmentId)) {
+      return res.status(400).send({
+        message: "Invalid apartment ID"
+      });
+    }
 
-    const apartment =
-      await ApartmentModel.findById(
-        apartmentId
-      );
+    const apartment = await ApartmentModel.findById(apartmentId);
 
     if (!apartment) {
       return res.status(404).send({
@@ -34,212 +35,95 @@ const createApartmentBooking = async (req, res) => {
 
     if (!apartment.isAvailable) {
       return res.status(400).send({
-        message:
-          "Apartment is currently unavailable"
+        message: "Apartment is currently unavailable"
       });
     }
 
-
-    // ==========================================
-    // VALIDATE STAY TYPE
-    // ==========================================
-
-    if (
-      !["day_use", "overnight"].includes(
-        stayType
-      )
-    ) {
+    if (!["day_use", "overnight"].includes(stayType)) {
       return res.status(400).send({
-        message:
-          "Stay type must be day_use or overnight"
+        message: "Stay type must be day_use or overnight"
       });
     }
 
-
-    // ==========================================
-    // CONVERT DATES
-    // ==========================================
-
-    const checkIn =
-      new Date(checkInDate);
-
-    const checkOut =
-      new Date(checkOutDate);
-
-    if (
-      isNaN(checkIn.getTime()) ||
-      isNaN(checkOut.getTime())
-    ) {
+    if (!checkInDate || !checkOutDate) {
       return res.status(400).send({
-        message:
-          "Invalid check-in or check-out date"
+        message: "Check-in and check-out dates are required"
       });
     }
 
-
-    // ==========================================
-    // VALIDATE NUMBER OF ROOMS
-    // ==========================================
-
-    const units =
-      Number(numberOfUnits);
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
 
     if (
-      !Number.isInteger(units) ||
-      units < 1
+      Number.isNaN(checkIn.getTime()) ||
+      Number.isNaN(checkOut.getTime())
     ) {
       return res.status(400).send({
-        message:
-          "Number of units must be at least 1"
+        message: "Invalid check-in or check-out date"
+      });
+    }
+
+    const units = Number(numberOfUnits);
+
+    if (!Number.isInteger(units) || units < 1) {
+      return res.status(400).send({
+        message: "Number of units must be at least 1"
+      });
+    }
+
+    if (units > apartment.totalUnits) {
+      return res.status(409).send({
+        message: "Room occupied"
       });
     }
 
     if (
-      units > apartment.totalUnits
+      expectedCheckInTime &&
+      !/^([01]\d|2[0-3]):([0-5]\d)$/.test(expectedCheckInTime)
     ) {
       return res.status(400).send({
-        message:
-          `This apartment has only ${apartment.totalUnits} unit(s)`
+        message: "Invalid check-in time. Use HH:MM format"
       });
     }
-
 
     let numberOfNights = 0;
     let totalAmount = 0;
 
-
-    // ==========================================
-    // DAY USE
-    // ==========================================
-
     if (stayType === "day_use") {
-
-      // Day use must be on one date
       if (
         checkIn.toDateString() !==
         checkOut.toDateString()
       ) {
         return res.status(400).send({
-          message:
-            "Day use check-in and check-out must be on the same date"
+          message: "Day use check-in and check-out must be on the same date"
         });
       }
 
-      // Day use doesn't need expectedCheckInTime
-      totalAmount =
-        apartment.dayUsePrice *
-        units;
+      if (expectedCheckInTime && expectedCheckInTime >= "18:00") {
+        return res.status(400).send({
+          message: "Day use check-in must be before 6:00 PM"
+        });
+      }
+
+      totalAmount = apartment.dayUsePrice * units;
     }
 
-
-    // ==========================================
-    // OVERNIGHT
-    // ==========================================
-
     if (stayType === "overnight") {
+      const checkInDay = new Date(checkIn);
+      checkInDay.setHours(0, 0, 0, 0);
 
-      if (checkOut <= checkIn) {
-        return res.status(400).send({
-          message:
-            "Check-out date must be after check-in date"
-        });
-      }
+      const checkOutDay = new Date(checkOut);
+      checkOutDay.setHours(0, 0, 0, 0);
 
-
-      // ----------------------------------------
-      // EXPECTED CHECK-IN TIME IS REQUIRED
-      // Example: "14:00" = 2 PM
-      // ----------------------------------------
-
-      if (!expectedCheckInTime) {
-        return res.status(400).send({
-          message:
-            "Expected check-in time is required for overnight stay"
-        });
-      }
-
-
-      // Validate HH:MM format
-      const timePattern =
-        /^([01]\d|2[0-3]):([0-5]\d)$/;
-
-      if (
-        !timePattern.test(
-          expectedCheckInTime
-        )
-      ) {
-        return res.status(400).send({
-          message:
-            "Expected check-in time must be in HH:MM format, for example 14:00"
-        });
-      }
-
-
-      const [checkInHour] =
-  expectedCheckInTime
-    .split(":")
-    .map(Number);
-
-      // Earliest normal overnight
-      // check-in is 12 PM
-      if (
-        checkInHour < 12
-      ) {
-        return res.status(400).send({
-          message:
-            "Overnight check-in cannot be earlier than 12:00 PM"
-        });
-      }
-
-
-      // ========================================
-      // CALCULATE NUMBER OF NIGHTS
-      // ========================================
-
-      // Use date-only values so the customer's
-      // expected arrival time does not change
-      // the number of nights.
-
-      const checkInDay =
-        new Date(checkIn);
-
-      checkInDay.setHours(
-        0,
-        0,
-        0,
-        0
+      numberOfNights = Math.round(
+        (checkOutDay - checkInDay) / (1000 * 60 * 60 * 24)
       );
-
-      const checkOutDay =
-        new Date(checkOut);
-
-      checkOutDay.setHours(
-        0,
-        0,
-        0,
-        0
-      );
-
-      const millisecondsPerDay =
-        1000 * 60 * 60 * 24;
-
-      numberOfNights =
-        Math.round(
-          (
-            checkOutDay -
-            checkInDay
-          ) /
-          millisecondsPerDay
-        );
-
 
       if (numberOfNights < 1) {
         return res.status(400).send({
-          message:
-            "Overnight stay must be at least 1 night"
+          message: "Overnight stay must be at least 1 night"
         });
       }
-
 
       totalAmount =
         apartment.pricePerNight *
@@ -247,160 +131,112 @@ const createApartmentBooking = async (req, res) => {
         units;
     }
 
+    const bookingReference = `APT-BK-${Date.now()}-${new mongoose.Types.ObjectId().toString()}`;
 
-    // ==========================================
-    // CHECK CURRENT ROOM AVAILABILITY
-    // ==========================================
-
-    const {
-      availableUnits,
-      peakReservedUnits
-    } =
-      await getApartmentAvailability({
-        apartmentId:
-          apartment._id,
-
-        totalUnits:
-          apartment.totalUnits,
-
-        stayType,
-
-        checkInDate:
-          checkIn,
-
-        checkOutDate:
-          checkOut,
-
-        expectedCheckInTime:
-          stayType === "overnight"
-            ? expectedCheckInTime
-            : null
-      });
-
-
-    console.log(
-      "Apartment total units:",
-      apartment.totalUnits
+    const expiresAt = new Date(
+      Date.now() + 15 * 60 * 1000
     );
 
-    console.log(
-      "Peak reserved units:",
-      peakReservedUnits
-    );
+    let booking;
 
-    console.log(
-      "Available units:",
-      availableUnits
-    );
+    try {
+      await mongoose.connection.transaction(
+        async (session) => {
+          await ApartmentBookingLockModel.findOneAndUpdate(
+            {
+              apartment: apartment._id
+            },
+            {
+              $inc: {
+                version: 1
+              }
+            },
+            {
+              upsert: true,
+              new: true,
+              session
+            }
+          );
 
+          const currentApartment = await ApartmentModel.findById(
+            apartment._id
+          ).session(session);
 
-    // ==========================================
-    // NOT ENOUGH ROOMS
-    // ==========================================
+          if (!currentApartment || !currentApartment.isAvailable) {
+            const error = new Error("Apartment is currently unavailable");
+            error.statusCode = 400;
+            throw error;
+          }
 
-    if (
-      units > availableUnits
-    ) {
-      return res.status(400).send({
-        message:
-          `Only ${availableUnits} unit(s) are available for the selected date and time`
-      });
+          if (units > currentApartment.totalUnits) {
+            const error = new Error("Room occupied");
+            error.statusCode = 409;
+            throw error;
+          }
+
+          const { availableUnits } =
+            await getApartmentAvailability({
+              apartmentId: currentApartment._id,
+              totalUnits: currentApartment.totalUnits,
+              stayType,
+              checkInDate: checkIn,
+              checkOutDate: checkOut,
+              expectedCheckInTime: expectedCheckInTime || null,
+              session
+            });
+
+          if (units > availableUnits) {
+            const error = new Error("Room occupied");
+            error.statusCode = 409;
+            throw error;
+          }
+
+          const createdBookings = await ApartmentBookingModel.create(
+            [
+              {
+                user: req.user.id,
+                apartment: currentApartment._id,
+                stayType,
+                checkInDate: checkIn,
+                checkOutDate: checkOut,
+                expectedCheckInTime: expectedCheckInTime || null,
+                numberOfUnits: units,
+                numberOfNights,
+                totalAmount,
+                bookingReference,
+                expiresAt,
+                bookingStatus: "pending",
+                paymentStatus: "pending",
+                stayStatus: "upcoming"
+              }
+            ],
+            {
+              session
+            }
+          );
+
+          booking = createdBookings[0];
+        }
+      );
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).send({
+          message: error.message
+        });
+      }
+
+      throw error;
     }
 
-
-    // ==========================================
-    // GENERATE BOOKING REFERENCE
-    // ==========================================
-
-    const bookingReference =
-      `APT-BK-${Date.now()}-${Math.floor(
-        Math.random() * 1000
-      )}`;
-
-
-    // ==========================================
-    // CREATE 15-MINUTE HOLD
-    // ==========================================
-
-    const expiresAt =
-      new Date(
-        Date.now() +
-        15 * 60 * 1000
-      );
-
-
-    // ==========================================
-    // CREATE BOOKING
-    // ==========================================
-
-    const booking =
-      await ApartmentBookingModel.create({
-        user:
-          req.user.id,
-
-        apartment:
-          apartmentId,
-
-        stayType,
-
-        checkInDate:
-          checkIn,
-
-        checkOutDate:
-          checkOut,
-
-        // Only overnight needs this
-        expectedCheckInTime:
-          stayType === "overnight"
-            ? expectedCheckInTime
-            : null,
-
-        numberOfUnits:
-          units,
-
-        numberOfNights,
-
-        totalAmount,
-
-        bookingReference,
-
-        expiresAt,
-
-        bookingStatus:
-          "pending",
-
-        paymentStatus:
-          "pending",
-
-        stayStatus:
-          "upcoming"
-      });
-
-
-    // ==========================================
-    // SUCCESS
-    // ==========================================
-
     return res.status(201).send({
-      message:
-        "Apartment booking created successfully",
-
+      message: "Apartment booking created successfully",
       data: booking
     });
-
   } catch (error) {
-
-    console.log(
-      "CREATE APARTMENT BOOKING ERROR:",
-      error
-    );
+    console.log("CREATE APARTMENT BOOKING ERROR:", error);
 
     return res.status(500).send({
-      message:
-        "Cannot create apartment booking at this time",
-
-      error:
-        error.message
+      message: "Cannot create apartment booking at this time"
     });
   }
 };
@@ -753,210 +589,81 @@ const checkInApartmentGuest = async (req, res) => {
     const { bookingId } = req.params;
     const organizerId = req.user.id;
 
-
-    // ==========================================
-    // FIND BOOKING
-    // ==========================================
-
-    const booking =
-      await ApartmentBookingModel.findById(
-        bookingId
-      );
-
+    const booking = await ApartmentBookingModel.findById(bookingId);
 
     if (!booking) {
       return res.status(404).send({
-        message:
-          "Apartment booking not found"
+        message: "Apartment booking not found"
       });
     }
 
-
-    // ==========================================
-    // FIND APARTMENT
-    // ==========================================
-
-    const apartment =
-      await ApartmentModel.findById(
-        booking.apartment
-      );
-
+    const apartment = await ApartmentModel.findById(
+      booking.apartment
+    );
 
     if (!apartment) {
       return res.status(404).send({
-        message:
-          "Apartment not found"
+        message: "Apartment not found"
       });
     }
-
-
-    // ==========================================
-    // ORGANIZER MUST OWN APARTMENT
-    // ==========================================
 
     if (
       apartment.createdBy.toString() !==
       organizerId.toString()
     ) {
       return res.status(403).send({
-        message:
-          "You are not authorized to check in guests for this apartment"
+        message: "You are not authorized to check in guests for this apartment"
       });
     }
 
-
-    // ==========================================
-    // BOOKING MUST BE CONFIRMED
-    // ==========================================
-
-    if (
-      booking.bookingStatus !==
-      "confirmed"
-    ) {
+    if (booking.bookingStatus !== "confirmed") {
       return res.status(400).send({
-        message:
-          "Only confirmed bookings can be checked in"
+        message: "Only confirmed bookings can be checked in"
       });
     }
 
-
-    // ==========================================
-    // BOOKING MUST BE PAID
-    // ==========================================
-
-    if (
-      booking.paymentStatus !==
-      "paid"
-    ) {
+    if (booking.paymentStatus !== "paid") {
       return res.status(400).send({
-        message:
-          "Only paid bookings can be checked in"
+        message: "Only paid bookings can be checked in"
       });
     }
 
-
-    // ==========================================
-    // ALREADY CHECKED IN
-    // ==========================================
-
-    if (
-      booking.stayStatus ===
-      "checked_in"
-    ) {
+    if (booking.stayStatus === "checked_in") {
       return res.status(400).send({
-        message:
-          "Guest is already checked in"
+        message: "Guest is already checked in"
       });
     }
 
-
-    // ==========================================
-    // ALREADY CHECKED OUT
-    // ==========================================
-
-    if (
-      booking.stayStatus ===
-      "checked_out"
-    ) {
+    if (booking.stayStatus === "checked_out") {
       return res.status(400).send({
-        message:
-          "Guest has already checked out"
+        message: "Guest has already checked out"
       });
     }
-
-
-    // ==========================================
-    // CURRENT TIME
-    // ==========================================
 
     const now = new Date();
 
+    const allowedCheckIn = new Date(
+      booking.checkInDate
+    );
 
-    // ==========================================
-    // BUILD ALLOWED CHECK-IN TIME
-    // ==========================================
+    const checkInDeadline = new Date(
+      booking.checkOutDate
+    );
 
-    const allowedCheckIn =
-      new Date(
-        booking.checkInDate
-      );
-
-
-    // ==========================================
-    // BUILD FINAL CHECK-IN DEADLINE
-    // ==========================================
-
-    let checkInDeadline;
-
-
-    // ==========================================
-    // DAY USE
-    //
-    // Check-in:
-    // 8:00 AM
-    //
-    // Day use ends:
-    // 6:00 PM
-    // ==========================================
-
-    if (
-      booking.stayType ===
-      "day_use"
-    ) {
-
-      allowedCheckIn.setHours(
-        8,
-        0,
-        0,
-        0
-      );
-
-
-      checkInDeadline =
-        new Date(
-          booking.checkInDate
-        );
-
-
-      checkInDeadline.setHours(
-        18,
-        0,
-        0,
-        0
-      );
+    if (booking.stayType === "day_use") {
+      checkInDeadline.setHours(18, 0, 0, 0);
+    } else if (booking.stayType === "overnight") {
+      checkInDeadline.setHours(12, 0, 0, 0);
+    } else {
+      return res.status(400).send({
+        message: "Invalid apartment stay type"
+      });
     }
 
-
-    // ==========================================
-    // OVERNIGHT
-    //
-    // Use customer's expected arrival time.
-    // ==========================================
-
-    else if (
-      booking.stayType ===
-      "overnight"
-    ) {
-
-      if (
-        !booking.expectedCheckInTime
-      ) {
-        return res.status(400).send({
-          message:
-            "Expected check-in time is missing for this booking"
-        });
-      }
-
-
-      const [
-        hours,
-        minutes
-      ] =
-        booking
-          .expectedCheckInTime
-          .split(":")
-          .map(Number);
-
+    if (booking.expectedCheckInTime) {
+      const [hours, minutes] = booking.expectedCheckInTime
+        .split(":")
+        .map(Number);
 
       allowedCheckIn.setHours(
         hours,
@@ -964,105 +671,44 @@ const checkInApartmentGuest = async (req, res) => {
         0,
         0
       );
-
-
-      // Overnight reservation ends at
-      // 12:00 PM on checkout date.
-
-      checkInDeadline =
-        new Date(
-          booking.checkOutDate
-        );
-
-
-      checkInDeadline.setHours(
-        12,
+    } else {
+      allowedCheckIn.setHours(
+        0,
         0,
         0,
         0
       );
     }
 
-
-    // ==========================================
-    // INVALID STAY TYPE
-    // ==========================================
-
-    else {
+    if (now < allowedCheckIn) {
       return res.status(400).send({
-        message:
-          "Invalid apartment stay type"
+        message: "Guest cannot check in before the scheduled check-in time",
+        checkInTime: allowedCheckIn
       });
     }
 
-
-    // ==========================================
-    // TOO EARLY
-    // ==========================================
-
-    if (
-      now < allowedCheckIn
-    ) {
+    if (now >= checkInDeadline) {
       return res.status(400).send({
-        message:
-          "Guest cannot check in before the scheduled check-in time",
-
-        checkInTime:
-          allowedCheckIn
+        message: "This apartment reservation has already ended and can no longer be checked in"
       });
     }
 
+    booking.stayStatus = "checked_in";
+    booking.checkedInAt = new Date();
 
-    // ==========================================
-    // RESERVATION ALREADY ENDED
-    // ==========================================
-
-    if (
-      now >= checkInDeadline
-    ) {
-      return res.status(400).send({
-        message:
-          "This apartment reservation has already ended and can no longer be checked in"
-      });
-    }
-
-
-    // ==========================================
-    // CHECK-IN SUCCESSFUL
-    // ==========================================
-
-    booking.stayStatus =
-  "checked_in";
-
-booking.checkedInAt =
-  new Date();
-
-await booking.save();
-
+    await booking.save();
 
     return res.status(200).send({
-      message:
-        "Guest checked in successfully",
-
-      data:
-        booking
+      message: "Guest checked in successfully",
+      data: booking
     });
 
-
   } catch (error) {
-
-    console.log(
-      "APARTMENT CHECK-IN ERROR:",
-      error
-    );
-
+    console.log("APARTMENT CHECK-IN ERROR:", error);
 
     return res.status(500).send({
-      message:
-        "Cannot check in guest at this time",
-
-      error:
-        error.message
+      message: "Cannot check in guest at this time",
+      error: error.message
     });
   }
 };

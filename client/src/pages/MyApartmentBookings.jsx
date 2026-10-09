@@ -170,21 +170,21 @@ const MyApartmentBookings = () => {
   const [now, setNow] = useState(Date.now());
 
   const redirectToLogin = useCallback(() => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("role");
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
 
-    navigate("/login", {
-      replace: true,
-      state: {
-        returnTo: "/my-apartment-bookings"
-      }
-    });
-  }, [navigate]);
+  navigate("/login", {
+    replace: true,
+    state: {
+      returnTo: "/my-apartment-bookings"
+    }
+  });
+}, [navigate]);
 
   const fetchBookings = useCallback(
     async (signal) => {
-      const accessToken = localStorage.getItem("accessToken");
+      const accessToken = localStorage.getItem("userAccessToken");
 
       if (!accessToken) {
         redirectToLogin();
@@ -334,7 +334,7 @@ const MyApartmentBookings = () => {
     if (!cancelBooking || processingId) return;
 
     const bookingId = cancelBooking._id;
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem("userAccessToken");
 
     if (!accessToken) {
       redirectToLogin();
@@ -390,7 +390,7 @@ const MyApartmentBookings = () => {
   const handleRetryPayment = async (booking) => {
     if (processingId) return;
 
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem("userAccessToken");
 
     if (!accessToken) {
       redirectToLogin();

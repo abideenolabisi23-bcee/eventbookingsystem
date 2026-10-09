@@ -34,9 +34,14 @@ const ApartmentSchema = new mongoose.Schema(
     },
 
     totalUnits: {
-      type: Number,
-      required: true
-    },
+  type: Number,
+  required: true,
+  min: 1,
+  validate: {
+    validator: Number.isInteger,
+    message: "Total units must be a whole number"
+  }
+},
 
     amenities: [
       {

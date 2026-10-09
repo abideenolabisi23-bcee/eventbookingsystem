@@ -1,127 +1,209 @@
-
 .vtickets-page {
   min-height: 100vh;
+  padding: 45px 0 90px;
   background:
-    radial-gradient(circle at 5% 12%, #f8e4ec, transparent 30%),
-    #fffafc;
+    radial-gradient(ellipse at 0% 0%, rgba(244, 201, 215, .45), transparent 34%),
+    radial-gradient(ellipse at 100% 65%, rgba(255, 226, 235, .6), transparent 35%),
+    #fffaf8;
+  color: #361727;
   font-family: "DM Sans", sans-serif;
-  color: #3c0a21;
-  padding: 75px 0 90px;
 }
 
 .vtickets-container {
-  width: min(1180px, calc(100% - 50px));
-  margin: 0 auto;
+  width: min(1240px, calc(100% - 48px));
+  margin: auto;
 }
 
 .vtickets-heading {
-  text-align: center;
-  max-width: 650px;
-  margin: 0 auto 40px;
+  position: relative;
+  max-width: none;
+  margin: 0 0 32px;
+  padding: 38px 48px 40px;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid #f1d9df;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 91% 12%, rgba(255, 203, 219, .75), transparent 29%),
+    linear-gradient(120deg, #fff 10%, #fff2f5 72%, #fce0e8);
+  box-shadow: 0 20px 55px rgba(101, 0, 29, .075);
+}
+
+.vtickets-heading::before {
+  display: block;
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -85px;
+  top: -170px;
+  border: 1px solid rgba(145, 35, 75, .15);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.vtickets-heading::after {
+  display: block;
+  content: "✦";
+  position: absolute;
+  right: 65px;
+  bottom: 28px;
+  font-size: 105px;
+  line-height: 1;
+  color: rgba(128, 21, 59, .10);
+  background: none;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+.vtickets-back-profile {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 25px;
+  padding: 10px 17px;
+  background: #fff;
+  color: #65001d;
+  border: 1px solid #edcbd5;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 5px 15px rgba(101, 0, 29, .05);
+  transition: .25s ease;
+}
+
+.vtickets-back-profile:hover {
+  background: #65001d;
+  color: #fff;
+  transform: translateX(-4px);
 }
 
 .vtickets-logo {
+  position: relative;
+  z-index: 1;
   display: block;
-  margin-bottom: 25px;
-  color: #650e2e;
-  font-size: 19px;
+  width: fit-content;
+  margin-bottom: 17px;
+  color: #65001d;
+  font-size: 15px;
   font-weight: 900;
   letter-spacing: 3px;
   text-decoration: none;
 }
 
-.vtickets-eyebrow {
-  display: block;
+.vtickets-heading .vtickets-eyebrow {
+  position: relative;
+  z-index: 1;
+  color: #b36b82;
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 2.5px;
-  color: #b06b84;
+  font-weight: 900;
+  letter-spacing: 2.6px;
 }
 
 .vtickets-heading h1 {
-  font-family: "Playfair Display", serif;
-  font-size: clamp(39px, 5vw, 64px);
-  font-weight: 500;
-  line-height: 1.2;
-  margin: 18px 0;
+  position: relative;
+  z-index: 1;
+  margin: 12px 0 15px;
+  color: #4c0925;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(37px, 4.2vw, 58px);
+  font-weight: 600;
+  line-height: 1.13;
+  letter-spacing: -1.5px;
 }
 
-.vtickets-heading h1 em,
-.vtickets-bottom-banner h2 em {
-  color: #c17a94;
+.vtickets-heading h1 em {
+  color: #b45a7a;
   font-weight: 400;
 }
 
 .vtickets-heading p {
-  font-size: 14px;
-  color: #8d7480;
-  line-height: 1.9;
+  position: relative;
+  z-index: 1;
+  max-width: 580px;
+  margin: 0;
+  color: #886675;
+  font-size: 13px;
+  line-height: 1.8;
 }
 
 .vtickets-tabs {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin: 0 auto 42px;
+  margin: 0 0 26px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .vtickets-tab {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 13px 19px;
-  border: 1px solid #ecd8df;
-  border-radius: 30px;
-  background: white;
-  color: #754057;
+  gap: 10px;
+  padding: 13px 20px;
+  border: 1px solid #ecd2db;
+  border-radius: 100px;
+  background: #fff;
+  color: #79415a;
   font-family: inherit;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: 0.25s ease;
+  box-shadow: 0 5px 18px rgba(101, 0, 29, .04);
+  transition: .25s ease;
 }
 
 .vtickets-tab span {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
   display: inline-flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
   border-radius: 50%;
-  background: #f8e9ee;
-  color: #7e3654;
+  background: #f8e8ee;
+  color: #8b3656;
   font-size: 10px;
 }
 
 .vtickets-tab:hover {
-  border-color: #650e2e;
-  color: #650e2e;
+  border-color: #b45a7a;
+  background: #fff2f6;
+  transform: translateY(-2px);
 }
 
 .vtickets-tab.active {
-  background: #650e2e;
-  border-color: #650e2e;
-  color: white;
-  box-shadow: 0 8px 20px rgba(101, 14, 46, 0.15);
+  border-color: #65001d;
+  background: linear-gradient(135deg, #65001d, #a12c59);
+  color: #fff;
+  box-shadow: 0 9px 22px rgba(101, 0, 29, .20);
 }
 
 .vtickets-tab.active span {
-  background: rgba(255, 255, 255, 0.18);
-  color: white;
+  background: rgba(255, 255, 255, .2);
+  color: #fff;
 }
 
 .vtickets-count {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 18px;
-  border-bottom: 1px solid #ebd6de;
-  padding-bottom: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 27px;
+  padding: 22px 27px;
+  border: 1px solid #f0dbe2;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 35px rgba(101, 0, 29, .045);
 }
 
 .vtickets-count > div:first-child {
@@ -131,105 +213,123 @@
 }
 
 .vtickets-count span {
+  color: #ae7589;
   font-size: 10px;
-  font-weight: 800;
-  color: #b17a8f;
-  letter-spacing: 2px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
 }
 
 .vtickets-count strong {
-  font-size: 13px;
-  color: #650e2e;
+  color: #65001d;
+  font-size: 17px;
+  font-weight: 900;
 }
 
 .vtickets-controls {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 11px;
 }
 
 .vtickets-controls input,
 .vtickets-controls select {
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid #e8d0d9;
-  border-radius: 10px;
+  min-height: 45px;
+  padding: 0 15px;
+  border: 1px solid #ead3dc;
+  border-radius: 12px;
   outline: none;
-  background: white;
-  color: #650e2e;
+  background: #fffafb;
+  color: #65001d;
   font-family: inherit;
   font-size: 12px;
+  transition: .2s ease;
 }
 
 .vtickets-controls input {
-  width: 240px;
+  width: 270px;
 }
 
 .vtickets-controls input:focus,
 .vtickets-controls select:focus {
-  border-color: #a54a6d;
-}
-
-.vtickets-notice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 15px 18px;
-  margin-bottom: 25px;
-  background: #fff2e5;
-  border: 1px solid #f1d5b8;
-  border-radius: 12px;
-  color: #825421;
-  font-size: 12px;
-}
-
-.vtickets-notice button {
-  border: 0;
-  background: #650e2e;
-  color: white;
-  padding: 8px 13px;
-  border-radius: 8px;
-  cursor: pointer;
+  border-color: #b45a7a;
+  box-shadow: 0 0 0 4px rgba(180, 90, 122, .10);
 }
 
 .vtickets-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 30px;
+  gap: 27px;
+  margin-top: 0;
 }
 
 .vticket {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  background: white;
-  border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 18px 60px rgba(101, 14, 46, 0.11);
-  transition: transform 0.3s, box-shadow 0.3s;
+  border: 1px solid #edd4dd;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(101, 0, 29, .10);
+  transition: transform .3s ease, box-shadow .3s ease;
 }
 
 .vticket:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 25px 70px rgba(101, 14, 46, 0.16);
+  transform: translateY(-7px);
+  box-shadow: 0 28px 65px rgba(101, 0, 29, .17);
 }
 
-.vticket-top {
-  min-height: 320px;
-  padding: 30px;
-  background:
-    radial-gradient(circle at 95% 5%, rgba(255, 255, 255, 0.12), transparent 38%),
-    linear-gradient(130deg, #430a24, #852449);
-  color: white;
+.vticket-top,
+.vticket-apartment .vticket-top {
+  position: relative;
   display: flex;
   flex-direction: column;
+  min-height: 320px;
+  padding: 30px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 202, 219, .24), transparent 37%),
+    linear-gradient(145deg, #480017 0%, #750029 58%, #a63862 100%);
+  color: #fff;
 }
 
 .vticket-apartment .vticket-top {
   background:
-    radial-gradient(circle at 95% 5%, rgba(255, 255, 255, 0.12), transparent 38%),
-    linear-gradient(130deg, #35000e, #68001c);
+    radial-gradient(circle at 95% 5%, rgba(255, 219, 194, .22), transparent 36%),
+    linear-gradient(145deg, #4b0a24, #7d2848 62%, #a66a73);
+}
+
+.vticket-top::before {
+  content: "";
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  top: -145px;
+  right: -85px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.vticket-top::after {
+  content: "✦";
+  position: absolute;
+  right: 23px;
+  bottom: 48px;
+  color: rgba(255, 255, 255, .07);
+  font-size: 110px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.vticket-topline,
+.vticket-overline,
+.vticket-top h2,
+.vticket-category,
+.vticket-details {
+  position: relative;
+  z-index: 1;
 }
 
 .vticket-topline {
@@ -240,54 +340,64 @@
 }
 
 .vticket-brand {
-  font-weight: 800;
-  font-size: 18px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 900;
   letter-spacing: 3px;
 }
 
 .vticket-brand span {
-  margin-right: 7px;
-  color: #f4bfd0;
+  color: #ffcfdf;
+  margin-right: 5px;
 }
 
 .vticket-topline small {
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 100px;
+  background: rgba(255, 255, 255, .11);
+  color: #ffe1eb;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: 2px;
-  color: #f1bbcd;
+  letter-spacing: 1.2px;
   white-space: nowrap;
 }
 
 .vticket-overline {
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: #e7b5c6;
-  margin-top: 42px;
+  margin-top: 30px;
+  color: #ffc9da;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2.2px;
 }
 
 .vticket-top h2 {
-  font-family: "Playfair Display", serif;
-  font-size: 31px;
+  margin: 12px 0 17px;
+  color: #fff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(26px, 2.6vw, 34px);
   font-weight: 500;
-  line-height: 1.3;
-  margin: 13px 0 17px;
+  line-height: 1.23;
+  overflow-wrap: anywhere;
 }
 
 .vticket-category {
   display: inline-flex;
   align-self: flex-start;
-  padding: 9px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  margin-bottom: 25px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, .32);
   border-radius: 100px;
+  background: rgba(255, 255, 255, .12);
+  color: #ffe5ed;
   font-size: 11px;
-  color: #ffe5ee;
-  margin-bottom: 26px;
+  font-weight: 700;
 }
 
 .vticket-details {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
   margin-top: auto;
 }
 
@@ -299,51 +409,56 @@
 }
 
 .vticket-details small {
-  color: #dfaec0;
+  color: #f1bacd;
   font-size: 9px;
-  letter-spacing: 1.5px;
   font-weight: 800;
+  letter-spacing: 1.4px;
 }
 
 .vticket-details strong {
-  color: white;
+  color: #fff;
   font-size: 12px;
+  font-weight: 700;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
 .vticket-cut {
+  position: relative;
   display: flex;
   align-items: center;
-  position: relative;
-  background: white;
-  height: 24px;
+  height: 26px;
+  background: #fff;
 }
 
 .vticket-cut > span {
-  width: 24px;
-  height: 24px;
-  background: #fffafc;
-  border-radius: 50%;
   position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fffaf8;
 }
 
 .vticket-cut > span:first-child {
-  left: -12px;
+  left: -13px;
 }
 
 .vticket-cut > span:last-child {
-  right: -12px;
+  right: -13px;
 }
 
 .vticket-cut > div {
   width: 100%;
-  border-top: 2px dashed #e6c9d4;
-  margin: 0 20px;
+  margin: 0 21px;
+  border-top: 2px dashed #e9cad5;
 }
 
 .vticket-bottom {
-  padding: 18px 30px 30px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 20px 30px 29px;
+  background: #fff;
 }
 
 .vticket-qr-area {
@@ -353,138 +468,144 @@
 }
 
 .vticket-qr-area img {
-  width: 110px;
-  height: 110px;
+  width: 108px;
+  height: 108px;
   flex-shrink: 0;
-  object-fit: contain;
   padding: 7px;
-  background: white;
-  border: 1px solid #f0dce3;
-  border-radius: 12px;
+  border: 1px solid #efdce3;
+  border-radius: 13px;
+  background: #fff;
+  object-fit: contain;
 }
 
 .vticket-qr-area .vticket-property-image {
-  object-fit: cover;
   padding: 0;
+  object-fit: cover;
 }
 
 .vticket-qr-area > div:last-child {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   min-width: 0;
-  gap: 9px;
 }
 
 .vticket-qr-area small {
-  color: #a57b8c;
+  color: #ae8192;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: 1.4px;
+  letter-spacing: 1.2px;
 }
 
 .vticket-qr-area strong {
-  color: #650e2e;
+  color: #65001d;
   font-size: 11px;
   overflow-wrap: anywhere;
 }
 
 .vticket-status {
+  display: inline-flex;
   align-self: flex-start;
+  padding: 7px 12px;
+  border-radius: 100px;
   font-size: 10px;
   font-weight: 800;
   text-transform: capitalize;
-  padding: 7px 11px;
-  border-radius: 100px;
 }
 
 .vticket-status.valid {
-  background: #e8f5eb;
-  color: #32704b;
+  background: #e5f6eb;
+  color: #267044;
 }
 
 .vticket-status.inactive {
-  background: #fbe7ed;
-  color: #9d3659;
+  background: #fff0f3;
+  color: #a43b5b;
 }
 
 .vticket-download {
   width: 100%;
-  margin-top: 25px;
-  padding: 14px;
-  border: 1px solid #d8a8ba;
-  border-radius: 11px;
-  color: #650e2e;
-  background: #fff7fa;
+  margin-top: 23px;
+  padding: 14px 17px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #65001d, #9d2855);
+  color: #fff;
   font-family: inherit;
-  font-weight: 800;
   font-size: 12px;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.2s ease;
+  box-shadow: 0 8px 20px rgba(101, 0, 29, .14);
+  transition: .25s ease;
 }
 
 .vticket-download:hover {
-  background: #f7e4eb;
+  background: linear-gradient(135deg, #7d0028, #b53b69);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(101, 0, 29, .22);
 }
 
 .vticket-no-qr {
-  width: 110px;
-  height: 110px;
-  flex-shrink: 0;
   display: grid;
   place-items: center;
-  text-align: center;
+  width: 108px;
+  height: 108px;
+  flex-shrink: 0;
+  padding: 8px;
+  border-radius: 13px;
+  background: #fff3f7;
+  color: #a67c8e;
   font-size: 11px;
-  color: #a57b8c;
-  background: #fff6f9;
-  border-radius: 12px;
+  text-align: center;
 }
 
 .vticket-booking-ref {
-  margin: 13px 0 0;
+  margin: 12px 0 0;
+  color: #aa8292;
   font-size: 10px;
-  color: #a57b8c;
   overflow-wrap: anywhere;
 }
 
 .vtickets-empty {
-  max-width: 550px;
+  max-width: 600px;
   margin: 0 auto;
-  text-align: center;
-  background: white;
-  border: 1px solid #f0dce3;
-  border-radius: 25px;
   padding: 65px 35px;
-  box-shadow: 0 20px 55px rgba(101, 14, 46, 0.06);
+  border: 1px solid #f0d8e1;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(101, 0, 29, .07);
+  text-align: center;
 }
 
 .vtickets-empty > span:not(.vtickets-loader) {
   display: block;
-  font-size: 65px;
-  color: #dba8ba;
+  color: #d39aae;
+  font-size: 60px;
 }
 
 .vtickets-empty h2 {
-  font-family: "Playfair Display", serif;
+  margin: 18px 0;
+  color: #520b2b;
+  font-family: "Playfair Display", Georgia, serif;
   font-size: 30px;
-  font-weight: 500;
-  margin: 20px 0;
 }
 
 .vtickets-empty p {
-  color: #8d7480;
+  margin-bottom: 24px;
+  color: #947584;
   font-size: 13px;
   line-height: 1.9;
-  margin-bottom: 25px;
 }
 
 .vtickets-empty a,
 .vtickets-empty button {
   display: inline-block;
+  padding: 14px 22px;
   border: none;
-  background: #650e2e;
-  color: white;
-  border-radius: 12px;
-  padding: 15px 25px;
+  border-radius: 11px;
+  background: #65001d;
+  color: #fff;
   font-family: inherit;
   font-size: 12px;
   font-weight: 800;
@@ -492,58 +613,53 @@
   cursor: pointer;
 }
 
-.vtickets-loader {
-  display: block;
-  width: 42px;
-  height: 42px;
-  margin: 0 auto;
-  border: 3px solid #f0d5df;
-  border-top-color: #650e2e;
-  border-radius: 50%;
-  animation: vtickets-spin 0.8s linear infinite;
-}
-
-@keyframes vtickets-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .vtickets-bottom-banner {
-  margin-top: 85px;
-  padding: 50px;
-  border-radius: 24px;
-  background: #430a24;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 25px;
+  margin-top: 60px;
+  padding: 40px 45px;
+  border: none;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 210, 224, .16), transparent 35%),
+    linear-gradient(135deg, #480017, #850e3e);
+  box-shadow: 0 18px 45px rgba(101, 0, 29, .13);
 }
 
 .vtickets-bottom-banner > div > span {
+  color: #f1bdd0;
   font-size: 10px;
-  letter-spacing: 2px;
   font-weight: 800;
-  color: #dfabc0;
+  letter-spacing: 2px;
 }
 
 .vtickets-bottom-banner h2 {
-  font-family: "Playfair Display", serif;
-  font-size: 35px;
+  margin-top: 12px;
+  color: #fff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 34px;
   font-weight: 500;
-  color: white;
-  margin-top: 13px;
+}
+
+.vtickets-bottom-banner h2 em {
+  color: #ffc4d8;
 }
 
 .vtickets-bottom-banner a {
-  color: #650e2e;
-  background: white;
-  padding: 17px 23px;
-  border-radius: 12px;
-  text-decoration: none;
+  padding: 15px 22px;
+  border-radius: 11px;
+  background: #fff;
+  color: #65001d;
   font-size: 12px;
   font-weight: 800;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.vtickets-bottom-banner a:hover {
+  background: #fff0f5;
 }
 
 .vtickets-modal-backdrop {
@@ -554,77 +670,77 @@
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  padding: 25px 15px;
-  background: rgba(25, 3, 13, 0.78);
-  backdrop-filter: blur(5px);
+  padding: 22px;
+  background: rgba(30, 4, 17, .78);
+  backdrop-filter: blur(7px);
 }
 
 .vtickets-modal {
   position: relative;
-  width: min(510px, 100%);
-  max-height: calc(100vh - 50px);
+  width: min(550px, 100%);
+  max-height: calc(100vh - 44px);
   overflow-y: auto;
   padding: 35px;
-  border-radius: 22px;
-  background: white;
+  border: 1px solid #f0d9e1;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 30px 85px rgba(20, 0, 10, .3);
   text-align: center;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25);
 }
 
 .vtickets-modal-close {
   position: absolute;
-  top: 14px;
-  right: 17px;
-  border: 0;
+  top: 13px;
+  right: 18px;
+  border: none;
   background: transparent;
-  color: #650e2e;
+  color: #65001d;
   font-size: 30px;
   cursor: pointer;
 }
 
 .vtickets-modal-brand {
   margin-bottom: 20px;
-  color: #650e2e;
+  color: #65001d;
   font-size: 18px;
   font-weight: 900;
   letter-spacing: 3px;
 }
 
 .vtickets-modal h2 {
-  margin: 13px 0 22px;
+  margin: 14px 0 23px;
   color: #430a24;
-  font-family: "Playfair Display", serif;
+  font-family: "Playfair Display", Georgia, serif;
   font-size: 29px;
-  font-weight: 500;
 }
 
 .vtickets-modal-qr {
   display: block;
-  width: 170px;
-  height: 170px;
+  width: 175px;
+  height: 175px;
   max-width: 100%;
-  margin: 0 auto 15px;
+  margin: 0 auto 16px;
   padding: 8px;
   border: 1px solid #f0dce3;
-  border-radius: 12px;
+  border-radius: 13px;
   object-fit: contain;
 }
 
 .vtickets-modal-stay-icon {
-  width: 90px;
-  height: 90px;
   display: grid;
   place-items: center;
+  width: 90px;
+  height: 90px;
   margin: 0 auto 18px;
   border-radius: 50%;
   background: #f8e4ec;
-  color: #650e2e;
+  color: #65001d;
   font-size: 42px;
 }
 
 .vtickets-modal-code {
   margin: 10px 0 22px;
-  color: #650e2e;
+  color: #65001d;
   font-size: 12px;
   font-weight: 800;
   overflow-wrap: anywhere;
@@ -633,8 +749,8 @@
 .vtickets-modal-details {
   display: flex;
   flex-direction: column;
-  text-align: left;
   border-top: 1px solid #f0dce3;
+  text-align: left;
 }
 
 .vtickets-modal-details p {
@@ -665,10 +781,10 @@
   width: 100%;
   margin-top: 23px;
   padding: 14px;
-  border: 0;
+  border: none;
   border-radius: 11px;
-  background: #650e2e;
-  color: white;
+  background: linear-gradient(135deg, #65001d, #a12c59);
+  color: #fff;
   font-family: inherit;
   font-size: 12px;
   font-weight: 800;
@@ -676,14 +792,53 @@
 }
 
 .vtickets-modal-action:hover {
-  background: #852449;
+  background: #870d38;
 }
 
 .vtickets-modal-note {
-  margin: 20px 0 0;
+  margin-top: 20px;
   color: #997b87;
   font-size: 12px;
   line-height: 1.7;
+}
+
+.vtickets-apartment-gallery {
+  margin-top: 28px;
+}
+
+.vtickets-apartment-gallery h3 {
+  margin-bottom: 16px;
+  color: #68001c;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 22px;
+}
+
+.vtickets-apartment-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.vtickets-apartment-gallery-item {
+  overflow: hidden;
+  border: 1px solid #f1e1e5;
+  border-radius: 13px;
+  background: #fff6f7;
+}
+
+.vtickets-apartment-gallery-item img {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.vtickets-apartment-gallery-item span {
+  display: block;
+  padding: 10px 12px;
+  color: #68001c;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 @media (max-width: 800px) {
@@ -699,15 +854,26 @@
 
 @media (max-width: 580px) {
   .vtickets-page {
-    padding: 55px 0;
+    padding: 24px 0 55px;
   }
 
   .vtickets-container {
-    width: calc(100% - 30px);
+    width: calc(100% - 28px);
   }
 
   .vtickets-heading {
-    margin-bottom: 30px;
+    padding: 26px 22px;
+    border-radius: 20px;
+  }
+
+  .vtickets-heading::after {
+    right: 18px;
+    bottom: 20px;
+    font-size: 65px;
+  }
+
+  .vtickets-heading h1 {
+    font-size: 37px;
   }
 
   .vtickets-heading p {
@@ -716,59 +882,51 @@
 
   .vtickets-tabs {
     gap: 8px;
-    margin-bottom: 30px;
   }
 
   .vtickets-tab {
-    padding: 10px 12px;
-    font-size: 10px;
-    gap: 6px;
+    padding: 10px 13px;
+    font-size: 11px;
   }
 
-  .vtickets-tab span {
-    min-width: 19px;
-    height: 19px;
-    font-size: 9px;
+  .vtickets-count {
+    padding: 19px;
   }
 
-  .vtickets-controls {
-    width: 100%;
-  }
-
-  .vtickets-controls input {
-    width: 100%;
-  }
-
+  .vtickets-controls,
+  .vtickets-controls input,
   .vtickets-controls select {
     width: 100%;
   }
 
-  .vticket-top {
-    padding: 25px;
-  }
-
-  .vticket-bottom {
-    padding: 18px 22px 25px;
+  .vticket-top,
+  .vticket-apartment .vticket-top {
+    min-height: 0;
+    padding: 25px 22px;
   }
 
   .vticket-top h2 {
     font-size: 27px;
   }
 
+  .vticket-bottom {
+    padding: 19px 22px 25px;
+  }
+
   .vticket-qr-area {
-    gap: 12px;
+    gap: 13px;
   }
 
   .vticket-qr-area img,
   .vticket-no-qr {
-    width: 90px;
-    height: 90px;
+    width: 88px;
+    height: 88px;
   }
 
   .vtickets-bottom-banner {
-    padding: 35px 25px;
     flex-direction: column;
     align-items: flex-start;
+    padding: 32px 25px;
   }
 
   .vtickets-bottom-banner h2 {
@@ -779,73 +937,879 @@
     padding: 30px 20px;
   }
 
-  .vtickets-modal h2 {
-    font-size: 25px;
-  }
-}
-
-@media (max-width: 380px) {
-  .vtickets-tab {
-    padding: 9px 10px;
-    font-size: 9px;
-  }
-
-  .vticket-details {
-    gap: 14px;
-  }
-
-  .vticket-topline small {
-    font-size: 8px;
-  }
-}
-
-
-.vtickets-apartment-gallery {
-  margin-top: 28px;
-}
-
-.vtickets-apartment-gallery h3 {
-  font-family: "Playfair Display", serif;
-  font-size: 22px;
-  color: #68001c;
-  margin-bottom: 16px;
-}
-
-.vtickets-apartment-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.vtickets-apartment-gallery-item {
-  overflow: hidden;
-  border-radius: 12px;
-  background: #fff6f7;
-  border: 1px solid #f1e1e5;
-}
-
-.vtickets-apartment-gallery-item img {
-  display: block;
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-}
-
-.vtickets-apartment-gallery-item span {
-  display: block;
-  padding: 10px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #68001c;
-}
-
-@media (max-width: 480px) {
   .vtickets-apartment-gallery-grid {
     grid-template-columns: 1fr;
   }
+}
 
-  .vtickets-apartment-gallery-item img {
-    height: 190px;
+.vtickets-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.vticket.vticket-event,
+.vticket.vticket-apartment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 225px;
+  grid-template-rows: auto;
+  position: relative;
+  min-height: 225px;
+  border: 1px solid #efcfdb;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(101, 0, 29, 0.09);
+}
+
+.vticket.vticket-event .vticket-top,
+.vticket.vticket-apartment .vticket-top {
+  min-height: 225px;
+  padding: 21px 24px;
+  background: linear-gradient(135deg, #65001d, #8d214a);
+  color: #fff;
+}
+
+.vticket-event .vticket-top h2,
+.vticket-apartment .vticket-top h2 {
+  color: #fff;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.vticket-event .vticket-topline,
+.vticket-apartment .vticket-topline {
+  position: relative;
+  z-index: 1;
+}
+
+.vticket-event .vticket-overline,
+.vticket-apartment .vticket-overline {
+  margin-top: 14px;
+}
+
+.vticket-event .vticket-category,
+.vticket-apartment .vticket-category {
+  margin-bottom: 14px;
+}
+
+.vticket-event .vticket-details,
+.vticket-apartment .vticket-details {
+  gap: 12px;
+}
+
+.vticket-event-photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 42%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.vticket-event-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #65001d 0%,
+    rgba(101, 0, 29, 0.6) 45%,
+    rgba(101, 0, 29, 0.28) 100%
+  );
+}
+
+.vticket-event-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vticket-event .vticket-top > :not(.vticket-event-photo) {
+  position: relative;
+  z-index: 1;
+}
+
+.vticket-event .vticket-top h2,
+.vticket-event .vticket-details,
+.vticket-event .vticket-category {
+  max-width: 75%;
+}
+
+.vticket-event .vticket-cut,
+.vticket-apartment .vticket-cut {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: calc(100% - 225px);
+  width: 1px;
+  height: auto;
+  background: transparent;
+  border-left: 2px dashed #e6bdcb;
+}
+
+.vticket-event .vticket-cut > div,
+.vticket-apartment .vticket-cut > div {
+  display: none;
+}
+
+.vticket-event .vticket-cut > span,
+.vticket-apartment .vticket-cut > span {
+  position: absolute;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  background: #fffaf8;
+  border-radius: 50%;
+}
+
+.vticket-event .vticket-cut > span:first-child,
+.vticket-apartment .vticket-cut > span:first-child {
+  top: -12px;
+}
+
+.vticket-event .vticket-cut > span:last-child,
+.vticket-apartment .vticket-cut > span:last-child {
+  top: auto;
+  bottom: -12px;
+}
+
+.vticket-event .vticket-bottom,
+.vticket-apartment .vticket-bottom {
+  min-width: 0;
+  padding: 19px 15px;
+  background: #fff0f5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.vticket-event .vticket-qr-area,
+.vticket-apartment .vticket-qr-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+}
+
+.vticket-event .vticket-qr-area img,
+.vticket-apartment .vticket-qr-area img {
+  width: 86px;
+  height: 86px;
+  padding: 5px;
+  background: #fff;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.vticket-event .vticket-qr-area > div:last-child,
+.vticket-apartment .vticket-qr-area > div:last-child {
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  text-align: center;
+}
+
+.vticket-event .vticket-qr-area strong,
+.vticket-apartment .vticket-qr-area strong {
+  max-width: 100%;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.vticket-event .vticket-download,
+.vticket-apartment .vticket-download {
+  width: 100%;
+  margin: 0;
+  padding: 10px 8px;
+  font-size: 10px;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+.vticket-event .vticket-booking-ref {
+  margin: 0;
+  text-align: center;
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .vticket.vticket-event,
+  .vticket.vticket-apartment {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vticket-event .vticket-cut,
+  .vticket-apartment .vticket-cut {
+    position: relative;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    height: 1px;
+    border-left: 0;
+    border-top: 2px dashed #e6bdcb;
+  }
+
+  .vticket-event .vticket-bottom,
+  .vticket-apartment .vticket-bottom {
+    padding: 18px;
+  }
+
+  .vticket-event .vticket-qr-area,
+  .vticket-apartment .vticket-qr-area {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .vticket-event .vticket-top h2,
+  .vticket-event .vticket-details,
+  .vticket-event .vticket-category {
+    max-width: 100%;
   }
 }
 
+.vtickets-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1000px;
+  gap: 18px;
+}
+
+.vticket.vticket-event {
+  grid-template-columns: minmax(0, 1fr) 205px;
+  min-height: 0;
+}
+
+.vticket-event .vticket-top {
+  min-height: 230px;
+  padding: 20px 24px;
+}
+
+.vticket-event .vticket-top h2 {
+  font-size: 23px;
+  margin: 8px 0 10px;
+}
+
+.vticket-event .vticket-overline {
+  margin-top: 12px;
+}
+
+.vticket-event .vticket-category {
+  margin-bottom: 12px;
+}
+
+.vticket-event .vticket-details {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vticket-event .vticket-details small {
+  font-size: 9px;
+}
+
+.vticket-event .vticket-details strong {
+  font-size: 11px;
+}
+
+.vticket-event .vticket-cut {
+  left: calc(100% - 205px);
+}
+
+.vticket-event .vticket-bottom {
+  padding: 16px 13px;
+  gap: 12px;
+  background: #fff0f5;
+}
+
+.vticket-event .vticket-qr-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.vticket-event .vticket-qr-area img.vticket-bold-qr {
+  width: 145px;
+  height: 145px;
+  padding: 5px;
+  background: #fff;
+  border: 2px solid #65001d;
+  border-radius: 10px;
+  image-rendering: auto;
+  object-fit: contain;
+}
+
+.vticket-event .vticket-qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.vticket-event .vticket-qr-code small {
+  color: #a2647c;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.vticket-event .vticket-qr-code strong {
+  color: #65001d;
+  font-size: 11px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.vticket-event .vticket-download {
+  width: 100%;
+  padding: 9px;
+  font-size: 10px;
+}
+
+.vticket-event .vticket-booking-ref {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .vticket.vticket-event {
+    grid-template-columns: 1fr;
+  }
+
+  .vticket-event .vticket-cut {
+    left: auto;
+  }
+
+  .vticket-event .vticket-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vticket-event .vticket-qr-area {
+    flex-direction: column;
+  }
+}
+
+.vticket-event .vticket-left-button {
+  align-self: flex-start;
+  width: auto;
+  margin-top: 17px;
+  padding: 10px 17px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 9px;
+  background: #fff;
+  color: #65001d;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.vticket-event .vticket-left-button:hover {
+  background: #ffe5ee;
+  color: #65001d;
+  transform: translateY(-2px);
+}
+
+.vticket-event .vticket-bottom {
+  justify-content: center;
+}
+
+.vticket-event .vticket-qr-area img.vticket-bold-qr {
+  width: 160px;
+  height: 160px;
+}
+
+.vticket-event .vticket-qr-area {
+  gap: 23px;
+}
+
+.vticket-event .vticket-qr-code {
+  gap: 6px;
+}
+
+.vticket.vticket-apartment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 215px;
+  min-height: 250px;
+  background: #ffffff;
+  border: 1px solid #f0d6df;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(101, 0, 29, 0.07);
+}
+
+.vticket-apartment .vticket-top {
+  position: relative;
+  min-height: 250px;
+  padding: 22px 25px;
+  background: #ffffff;
+  color: #65001d;
+}
+
+.vticket-apartment .vticket-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vticket-apartment .vticket-brand {
+  color: #65001d;
+  font-weight: 900;
+}
+
+.vticket-apartment .vticket-topline small {
+  color: #a45a72;
+}
+
+.vticket-apartment .vticket-overline {
+  display: block;
+  color: #b56b85;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.vticket-apartment .vticket-top h2 {
+  color: #65001d;
+  font-size: 23px;
+  line-height: 1.2;
+  margin: 8px 0;
+}
+
+.vticket-apartment .vticket-category {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: #fff0f5;
+  color: #65001d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vticket-apartment .vticket-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 16px;
+}
+
+.vticket-apartment .vticket-details small {
+  display: block;
+  color: #ae7186;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.vticket-apartment .vticket-details strong {
+  display: block;
+  color: #65001d;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.vticket-apartment-photo {
+  float: right;
+  width: 150px;
+  height: 100px;
+  margin: 5px 0 12px 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid #fff0f5;
+}
+
+.vticket-apartment-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vticket-apartment .vticket-cut {
+  left: calc(100% - 215px);
+  border-left: 2px dashed #e7b8c9;
+}
+
+.vticket-apartment .vticket-bottom {
+  padding: 20px 14px;
+  background: linear-gradient(160deg, #ffe6ef, #fff5f8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vticket-apartment .vticket-qr-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.vticket-apartment .vticket-qr-area img.vticket-apartment-qr {
+  width: 160px;
+  height: 160px;
+  padding: 6px;
+  border: 2px solid #65001d;
+  border-radius: 12px;
+  background: #ffffff;
+  object-fit: contain;
+}
+
+.vticket-apartment .vticket-qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.vticket-apartment .vticket-qr-code small {
+  color: #a76b80;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.vticket-apartment .vticket-qr-code strong {
+  color: #65001d;
+  font-size: 11px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.vticket-apartment .vticket-download {
+  width: auto;
+  margin-top: 17px;
+  padding: 10px 17px;
+  background: #65001d;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vticket-apartment .vticket-download:hover {
+  background: #8b2449;
+  color: #ffffff;
+}
+
+@media (max-width: 700px) {
+  .vticket.vticket-apartment {
+    grid-template-columns: 1fr;
+  }
+
+  .vticket-apartment .vticket-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vticket-apartment .vticket-cut {
+    left: auto;
+    width: 100%;
+    height: 1px;
+    border-left: none;
+    border-top: 2px dashed #e7b8c9;
+  }
+
+  .vticket-apartment-photo {
+    width: 110px;
+    height: 85px;
+  }
+}
+
+.vticket.vticket-apartment {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #f0dce3;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(101, 0, 29, 0.07);
+}
+
+.vstay-card {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) 205px;
+  min-height: 260px;
+  background: #fff;
+}
+
+.vstay-photo {
+  position: relative;
+  min-height: 260px;
+  background: #f5e4ea;
+  overflow: hidden;
+}
+
+.vstay-photo > img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+}
+
+.vstay-photo-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #65001d;
+}
+
+.vstay-photo-empty i {
+  font-size: 38px;
+}
+
+.vstay-photo-empty span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.vstay-photo-label {
+  position: absolute;
+  bottom: 13px;
+  left: 13px;
+  padding: 8px 11px;
+  background: rgba(101, 0, 29, 0.92);
+  color: white;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.vstay-content {
+  min-width: 0;
+  padding: 21px 23px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #fff;
+  color: #65001d;
+}
+
+.vstay-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.vstay-eyebrow {
+  color: #ba7c91;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+
+.vstay-heading h2 {
+  margin: 6px 0;
+  color: #65001d;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.vstay-heading p {
+  margin: 0;
+  color: #906476;
+  font-size: 11px;
+}
+
+.vstay-type {
+  flex-shrink: 0;
+  padding: 7px 9px;
+  border-radius: 20px;
+  background: #fff0f5;
+  color: #65001d;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.vstay-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff4f7;
+  border-radius: 10px;
+}
+
+.vstay-dates > div,
+.vstay-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.vstay-dates small,
+.vstay-meta small {
+  color: #ad788b;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.vstay-dates strong,
+.vstay-meta strong {
+  color: #65001d;
+  font-size: 11px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.vstay-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vstay-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.vstay-reference {
+  color: #a16c7e;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.vstay-details-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  background: #65001d;
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.vstay-details-btn:hover {
+  background: #8b2449;
+}
+
+.vstay-qr-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 13px;
+  background: #fff0f5;
+  border-left: 1px solid #f2d9e2;
+  text-align: center;
+}
+
+.vstay-qr-heading {
+  color: #65001d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.vstay-qr-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 165px;
+  height: 165px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #eacbd5;
+  border-radius: 12px;
+}
+
+.vstay-qr-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vstay-qr-panel > small {
+  color: #ae7287;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.vstay-ticket-code {
+  max-width: 100%;
+  color: #65001d;
+  font-size: 10px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .vstay-card {
+    grid-template-columns: 155px minmax(0, 1fr);
+  }
+
+  .vstay-qr-panel {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid #f2d9e2;
+  }
+
+  .vstay-photo {
+    min-height: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .vstay-card {
+    grid-template-columns: 1fr;
+  }
+
+  .vstay-photo {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .vstay-content {
+    padding: 19px;
+  }
+
+  .vstay-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vstay-heading {
+    flex-wrap: wrap;
+  }
+
+  .vstay-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vstay-qr-panel {
+    grid-column: auto;
+  }
+}

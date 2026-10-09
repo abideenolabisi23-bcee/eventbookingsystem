@@ -26,7 +26,7 @@ const OrganizerEvents = () => {
     message: "",
   });
 
-  const accessToken = localStorage.getItem("accessToken");
+  const accessToken = localStorage.getItem("organizerAccessToken");
 
   const showFeedback = (type, title, message) => {
     setFeedback({
@@ -79,7 +79,7 @@ const OrganizerEvents = () => {
       const user = profileData?.user || profileData;
 
       if (user?.role !== "organizer") {
-        navigate("/");
+        navigate("/organizer/login");
         return;
       }
 
@@ -97,10 +97,35 @@ const OrganizerEvents = () => {
         return;
       }
 
-      if (error.response?.status === 403) {
-        navigate("/organizer/pending");
-        return;
-      }
+    if (error.response?.status === 403) {
+  const message = String(
+    error.response?.data?.message || ""
+  ).toLowerCase();
+
+  if (message.includes("pending") || message.includes("approval")) {
+    navigate("/organizer/pending");
+    return;
+  }
+
+  if (message.includes("suspend")) {
+    navigate("/organizer/suspended");
+    return;
+  }
+
+  if (message.includes("reject")) {
+    navigate("/organizer/rejected");
+    return;
+  }
+
+  showFeedback(
+    "error",
+    "Access denied",
+    error.response?.data?.message ||
+      "You do not have permission to access these events."
+  );
+
+  return;
+}
 
       showFeedback(
         "error",
@@ -257,7 +282,7 @@ const OrganizerEvents = () => {
   };
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
+    const refreshToken = localStorage.getItem("organizerRefreshToken");
 
     try {
       if (accessToken && refreshToken) {
@@ -276,9 +301,9 @@ const OrganizerEvents = () => {
     } catch (error) {
       console.log(error);
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("role");
+      localStorage.removeItem("organizerAccessToken");
+      localStorage.removeItem("organizerRefreshToken");
+      localStorage.removeItem("organizerRole");
       localStorage.removeItem("firstname");
       localStorage.removeItem("lastname");
 

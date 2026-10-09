@@ -12,7 +12,7 @@ const Navbar = () => {
   const location = useLocation();
 
   const accessToken =
-    localStorage.getItem("accessToken");
+    localStorage.getItem("userAccessToken");
 
   const isHomePage =
     location.pathname === "/";

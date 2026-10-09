@@ -17,8 +17,11 @@ const formatCurrency = (amount) =>
 
 const formatDate = (value) => {
   if (!value) return "No date";
+
   const date = new Date(value);
+
   if (Number.isNaN(date.getTime())) return "No date";
+
   return date.toLocaleDateString("en-NG", {
     day: "numeric",
     month: "short",
@@ -28,6 +31,7 @@ const formatDate = (value) => {
 
 const getCustomerName = (user) => {
   if (!user) return "Customer";
+
   return (
     [user.firstname, user.lastname].filter(Boolean).join(" ") ||
     user.email ||
@@ -48,20 +52,18 @@ const OrganizerDashboard = () => {
   const [operationsError, setOperationsError] = useState("");
 
   const logout = useCallback(() => {
-    [
-      "accessToken",
-      "refreshToken",
-      "role",
-      "firstname",
-      "lastname"
-    ].forEach((key) => localStorage.removeItem(key));
+  [
+    "organizerAccessToken",
+    "organizerRefreshToken",
+    "organizerRole"
+  ].forEach((key) => localStorage.removeItem(key));
 
-    navigate("/organizer/login");
-  }, [navigate]);
+  navigate("/organizer/login");
+}, [navigate]);
 
   const fetchDashboard = useCallback(
     async (showLoader = true) => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("organizerAccessToken");
 
       if (!token) {
         navigate("/organizer/login");
@@ -114,7 +116,7 @@ const OrganizerDashboard = () => {
   useEffect(() => {
     if (!dashboard) return;
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("organizerAccessToken");
 
     if (!token) return;
 

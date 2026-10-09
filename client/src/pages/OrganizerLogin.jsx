@@ -126,20 +126,15 @@ const OrganizerLogin = () => {
             return;
           }
 
-          localStorage.setItem(
-            "accessToken",
-            accessToken
-          );
+          localStorage.setItem("organizerAccessToken", accessToken);
 
-          localStorage.setItem(
-            "refreshToken",
-            refreshToken
-          );
+if (refreshToken) {
+  localStorage.setItem("organizerRefreshToken", refreshToken);
+} else {
+  localStorage.removeItem("organizerRefreshToken");
+}
 
-          localStorage.setItem(
-            "role",
-            role
-          );
+localStorage.setItem("organizerRole", "organizer");
 
           setNotification({
             type: "success",

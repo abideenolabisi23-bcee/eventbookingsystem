@@ -37,7 +37,7 @@ const OrganizerProfile = () => {
     message: "",
   });
 
-  const accessToken = localStorage.getItem("accessToken");
+  const accessToken = localStorage.getItem("organizerAccessToken");
 
   const showFeedback = (type, title, message) => {
     setFeedback({
@@ -358,7 +358,7 @@ const OrganizerProfile = () => {
   };
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
+    const refreshToken = localStorage.getItem("organizerRefreshToken");
 
     try {
       if (accessToken && refreshToken) {
@@ -377,9 +377,9 @@ const OrganizerProfile = () => {
     } catch (error) {
       console.log(error);
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("role");
+      localStorage.removeItem("organizerAccessToken");
+      localStorage.removeItem("organizerRefreshToken");
+      localStorage.removeItem("organizerRole");
 
       navigate("/organizer/login");
     }

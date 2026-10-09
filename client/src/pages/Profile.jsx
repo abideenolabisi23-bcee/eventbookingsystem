@@ -18,19 +18,46 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [isEditing, setIsEditing] = useState(false);
+
+const [editForm, setEditForm] = useState({
+  firstname: "",
+  lastname: "",
+});
+
+const [savingProfile, setSavingProfile] = useState(false);
+const [editError, setEditError] = useState("");
+const [editSuccess, setEditSuccess] = useState("");
+useEffect(() => {
+  if (!editSuccess) return;
+
+  const timer = setTimeout(() => {
+    setEditSuccess("");
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}, [editSuccess]);
   const [photoUploading, setPhotoUploading] =
     useState(false);
 
   const [photoMessage, setPhotoMessage] =
     useState("");
+    useEffect(() => {
+  if (!photoMessage) return;
 
+  const timer = setTimeout(() => {
+    setPhotoMessage("");
+  }, 4000);
+
+  return () => clearTimeout(timer);
+}, [photoMessage]);
   const [photoError, setPhotoError] =
     useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
       const accessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("userAccessToken");
 
       if (!accessToken) {
         navigate("/login", {
@@ -82,11 +109,11 @@ const Profile = () => {
 
         if (error.response?.status === 401) {
           localStorage.removeItem(
-            "accessToken"
+            "userAccessToken"
           );
 
           localStorage.removeItem(
-            "refreshToken"
+            "userRefreshToken"
           );
 
           navigate("/login", {
@@ -109,6 +136,99 @@ const Profile = () => {
 
     fetchProfile();
   }, [navigate]);
+
+  const handleEditProfile = () => {
+  setEditForm({
+    firstname: user.firstname || "",
+    lastname: user.lastname || "",
+  });
+
+  setEditError("");
+  setEditSuccess("");
+  setIsEditing(true);
+};
+
+const handleCancelEdit = () => {
+  setIsEditing(false);
+  setEditError("");
+  setEditSuccess("");
+};
+
+const handleSaveProfile = async () => {
+  const firstname = editForm.firstname.trim();
+  const lastname = editForm.lastname.trim();
+
+  if (!firstname || !lastname) {
+    setEditError("First name and last name are required.");
+    return;
+  }
+
+  const accessToken = localStorage.getItem("userAccessToken");
+
+  if (!accessToken) {
+    navigate("/login", {
+      state: {
+        returnTo: "/profile",
+      },
+    });
+    return;
+  }
+
+  try {
+    setSavingProfile(true);
+    setEditError("");
+    setEditSuccess("");
+
+    const response = await axios.put(
+      "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+      { firstname, lastname },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const updatedProfile = response.data?.data;
+    const updatedUser = updatedProfile?.user || updatedProfile;
+
+    setUser((previous) => ({
+      ...previous,
+      ...(updatedUser && typeof updatedUser === "object"
+        ? updatedUser
+        : {}),
+      firstname,
+      lastname,
+    }));
+
+    setIsEditing(false);
+    setEditSuccess("Your personal information was updated successfully.");
+
+    window.dispatchEvent(new Event("profilePictureUpdated"));
+  } catch (error) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("userAccessToken");
+      localStorage.removeItem("userRefreshToken");
+      localStorage.removeItem("userRole");
+
+      navigate("/login", {
+        replace: true,
+        state: {
+          returnTo: "/profile",
+        },
+      });
+
+      return;
+    }
+
+    setEditError(
+      error.response?.data?.message ||
+        "Unable to update your personal information."
+    );
+  } finally {
+    setSavingProfile(false);
+  }
+};
 
   const getInitials = () => {
     if (!user) return "";
@@ -163,12 +283,14 @@ const Profile = () => {
     ).format(price || 0);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+ const handleLogout = () => {
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
 
-    navigate("/");
-  };
+  navigate("/");
+  window.location.reload();
+};
 
   const openProfilePicturePicker = () => {
     setPhotoMessage("");
@@ -225,7 +347,7 @@ const Profile = () => {
 
     const accessToken =
       localStorage.getItem(
-        "accessToken"
+        "userAccessToken"
       );
 
     if (!accessToken) {
@@ -288,12 +410,14 @@ const Profile = () => {
 
       if (error.response?.status === 401) {
         localStorage.removeItem(
-          "accessToken"
+          "userAccessToken"
         );
 
         localStorage.removeItem(
-          "refreshToken"
+          "userRefreshToken"
         );
+
+        localStorage.removeItem("userRole");
 
         navigate("/login", {
           state: {
@@ -881,66 +1005,102 @@ const Profile = () => {
 
             <section className="profile-account-info">
               <div className="profile-account-info-heading">
-                <div>
-                  <span>
-                    YOUR DETAILS
-                  </span>
+  <div>
+    <span>YOUR DETAILS</span>
+    <h2>Personal information</h2>
+  </div>
 
-                  <h2>
-                    Personal information
-                  </h2>
-                </div>
+  <div className="profile-secure">
+    <i className="bi bi-shield-check"></i>
+    Secure account
+  </div>
+</div>
 
-                <div className="profile-secure">
-                  <i className="bi bi-shield-check"></i>
+    <div className="profile-info-grid">
+  <div>
+    <span>FIRST NAME</span>
 
-                  Secure account
-                </div>
-              </div>
+    {isEditing ? (
+      <input
+        type="text"
+        value={editForm.firstname}
+        onChange={(event) =>
+          setEditForm((previous) => ({
+            ...previous,
+            firstname: event.target.value,
+          }))
+        }
+        maxLength={60}
+        style={{
+          width: "100%",
+          padding: "10px",
+          border: "1px solid #ead3d9",
+          borderRadius: "8px",
+          background: "#fff",
+          color: "#330014",
+          font: "inherit",
+        }}
+      />
+    ) : (
+      <strong>{user.firstname}</strong>
+    )}
+  </div>
 
-              <div className="profile-info-grid">
-                <div>
-                  <span>
-                    FIRST NAME
-                  </span>
+  <div>
+    <span>LAST NAME</span>
 
-                  <strong>
-                    {user.firstname}
-                  </strong>
-                </div>
+    {isEditing ? (
+      <input
+        type="text"
+        value={editForm.lastname}
+        onChange={(event) =>
+          setEditForm((previous) => ({
+            ...previous,
+            lastname: event.target.value,
+          }))
+        }
+        maxLength={60}
+        style={{
+          width: "100%",
+          padding: "10px",
+          border: "1px solid #ead3d9",
+          borderRadius: "8px",
+          background: "#fff",
+          color: "#330014",
+          font: "inherit",
+        }}
+      />
+    ) : (
+      <strong>{user.lastname}</strong>
+    )}
+  </div>
 
-                <div>
-                  <span>
-                    LAST NAME
-                  </span>
+  <div>
+    <span>EMAIL ADDRESS</span>
+    <strong>{user.email}</strong>
+  </div>
 
-                  <strong>
-                    {user.lastname}
-                  </strong>
-                </div>
+  <div>
+    <span>MEMBER SINCE</span>
+    <strong>{formatDate(user.createdAt)}</strong>
+  </div>
+</div>
 
-                <div>
-                  <span>
-                    EMAIL ADDRESS
-                  </span>
+{editError && (
+  <p style={{ color: "#b42318", marginTop: "14px" }}>
+    <i className="bi bi-exclamation-circle"></i>{" "}
+    {editError}
+  </p>
+)}
 
-                  <strong>
-                    {user.email}
-                  </strong>
-                </div>
+{editSuccess && (
+  <p style={{ color: "#18794e", marginTop: "14px" }}>
+    <i className="bi bi-check-circle-fill"></i>{" "}
+    {editSuccess}
+  </p>
+)}
 
-                <div>
-                  <span>
-                    MEMBER SINCE
-                  </span>
 
-                  <strong>
-                    {formatDate(
-                      user.createdAt
-                    )}
-                  </strong>
-                </div>
-              </div>
 
               <div className="profile-security-links">
                 <Link to="/payments-refunds">
@@ -978,9 +1138,66 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <i className="bi bi-chevron-right"></i>
-                </Link>
-              </div>
+                      <i className="bi bi-chevron-right"></i>
+  </Link>
+</div>
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: "8px",
+    marginTop: "14px",
+  }}
+>
+  {isEditing && (
+    <button
+      type="button"
+      onClick={handleCancelEdit}
+      disabled={savingProfile}
+      style={{
+        padding: "7px 12px",
+        fontSize: "12px",
+        borderRadius: "7px",
+        border: "1px solid #ddd",
+        background: "#fff",
+        color: "#65001d",
+        cursor: "pointer",
+      }}
+    >
+      Cancel
+    </button>
+  )}
+
+  <button
+    type="button"
+    onClick={isEditing ? handleSaveProfile : handleEditProfile}
+    disabled={savingProfile}
+    style={{
+      padding: "7px 12px",
+      fontSize: "12px",
+      borderRadius: "7px",
+      border: "none",
+      background: "#65001d",
+      color: "#fff",
+      cursor: savingProfile ? "wait" : "pointer",
+    }}
+  >
+    <i
+      className={
+        isEditing ? "bi bi-check2" : "bi bi-pencil-square"
+      }
+    ></i>{" "}
+    {savingProfile
+      ? "Saving..."
+      : isEditing
+        ? "Save Changes"
+        : "Edit Profile"}
+  </button>
+</div>
+</section>
+
+<section className="profile-recent">
             </section>
 
             <section className="profile-recent">

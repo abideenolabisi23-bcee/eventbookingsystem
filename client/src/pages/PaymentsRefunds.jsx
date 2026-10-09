@@ -22,7 +22,7 @@ const PaymentsRefunds = () => {
   useEffect(() => {
     const fetchData = async () => {
       const accessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("userAccessToken");
 
       if (!accessToken) {
         navigate("/login", {
@@ -74,24 +74,20 @@ const PaymentsRefunds = () => {
           error
         );
 
-        if (error.response?.status === 401) {
-          localStorage.removeItem(
-            "accessToken"
-          );
+       if (error.response?.status === 401) {
+  localStorage.removeItem("userAccessToken");
+  localStorage.removeItem("userRefreshToken");
+  localStorage.removeItem("userRole");
 
-          localStorage.removeItem(
-            "refreshToken"
-          );
+  navigate("/login", {
+    replace: true,
+    state: {
+      returnTo: "/payments-refunds",
+    },
+  });
 
-          navigate("/login", {
-            state: {
-              returnTo: "/payments-refunds",
-            },
-          });
-
-          return;
-        }
-
+  return;
+}
         setError(
           error.response?.data?.message ||
           "Unable to load your payment activity."

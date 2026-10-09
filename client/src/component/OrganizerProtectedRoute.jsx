@@ -1,73 +1,139 @@
+
 import { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import axios from "axios";
 
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
 const OrganizerProtectedRoute = () => {
+  const location = useLocation();
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
+    let active = true;
+
     const checkOrganizer = async () => {
-      const accessToken = localStorage.getItem("accessToken");
+      const accessToken = localStorage.getItem("organizerAccessToken");
 
       if (!accessToken) {
-        setStatus("login");
+        if (active) setStatus("login");
         return;
       }
 
       try {
         const response = await axios.get(
-          "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+          `${API_URL}/organizer/dashboard`,
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+              Authorization: `Bearer ${accessToken}`
+            }
           }
         );
 
-        const profileData = response.data.data;
-        const user = profileData.user || profileData;
+        if (!active) return;
 
-        if (user.role !== "organizer") {
+        const organizer = response.data?.data?.organizer;
+
+        if (!organizer) {
+          setStatus("error");
+          return;
+        }
+
+        if (organizer.role && organizer.role !== "organizer") {
           setStatus("login");
           return;
         }
 
-        if (user.accountStatus === "suspended") {
+        const accountStatus = String(
+          organizer.accountStatus || ""
+        ).toLowerCase();
+
+        const approvalStatus = String(
+          organizer.approvalStatus || ""
+        ).toLowerCase();
+
+        if (
+          accountStatus === "suspended" ||
+          accountStatus === "inactive"
+        ) {
           setStatus("suspended");
           return;
         }
 
-        if (user.approvalStatus === "rejected") {
+        if (approvalStatus === "rejected") {
           setStatus("rejected");
           return;
         }
 
-        if (user.approvalStatus !== "approved") {
+        if (approvalStatus === "pending") {
           setStatus("pending");
+          return;
+        }
+
+        if (
+          approvalStatus &&
+          approvalStatus !== "approved"
+        ) {
+          setStatus("error");
           return;
         }
 
         setStatus("approved");
       } catch (error) {
-        if (error.response?.status === 403) {
-          setStatus("suspended");
-          return;
-        }
+        if (!active) return;
 
-        if (error.response?.status === 401) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("role");
+        const statusCode = error.response?.status;
+
+        if (statusCode === 401) {
+          localStorage.removeItem("organizerAccessToken");
+          localStorage.removeItem("organizerRefreshToken");
+          localStorage.removeItem("organizerRole");
 
           setStatus("login");
           return;
         }
 
-        setStatus("login");
+        if (statusCode === 403) {
+          const message = String(
+            error.response?.data?.message || ""
+          ).toLowerCase();
+
+          if (
+            message.includes("suspend") ||
+            message.includes("inactive")
+          ) {
+            setStatus("suspended");
+            return;
+          }
+
+          if (message.includes("reject")) {
+            setStatus("rejected");
+            return;
+          }
+
+          if (
+            message.includes("pending") ||
+            message.includes("approval")
+          ) {
+            setStatus("pending");
+            return;
+          }
+
+          setStatus("error");
+          return;
+        }
+
+        setStatus("error");
       }
     };
 
     checkOrganizer();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   if (status === "loading") {
@@ -79,6 +145,7 @@ const OrganizerProtectedRoute = () => {
           placeItems: "center",
           background: "#fff4f6",
           color: "#68001c",
+          fontWeight: 600
         }}
       >
         Checking organizer account...
@@ -86,8 +153,56 @@ const OrganizerProtectedRoute = () => {
     );
   }
 
+  if (status === "error") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "#fff4f6",
+          padding: 24
+        }}
+      >
+        <div style={{ textAlign: "center", maxWidth: 420 }}>
+          <h2 style={{ color: "#68001c" }}>
+            Unable to verify your account
+          </h2>
+
+          <p>
+            We couldn't verify your organizer account.
+            Please try again.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              background: "#68001c",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              padding: "12px 24px",
+              cursor: "pointer"
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "login") {
-    return <Navigate to="/organizer/login" replace />;
+    return (
+      <Navigate
+        to="/organizer/login"
+        replace
+        state={{
+          returnTo: location.pathname + location.search
+        }}
+      />
+    );
   }
 
   if (status === "pending") {
