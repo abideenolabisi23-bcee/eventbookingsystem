@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import "../styles/vibelyTickets.css";
+// import "../styles/vibelyTickets.css";
+import "../styles/eventPaymentCallback.css";
 
 const API =
   import.meta.env.VITE_API_URL ||
