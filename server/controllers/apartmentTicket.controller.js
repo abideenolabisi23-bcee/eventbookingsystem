@@ -183,7 +183,33 @@ const validateApartmentTicket = async (req, res) => {
           "Apartment ownership information is unavailable"
       });
     }
+if (!ticket.apartment.createdBy) {
+  return res.status(403).send({
+    valid: false,
+    message:
+      "Apartment ownership information is unavailable"
+  });
+}
 
+console.log("LOGGED-IN ORGANIZER:", organizerId.toString());
+
+console.log(
+  "APARTMENT OWNER:",
+  ticket.apartment.createdBy.toString()
+);
+
+console.log("APARTMENT:", ticket.apartment.title);
+
+if (
+  ticket.apartment.createdBy.toString() !==
+  organizerId.toString()
+) {
+  return res.status(403).send({
+    valid: false,
+    message:
+      "You are not authorized to scan this apartment ticket"
+  });
+}
     if (
       ticket.apartment.createdBy.toString() !==
       organizerId.toString()
@@ -195,13 +221,15 @@ const validateApartmentTicket = async (req, res) => {
       });
     }
 
-    if (ticket.status === "cancelled") {
-      return res.status(400).send({
-        valid: false,
-        message:
-          "This apartment ticket has been cancelled"
-      });
-    }
+  if (ticket.status !== "valid") {
+  return res.status(400).send({
+    valid: false,
+    message:
+      ticket.status === "used"
+        ? "This apartment ticket has already been used"
+        : "This apartment ticket is no longer valid"
+  });
+}
 
     if (
       ticket.booking.bookingStatus === "cancelled"

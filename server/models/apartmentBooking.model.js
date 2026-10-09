@@ -32,9 +32,9 @@ const ApartmentBookingSchema = new mongoose.Schema(
     },
 
     expectedCheckInTime: {
-  type: String,
-  default: null
-},
+      type: String,
+      default: null
+    },
 
     numberOfUnits: {
       type: Number,
@@ -57,25 +57,24 @@ const ApartmentBookingSchema = new mongoose.Schema(
       required: true,
       unique: true
     },
-    checkInToken: {
-  type: String,
-  unique: true,
-  default: () =>
-    crypto.randomBytes(32).toString("hex")
-},
 
-        expiresAt: {
-  type: Date,
-  required: true
-},
+    checkInToken: {
+      type: String,
+      unique: true,
+      select: false,
+      default: () => crypto.randomBytes(32).toString("hex")
+    },
+
+    expiresAt: {
+      type: Date,
+      required: true
+    },
 
     bookingStatus: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled"],
+      enum: ["pending", "confirmed", "cancelled", "expired"],
       default: "pending"
     },
-
-
 
     paymentStatus: {
       type: String,
@@ -84,31 +83,32 @@ const ApartmentBookingSchema = new mongoose.Schema(
     },
 
     stayStatus: {
-  type: String,
-  enum: [
-    "upcoming",
-    "checked_in",
-    "checked_out"
-  ],
-  default: "upcoming"
-},
+      type: String,
+      enum: ["upcoming", "checked_in", "checked_out"],
+      default: "upcoming"
+    },
 
-checkedInAt: {
-  type: Date,
-  default: null
-},
+    checkedInAt: {
+      type: Date,
+      default: null
+    },
 
-checkedOutAt: {
-  type: Date,
-  default: null
-}
-
+    checkedOutAt: {
+      type: Date,
+      default: null
+    }
   },
   {
     timestamps: true,
     strict: "throw"
   }
 );
+
+ApartmentBookingSchema.index({
+  bookingStatus: 1,
+  paymentStatus: 1,
+  expiresAt: 1
+});
 
 module.exports = mongoose.model(
   "ApartmentBooking",

@@ -16,7 +16,8 @@ const ApartmentPaymentSchema = new mongoose.Schema(
 
     amount: {
       type: Number,
-      required: true
+      required: true,
+      min: 0.01
     },
 
     paymentReference: {
@@ -26,14 +27,14 @@ const ApartmentPaymentSchema = new mongoose.Schema(
     },
 
     authorizationUrl: {
-  type: String,
-  default: null
-},
+      type: String,
+      default: null
+    },
 
-accessCode: {
-  type: String,
-  default: null
-},
+    accessCode: {
+      type: String,
+      default: null
+    },
 
     paymentMethod: {
       type: String,
@@ -53,13 +54,14 @@ accessCode: {
 
     refundedAmount: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0
     },
 
     paystackRefundId: {
-  type: String,
-  default: null
-},
+      type: String,
+      default: null
+    },
 
     refundStatus: {
       type: String,
@@ -70,14 +72,20 @@ accessCode: {
         "failed"
       ],
       default: "none"
-    },
-
+    }
   },
   {
     timestamps: true,
     strict: "throw"
   }
 );
+
+ApartmentPaymentSchema.index({
+  booking: 1,
+  user: 1,
+  status: 1,
+  createdAt: -1
+});
 
 module.exports = mongoose.model(
   "ApartmentPayment",

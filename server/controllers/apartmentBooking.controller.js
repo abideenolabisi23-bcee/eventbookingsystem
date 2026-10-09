@@ -4,6 +4,7 @@ const {
   getApartmentAvailability
 } = require("../utils/apartmentAvailability");
 const crypto = require("crypto");
+const ApartmentPaymentModel = require("../models/apartmentPayment.model");
 
 const createApartmentBooking = async (req, res) => {
   try {
@@ -408,6 +409,20 @@ const getMyApartmentBookings = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    await ApartmentBookingModel.updateMany(
+      {
+        user: userId,
+        bookingStatus: "pending",
+        paymentStatus: "pending",
+        expiresAt: { $lte: new Date() }
+      },
+      {
+        $set: {
+          bookingStatus: "expired"
+        }
+      }
+    );
+
     const bookings = await ApartmentBookingModel.find({
       user: userId
     })
@@ -421,7 +436,6 @@ const getMyApartmentBookings = async (req, res) => {
       message: "Apartment bookings fetched successfully",
       data: bookings
     });
-
   } catch (error) {
     console.log("GET APARTMENT BOOKINGS ERROR:", error);
 
@@ -469,17 +483,10 @@ const cancelApartmentBooking = async (req, res) => {
     const { bookingId } = req.params;
     const userId = req.user.id;
 
-
-    // ==========================================
-    // FIND THIS USER'S BOOKING
-    // ==========================================
-
-    const booking =
-      await ApartmentBookingModel.findOne({
-        _id: bookingId,
-        user: userId
-      });
-
+    const booking = await ApartmentBookingModel.findOne({
+      _id: bookingId,
+      user: userId
+    });
 
     if (!booking) {
       return res.status(404).send({
@@ -487,301 +494,185 @@ const cancelApartmentBooking = async (req, res) => {
       });
     }
 
-
-    // ==========================================
-    // ALREADY CANCELLED
-    // ==========================================
-
     if (
-      booking.bookingStatus === "cancelled"
+      booking.bookingStatus === "pending" &&
+      booking.paymentStatus === "pending" &&
+      booking.expiresAt &&
+      booking.expiresAt <= new Date()
     ) {
-      return res.status(400).send({
-        message:
-          "Apartment booking is already cancelled"
-      });
-    }
-
-
-    // ==========================================
-    // ALREADY CHECKED IN
-    // ==========================================
-
-    if (
-      booking.stayStatus === "checked_in"
-    ) {
-      return res.status(400).send({
-        message:
-          "You cannot cancel an apartment booking after check-in"
-      });
-    }
-
-
-    // ==========================================
-    // ALREADY CHECKED OUT
-    // ==========================================
-
-    if (
-      booking.stayStatus === "checked_out"
-    ) {
-      return res.status(400).send({
-        message:
-          "You cannot cancel an apartment booking after check-out"
-      });
-    }
-
-
-    // ==========================================
-    // ALREADY REFUNDED
-    // ==========================================
-
-    if (
-      booking.paymentStatus === "refunded"
-    ) {
-      return res.status(400).send({
-        message:
-          "This apartment booking has already been refunded"
-      });
-    }
-
-
-    // ==========================================
-    // UNPAID BOOKING
-    // ==========================================
-
-    if (
-      booking.paymentStatus === "pending"
-    ) {
-
-      booking.bookingStatus =
-        "cancelled";
-
+      booking.bookingStatus = "expired";
 
       await booking.save();
 
+      return res.status(400).send({
+        message: "This apartment booking has expired and cannot be cancelled"
+      });
+    }
+
+    if (booking.bookingStatus === "expired") {
+      return res.status(400).send({
+        message: "This apartment booking has expired and cannot be cancelled"
+      });
+    }
+
+    if (booking.bookingStatus === "cancelled") {
+      return res.status(400).send({
+        message: "Apartment booking is already cancelled"
+      });
+    }
+
+    if (booking.stayStatus === "checked_in") {
+      return res.status(400).send({
+        message: "You cannot cancel an apartment booking after check-in"
+      });
+    }
+
+    if (booking.stayStatus === "checked_out") {
+      return res.status(400).send({
+        message: "You cannot cancel an apartment booking after check-out"
+      });
+    }
+
+    if (booking.paymentStatus === "refunded") {
+      return res.status(400).send({
+        message: "This apartment booking has already been refunded"
+      });
+    }
+
+    if (booking.paymentStatus === "pending") {
+      booking.bookingStatus = "cancelled";
+
+      await booking.save();
 
       return res.status(200).send({
-        message:
-          "Apartment booking cancelled successfully",
-
+        message: "Apartment booking cancelled successfully",
         data: booking
       });
     }
 
-
-    // ==========================================
-    // PAID BOOKING
-    // ==========================================
-
-    if (
-      booking.paymentStatus === "paid"
-    ) {
-
-      const apartmentPayment =
-        await ApartmentPaymentModel
-          .findOne({
-            booking: booking._id,
-            user: userId,
-            status: "paid"
-          })
-          .sort({
-            createdAt: -1
-          });
-
+    if (booking.paymentStatus === "paid") {
+      const apartmentPayment = await ApartmentPaymentModel.findOne({
+        booking: booking._id,
+        user: userId,
+        status: "paid"
+      }).sort({
+        createdAt: -1
+      });
 
       if (!apartmentPayment) {
         return res.status(404).send({
-          message:
-            "Payment record for this booking was not found"
+          message: "Payment record for this booking was not found"
         });
       }
 
-
-      // ========================================
-      // REFUND ALREADY PENDING
-      // ========================================
-
-      if (
-        apartmentPayment.refundStatus ===
-        "pending"
-      ) {
+      if (apartmentPayment.refundStatus === "pending") {
         return res.status(400).send({
-          message:
-            "Refund for this apartment booking is already pending"
+          message: "Refund for this apartment booking is already pending"
         });
       }
 
-
-      // ========================================
-      // ALREADY REFUNDED
-      // ========================================
-
-      if (
-        apartmentPayment.refundStatus ===
-        "refunded"
-      ) {
+      if (apartmentPayment.refundStatus === "refunded") {
         return res.status(400).send({
-          message:
-            "This apartment booking has already been refunded"
+          message: "This apartment booking has already been refunded"
         });
       }
 
+      if (!apartmentPayment.paymentReference) {
+        return res.status(400).send({
+          message: "Payment reference is missing. Please contact support."
+        });
+      }
 
-      // ========================================
-      // CANCEL BOOKING FIRST
-      //
-      // This releases the apartment immediately.
-      // The customer has already chosen to cancel.
-      // ========================================
+      if (!process.env.PAYSTACK_SECRET_KEY) {
+        return res.status(500).send({
+          message: "Payment refund service is not configured"
+        });
+      }
 
-      booking.bookingStatus =
-        "cancelled";
-
+      booking.bookingStatus = "cancelled";
 
       await booking.save();
 
-
-      // ========================================
-      // REQUEST FULL REFUND FROM PAYSTACK
-      // ========================================
-
       try {
+        const refundResponse = await fetch(
+          "https://api.paystack.co/refund",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              transaction: apartmentPayment.paymentReference
+            })
+          }
+        );
 
-        const refundResponse =
-          await fetch(
-            "https://api.paystack.co/refund",
-            {
-              method: "POST",
+        const refundData = await refundResponse.json();
 
-              headers: {
-                Authorization:
-                  `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-
-                "Content-Type":
-                  "application/json"
-              },
-
-              body: JSON.stringify({
-                transaction:
-                  apartmentPayment
-                    .paymentReference
-              })
-            }
-          );
-
-
-        const refundData =
-          await refundResponse.json();
-
-
-        // ======================================
-        // REFUND REQUEST FAILED
-        // ======================================
-
-        if (
-          !refundResponse.ok ||
-          !refundData.status
-        ) {
-
-          apartmentPayment.refundStatus =
-            "failed";
-
+        if (!refundResponse.ok || !refundData.status) {
+          apartmentPayment.refundStatus = "failed";
 
           await apartmentPayment.save();
 
-
           return res.status(400).send({
             message:
-              "Apartment booking was cancelled, but the refund could not be started",
-
-            error:
-              refundData.message ||
-              "Paystack refund request failed"
+              "Apartment booking was cancelled, but the refund could not be started. Please contact support.",
+            bookingCancelled: true,
+            refundStatus: "failed"
           });
         }
 
+        apartmentPayment.refundStatus = "pending";
 
-        // ======================================
-        // REFUND REQUEST ACCEPTED
-        // ======================================
-
-        apartmentPayment.refundStatus =
-          "pending";
-
-
-        if (
-          refundData.data?.id
-        ) {
-          apartmentPayment.paystackRefundId =
-            String(
-              refundData.data.id
-            );
+        if (refundData.data?.id) {
+          apartmentPayment.paystackRefundId = String(
+            refundData.data.id
+          );
         }
-
 
         await apartmentPayment.save();
 
-
         return res.status(200).send({
           message:
-            "Apartment booking cancelled and refund started successfully",
-
+            "Apartment booking cancelled successfully. Your refund request is being processed.",
           data: {
             booking,
-            payment:
-              apartmentPayment
+            refundStatus: apartmentPayment.refundStatus,
+            paystackRefundId:
+              apartmentPayment.paystackRefundId || null
           }
         });
-
-
       } catch (refundError) {
-
-        console.log(
+        console.error(
           "APARTMENT REFUND ERROR:",
           refundError
         );
 
-
-        apartmentPayment.refundStatus =
-          "failed";
-
+        apartmentPayment.refundStatus = "failed";
 
         await apartmentPayment.save();
 
-
         return res.status(500).send({
           message:
-            "Apartment booking was cancelled, but the refund could not be started",
-
-          error:
-            refundError.message
+            "Apartment booking was cancelled, but the refund could not be started. Please contact support.",
+          bookingCancelled: true,
+          refundStatus: "failed"
         });
       }
     }
 
-
-    // ==========================================
-    // OTHER PAYMENT STATUS
-    // ==========================================
-
     return res.status(400).send({
-      message:
-        "Apartment booking cannot be cancelled"
+      message: "Apartment booking cannot be cancelled"
     });
-
-
   } catch (error) {
-
-    console.log(
+    console.error(
       "CANCEL APARTMENT BOOKING ERROR:",
       error
     );
 
-
     return res.status(500).send({
-      message:
-        "Cannot cancel apartment booking at this time",
-
-      error: error.message
+      message: "Cannot cancel apartment booking at this time"
     });
   }
 };

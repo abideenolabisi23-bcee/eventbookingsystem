@@ -307,24 +307,24 @@ const getApartmentAvailability = async ({
 
   const now = new Date();
 
-  const query = {
-    apartment: apartmentId,
+ const query = {
+  apartment: apartmentId,
 
-    $or: [
-      {
-        bookingStatus: "confirmed"
-      },
+  $or: [
+    {
+      bookingStatus: "confirmed",
+      paymentStatus: "paid"
+    },
 
-      {
-        bookingStatus: "pending",
-
-        expiresAt: {
-          $gt: now
-        }
+    {
+      bookingStatus: "pending",
+      paymentStatus: "pending",
+      expiresAt: {
+        $gt: now
       }
-    ]
-  };
-
+    }
+  ]
+};
 
   // Used when checking an existing booking.
   // We must not count the booking against itself.
