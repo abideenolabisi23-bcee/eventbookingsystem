@@ -24,7 +24,7 @@ const FoodCheckout = () => {
   }, [orderId]);
 
   const getToken = () => {
-    return localStorage.getItem("accessToken");
+    return localStorage.getItem("userAccessToken");
   };
 
   const showNotification = (type, message) => {
