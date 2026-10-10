@@ -143,7 +143,7 @@ const FoodDetails = () => {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("userAccessToken");
 
     if (!token) {
       showNotification(
