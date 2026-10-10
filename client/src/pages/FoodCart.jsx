@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../component/Navbar";
 import DetailFooter from "../component/DetailFooter";
@@ -13,6 +14,8 @@ import {
 } from "../utils/foodCart";
 
 import "../styles/foodCart.css";
+
+const API_URL = "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat("en-NG", {
@@ -29,6 +32,7 @@ const FoodCart = () => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   useEffect(() => {
     const refreshCart = () => {
@@ -57,17 +61,22 @@ const FoodCart = () => {
     );
 
     if (!currentItem) {
+      showMessage("This food is no longer in your cart.", "error");
       return;
     }
 
-   if (newQuantity < 1) {
-  return;
-}
+    const currentQuantity = Number(currentItem.quantity) || 0;
+    const newQuantity = currentQuantity + amount;
 
-    const updated = updateFoodCartQuantity(
-      foodId,
-      newQuantity
-    );
+    if (newQuantity < 1) {
+      showMessage(
+        "The minimum quantity is 1. Use Remove to delete this food.",
+        "error"
+      );
+      return;
+    }
+
+    const updated = updateFoodCartQuantity(foodId, newQuantity);
 
     if (!updated) {
       showMessage(
@@ -95,68 +104,175 @@ const FoodCart = () => {
     showMessage("Your cart has been cleared.");
   };
 
-  const handleCheckout = () => {
-    setMessage("");
+  
 
-    const cart = getFoodCart();
+const handleCheckout = async () => {
+  if (checkingOut) return;
 
-    if (cart.length === 0) {
-      showMessage(
-        "Your cart is empty. Add some food before checkout.",
-        "error"
+  setMessage("");
+
+  const cart = getFoodCart();
+
+  if (!cart.length) {
+    showMessage("Your cart is empty.", "error");
+    return;
+  }
+
+  const vendorIds = [
+    ...new Set(cart.map((item) => String(item.vendorId || "")))
+  ];
+
+  if (
+    vendorIds.length !== 1 ||
+    !vendorIds[0] ||
+    vendorIds[0] === "[object Object]"
+  ) {
+    showMessage(
+      "You can only order food from one vendor at a time.",
+      "error"
+    );
+    return;
+  }
+
+  const invalidItem = cart.some(
+    (item) =>
+      !item.foodId ||
+      !Number.isInteger(Number(item.quantity)) ||
+      Number(item.quantity) < 1
+  );
+
+  if (invalidItem) {
+    showMessage("Please review your cart items.", "error");
+    return;
+  }
+
+  const token = localStorage.getItem("userAccessToken");
+
+  if (!token) {
+    navigate("/login", {
+      state: { returnTo: "/food-cart" }
+    });
+    return;
+  }
+
+  const signature = JSON.stringify(
+    cart
+      .map((item) => ({
+        foodId: String(item.foodId),
+        quantity: Number(item.quantity)
+      }))
+      .sort((a, b) => a.foodId.localeCompare(b.foodId))
+  );
+
+  try {
+    setCheckingOut(true);
+
+    let savedCheckout = null;
+
+    try {
+      savedCheckout = JSON.parse(
+        sessionStorage.getItem("vibelyFoodCheckout") || "null"
       );
-      return;
+    } catch {
+      sessionStorage.removeItem("vibelyFoodCheckout");
     }
-
-    const vendorIds = [
-      ...new Set(
-        cart.map((item) => String(item.vendorId || ""))
-      )
-    ];
 
     if (
-      vendorIds.length !== 1 ||
-      !vendorIds[0] ||
-      vendorIds[0] === "[object Object]"
+      savedCheckout?.signature === signature &&
+      savedCheckout?.orderId
     ) {
-      showMessage(
-        "Your cart must contain food from one vendor only. Please review your items.",
-        "error"
-      );
-      return;
-    }
-
-    const invalidItem = cart.some(
-      (item) =>
-        !item.foodId ||
-        !Number.isInteger(Number(item.quantity)) ||
-        Number(item.quantity) < 1 ||
-        !Number.isFinite(Number(item.price)) ||
-        Number(item.price) < 0
-    );
-
-    if (invalidItem) {
-      showMessage(
-        "Some cart items are invalid. Please review your cart.",
-        "error"
-      );
-      return;
-    }
-
-    const token = localStorage.getItem("userAccessToken");
-
-    if (!token) {
-      navigate("/login", {
-        state: {
-          returnTo: "/food-cart"
+      const existingResponse = await axios.get(
+        `${API_URL}/food-orders/${savedCheckout.orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
+      ).catch((error) => {
+        if (error.response?.status === 404) return null;
+        throw error;
       });
 
+      const existingOrder = existingResponse?.data?.data;
+
+      if (
+        existingOrder &&
+        existingOrder.orderStatus !== "cancelled" &&
+        existingOrder.paymentStatus === "pending"
+      ) {
+        navigate(`/food-checkout/${existingOrder._id}`);
+        return;
+      }
+
+      if (existingOrder?.paymentStatus === "paid") {
+        navigate(`/my-food-orders/${existingOrder._id}`);
+        return;
+      }
+
+      if (
+        existingOrder &&
+        existingOrder.paymentStatus !== "failed" &&
+        existingOrder.orderStatus !== "cancelled"
+      ) {
+        showMessage(
+          "This order already has payment activity. Please check My Food Orders before trying again.",
+          "error"
+        );
+        return;
+      }
+
+      sessionStorage.removeItem("vibelyFoodCheckout");
+    }
+
+    const response = await axios.post(
+      `${API_URL}/food-orders`,
+      {
+        items: cart.map((item) => ({
+          food: item.foodId,
+          quantity: Number(item.quantity)
+        }))
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const order = response.data?.data;
+
+    if (!order?._id) {
+      showMessage(
+        "Your order may have been created. Please check My Food Orders before trying again.",
+        "error"
+      );
       return;
     }
 
-    navigate("/food-checkout");
-  };
+    sessionStorage.setItem(
+      "vibelyFoodCheckout",
+      JSON.stringify({
+        orderId: String(order._id),
+        totalAmount: Number(order.totalAmount),
+        signature
+      })
+    );
+
+    navigate(`/food-checkout/${order._id}`);
+  } catch (error) {
+    console.error("FOOD CHECKOUT ERROR:", error);
+
+    showMessage(
+      error.response?.data?.message ||
+        "Unable to prepare checkout. Please check My Food Orders before retrying.",
+      "error"
+    );
+  } finally {
+    setCheckingOut(false);
+  }
+};
+
+
 
   const totalQuantity = items.reduce(
     (sum, item) => sum + (Number(item.quantity) || 0),
@@ -186,8 +302,8 @@ const FoodCart = () => {
               <h1>Your Food Cart</h1>
 
               <p>
-                All your favourite meals, ready for one
-                easy checkout.
+                All your favourite meals, ready for one easy
+                checkout.
               </p>
             </div>
 
@@ -222,7 +338,22 @@ const FoodCart = () => {
                 }
               ></i>
 
-              {message}
+              <span>{message}</span>
+
+              <button
+                type="button"
+                onClick={() => setMessage("")}
+                aria-label="Dismiss message"
+                style={{
+                  marginLeft: "auto",
+                  border: "none",
+                  background: "transparent",
+                  color: "inherit",
+                  cursor: "pointer"
+                }}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
             </div>
           )}
 
@@ -293,7 +424,9 @@ const FoodCart = () => {
                       <button
                         type="button"
                         className="vibely-cart-remove"
-                        onClick={() => handleRemove(item.foodId)}
+                        onClick={() =>
+                          handleRemove(item.foodId)
+                        }
                       >
                         <i className="bi bi-x-circle"></i>
                         Remove
@@ -308,6 +441,7 @@ const FoodCart = () => {
                           onClick={() =>
                             updateQuantity(item.foodId, -1)
                           }
+                          disabled={Number(item.quantity) <= 1}
                         >
                           −
                         </button>
@@ -375,9 +509,19 @@ const FoodCart = () => {
                   type="button"
                   className="vibely-cart-checkout"
                   onClick={handleCheckout}
+                  disabled={checkingOut}
                 >
-                  Proceed to Checkout
-                  <i className="bi bi-arrow-right"></i>
+                  {checkingOut
+                    ? "Preparing Checkout..."
+                    : "Proceed to Checkout"}
+
+                  <i
+                    className={
+                      checkingOut
+                        ? "bi bi-hourglass-split"
+                        : "bi bi-arrow-right"
+                    }
+                  ></i>
                 </button>
 
                 <div className="vibely-cart-secure">

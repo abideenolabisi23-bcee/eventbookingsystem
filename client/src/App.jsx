@@ -48,7 +48,7 @@ import OrganizerProtectedRoute from "./component/OrganizerProtectedRoute";
 import Food from "./component/Food";
 import FoodDetails from "./component/FoodDetails";
 import FoodCheckout from "./component/FoodCheckout";
-import FoodPaymentSuccess from "./component/FoodPaymentSuccess";
+import FoodPaymentCallback from "./pages/FoodPaymentCallback";
 import FoodCart from "./pages/FoodCart";
 
 import AdminLogin from "./pages/AdminLogin";
@@ -134,9 +134,9 @@ function App() {
             element={<ApartmentPaymentCallback />}
           />
           <Route
-            path="/food-payment/callback"
-            element={<FoodPaymentSuccess />}
-          />
+  path="/food-payment/callback"
+  element={<FoodPaymentCallback />}
+/>
         </Route>
 
         <Route

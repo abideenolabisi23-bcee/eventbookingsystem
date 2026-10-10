@@ -1,143 +1,159 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "./Navbar";
 import DetailFooter from "./DetailFooter";
+import { getFoodCart } from "../utils/foodCart";
+
 import "../styles/foodCheckout.css";
+
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
+const formatPrice = (price) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0
+  }).format(Number(price) || 0);
 
 const FoodCheckout = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [notification, setNotification] = useState({
-    show: false,
-    type: "",
-    message: ""
-  });
+  const [priceConfirmed, setPriceConfirmed] = useState(false);
+
+  const submittingRef = useRef(false);
 
   useEffect(() => {
-    fetchOrder();
-  }, [orderId]);
+    let active = true;
 
-  const getToken = () => {
-    return localStorage.getItem("userAccessToken");
-  };
+    const loadOrder = async () => {
+      const token = localStorage.getItem("userAccessToken");
 
-  const showNotification = (type, message) => {
-    setNotification({
-      show: true,
-      type,
-      message
-    });
-
-    setTimeout(() => {
-      setNotification({
-        show: false,
-        type: "",
-        message: ""
-      });
-    }, 4000);
-  };
-
-  const fetchOrder = async () => {
-    const token = getToken();
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await axios.get(
-        `https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders/${orderId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
+      if (!token) {
+        navigate("/login", {
+          replace: true,
+          state: {
+            returnTo: `/food-checkout/${orderId}`
           }
+        });
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `${API}/food-orders/${orderId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        if (!active) return;
+
+        const fetchedOrder = response.data?.data;
+
+        if (!fetchedOrder?._id) {
+          throw new Error("Food order details were not returned.");
         }
-      );
 
-      setOrder(response.data?.data || null);
-    } catch (error) {
-      console.log(error);
+        setOrder(fetchedOrder);
+      } catch (requestError) {
+        if (!active) return;
 
-      setError(
-        error.response?.data?.message ||
-        "We couldn't load your food order."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+        setError(
+          requestError.response?.data?.message ||
+            requestError.message ||
+            "Unable to load your food order."
+        );
+      } finally {
+        if (active) setChecking(false);
+      }
+    };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      maximumFractionDigits: 0
-    }).format(Number(price) || 0);
-  };
+    loadOrder();
 
-  const getVendorName = () => {
-    if (order?.vendor?.businessName) {
-      return order.vendor.businessName;
-    }
+    return () => {
+      active = false;
+    };
+  }, [orderId, navigate]);
 
-    const name = `${order?.vendor?.firstname || ""} ${order?.vendor?.lastname || ""
-      }`.trim();
+  const items = order?.items || [];
 
-    return name || "Vibely Food Vendor";
-  };
+  const totalQuantity = items.reduce(
+    (sum, item) => sum + Number(item.quantity || 0),
+    0
+  );
+
+  const totalAmount = Number(order?.totalAmount || 0);
+
+  const savedCart = getFoodCart();
+
+  const cartSubtotal = savedCart.reduce(
+    (sum, item) =>
+      sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0
+  );
+
+  const priceChanged =
+    savedCart.length > 0 &&
+    Math.abs(cartSubtotal - totalAmount) > 0.001;
 
   const handlePayment = async () => {
-    const token = getToken();
+    if (submittingRef.current || !order) return;
+
+    const token = localStorage.getItem("userAccessToken");
 
     if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    if (!order?._id) {
-      showNotification(
-        "error",
-        "Your order information is unavailable."
-      );
-      return;
-    }
-
-    if (order.paymentStatus === "paid") {
-      showNotification(
-        "success",
-        "This food order has already been paid for."
-      );
-
-      setTimeout(() => {
-        navigate(`/food-orders/${order._id}`);
-      }, 1000);
-
+      navigate("/login", {
+        state: {
+          returnTo: `/food-checkout/${orderId}`
+        }
+      });
       return;
     }
 
     if (order.orderStatus === "cancelled") {
-      showNotification(
-        "error",
-        "This order has been cancelled and cannot be paid for."
+      setError("This food order has been cancelled.");
+      return;
+    }
+
+    if (order.paymentStatus === "paid") {
+      navigate(`/my-food-orders/${order._id}`);
+      return;
+    }
+
+    if (
+      ["refund_pending", "refunded"].includes(order.paymentStatus)
+    ) {
+      setError("This order is already in the refund process.");
+      return;
+    }
+
+    if (priceChanged && !priceConfirmed) {
+      setPriceConfirmed(true);
+      setError(
+        `The confirmed order total is ${formatPrice(totalAmount)}. Please review this amount and click Pay Securely again to continue.`
       );
       return;
     }
 
-    try {
-      setPaying(true);
+    submittingRef.current = true;
+    setLoading(true);
+    setError("");
 
+    try {
       const response = await axios.post(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/initialize",
+        `${API}/food-payments/initialize`,
         {
           orderId: order._id
         },
@@ -148,457 +164,286 @@ const FoodCheckout = () => {
         }
       );
 
-      const data = response.data?.data || response.data;
-
       const authorizationUrl =
-        data?.authorization_url ||
-        data?.authorizationUrl ||
-        data?.paymentUrl ||
-        data?.url;
+        response.data?.data?.authorizationUrl;
 
       if (!authorizationUrl) {
-        throw new Error(
-          "Paystack authorization URL was not returned"
+        throw new Error("Paystack did not return a payment link.");
+      }
+
+      const paymentUrl = new URL(authorizationUrl);
+
+      if (
+        paymentUrl.protocol !== "https:" ||
+        !(
+          paymentUrl.hostname === "paystack.com" ||
+          paymentUrl.hostname.endsWith(".paystack.com")
+        )
+      ) {
+        throw new Error("Invalid Paystack payment link.");
+      }
+
+      const pendingCheckout = JSON.parse(
+        sessionStorage.getItem("vibelyFoodCheckout") || "null"
+      );
+
+      if (pendingCheckout?.orderId === String(order._id)) {
+        sessionStorage.setItem(
+          "vibelyPendingFoodOrderId",
+          String(order._id)
+        );
+
+        sessionStorage.setItem(
+          "vibelyPendingFoodCart",
+          JSON.stringify(
+            savedCart.map((item) => ({
+              foodId: item.foodId,
+              quantity: Number(item.quantity)
+            }))
+          )
         );
       }
 
-      window.location.href = authorizationUrl;
-    } catch (error) {
-      console.log(error);
+      window.location.assign(paymentUrl.href);
+    } catch (requestError) {
+      const responseData = requestError.response?.data;
 
-      showNotification(
-        "error",
-        error.response?.data?.message ||
-        "We couldn't start your payment. Please try again."
-      );
-
-      setPaying(false);
+      if (requestError.response?.status === 401) {
+        setError("Your session has expired. Please log in again.");
+      } else {
+        setError(
+          responseData?.message ||
+            requestError.message ||
+            "Unable to start payment. Please try again."
+        );
+      }
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  if (checking) {
     return (
       <>
         <Navbar />
-
         <main className="food-checkout-page">
           <div className="food-checkout-loading">
-            <div className="food-checkout-spinner"></div>
-
-            <h2>Preparing checkout...</h2>
-
-            <p>We're getting your food order ready.</p>
+            Preparing your checkout...
           </div>
         </main>
-
-        <DetailFooter />
       </>
     );
   }
-
-  if (error || !order) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="food-checkout-page">
-          <div className="food-checkout-error">
-            <div className="food-checkout-error-icon">
-              <i className="bi bi-exclamation-circle"></i>
-            </div>
-
-            <span>VIBELY FOOD</span>
-
-            <h2>Checkout unavailable</h2>
-
-            <p>
-              {error ||
-                "We couldn't find this food order."}
-            </p>
-
-            <Link to="/food">
-              <i className="bi bi-arrow-left"></i>
-              Return to Food
-            </Link>
-          </div>
-        </main>
-
-        <DetailFooter />
-      </>
-    );
-  }
-
-  const totalItems =
-    order.items?.reduce(
-      (total, item) => total + Number(item.quantity || 0),
-      0
-    ) || 0;
 
   return (
     <>
       <Navbar />
 
-      {notification.show && (
-        <div
-          className={`food-checkout-notification ${notification.type}`}
-        >
-          <div className="food-checkout-notification-icon">
-            <i
-              className={
-                notification.type === "success"
-                  ? "bi bi-check-lg"
-                  : "bi bi-exclamation-lg"
-              }
-            ></i>
-          </div>
-
-          <div>
-            <span>
-              {notification.type === "success"
-                ? "SUCCESS"
-                : "PLEASE CHECK"}
-            </span>
-
-            <p>{notification.message}</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              setNotification({
-                show: false,
-                type: "",
-                message: ""
-              })
-            }
-          >
-            <i className="bi bi-x-lg"></i>
-          </button>
-        </div>
-      )}
-
       <main className="food-checkout-page">
-        <section className="food-checkout-hero">
-          <div className="food-checkout-hero-inner">
-            <Link to="/food" className="food-checkout-back">
+        <div className="container">
+          <div className="food-checkout-top">
+            <Link to="/food-cart">
               <i className="bi bi-arrow-left"></i>
-              Continue browsing
+              Back to Cart
             </Link>
 
-            <div className="food-checkout-hero-content">
-              <div>
-                <div className="food-checkout-eyebrow">
-                  <span></span>
-                  SECURE CHECKOUT
-                </div>
-
-                <h1>
-                  One last step
-                  <em> before the good part.</em>
-                </h1>
-
-                <p>
-                  Review your order and complete your payment
-                  securely.
-                </p>
-              </div>
-
-              <div className="food-checkout-secure-card">
-                <div>
-                  <i className="bi bi-shield-lock-fill"></i>
-                </div>
-
-                <span>PAYMENT PROTECTED</span>
-
-                <strong>Secure checkout</strong>
-
-                <p>
-                  Your payment is processed securely through
-                  Paystack.
-                </p>
-              </div>
-            </div>
+            <span>SECURE CHECKOUT</span>
+            <h1>Almost time to eat!</h1>
+            <p>
+              Review your delicious selections and complete your
+              payment securely.
+            </p>
           </div>
-        </section>
 
-        <section className="food-checkout-content">
-          <div className="food-checkout-layout">
-            <div className="food-checkout-main">
-              <div className="food-checkout-section-heading">
-                <div>
-                  <span>YOUR ORDER</span>
-                  <h2>Order summary</h2>
-                </div>
-
-                <div className="food-checkout-item-count">
-                  {totalItems}{" "}
-                  {totalItems === 1 ? "item" : "items"}
-                </div>
-              </div>
-
-              <div className="food-checkout-vendor">
-                <div className="food-checkout-vendor-icon">
-                  <i className="bi bi-shop-window"></i>
-                </div>
-
-                <div>
-                  <span>PREPARED BY</span>
-                  <strong>{getVendorName()}</strong>
-                </div>
-
-                <div className="food-checkout-verified">
-                  <i className="bi bi-patch-check-fill"></i>
-                  Vibely Vendor
-                </div>
-              </div>
-
-              <div className="food-checkout-items">
-                {order.items?.map((item, index) => (
-                  <div
-                    className="food-checkout-item"
-                    key={item._id || `${item.food}-${index}`}
-                  >
-                    <div className="food-checkout-item-image">
-                      {item.food?.image ? (
-                        <img
-                          src={item.food.image}
-                          alt={item.name}
-                        />
-                      ) : (
-                        <div>
-                          <i className="bi bi-bag-heart"></i>
-                        </div>
-                      )}
-
-                      <span>{item.quantity}</span>
+          {!order ? (
+            <div className="food-checkout-card">
+              <h2>Unable to prepare checkout</h2>
+              <p>{error}</p>
+              <Link to="/food-cart">Return to Cart</Link>
+            </div>
+          ) : (
+            <div className="food-checkout-layout">
+              <section className="food-checkout-main">
+                <div className="food-checkout-card">
+                  <div className="food-checkout-card-heading">
+                    <div className="food-checkout-icon">
+                      <i className="bi bi-bag-check"></i>
                     </div>
 
-                    <div className="food-checkout-item-info">
-                      <span>FOOD ITEM</span>
-                      <h3>{item.name}</h3>
-
+                    <div>
+                      <h2>Your Food Order</h2>
                       <p>
-                        {formatPrice(item.price)} ×{" "}
-                        {item.quantity}
+                        {totalQuantity}{" "}
+                        {totalQuantity === 1 ? "item" : "items"} selected
                       </p>
                     </div>
-
-                    <strong className="food-checkout-item-price">
-                      {formatPrice(item.subtotal)}
-                    </strong>
                   </div>
-                ))}
-              </div>
 
-              <div className="food-checkout-reference-card">
-                <div>
-                  <span className="food-checkout-reference-icon">
-                    <i className="bi bi-receipt"></i>
-                  </span>
+                  {items.map((item, index) => {
+                    const food = item.food || {};
 
-                  <div>
-                    <small>ORDER REFERENCE</small>
-                    <strong>
-                      {order.orderReference}
-                    </strong>
-                  </div>
+                    return (
+                      <div
+                        className="food-checkout-item"
+                        key={food._id || index}
+                      >
+                        <div className="food-checkout-image">
+                          {food.image ? (
+                            <img src={food.image} alt={item.name} />
+                          ) : (
+                            <i className="bi bi-cup-hot"></i>
+                          )}
+                        </div>
+
+                        <div className="food-checkout-item-info">
+                          <h3>{item.name}</h3>
+                          <span>
+                            {formatPrice(item.price)} × {item.quantity}
+                          </span>
+                        </div>
+
+                        <strong>
+                          {formatPrice(item.subtotal)}
+                        </strong>
+                      </div>
+                    );
+                  })}
+
+                  <Link
+                    to="/food-cart"
+                    className="food-checkout-edit"
+                  >
+                    <i className="bi bi-pencil-square"></i>
+                    Edit your food selection
+                  </Link>
                 </div>
 
-                <span
-                  className={`food-checkout-status ${order.orderStatus}`}
-                >
-                  {order.orderStatus}
+                <div className="food-checkout-card">
+                  <div className="food-checkout-card-heading">
+                    <div className="food-checkout-icon">
+                      <i className="bi bi-shield-lock"></i>
+                    </div>
+
+                    <div>
+                      <h2>Secure Payment</h2>
+                      <p>
+                        Your payment will be processed securely
+                        by Paystack.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="food-checkout-payment-info">
+                    <i className="bi bi-credit-card"></i>
+
+                    <div>
+                      <strong>Paystack Checkout</strong>
+                      <span>
+                        You will be redirected to Paystack to
+                        complete payment.
+                      </span>
+                    </div>
+
+                    <i className="bi bi-check-circle-fill"></i>
+                  </div>
+                </div>
+              </section>
+
+              <aside className="food-checkout-summary">
+                <span className="food-checkout-eyebrow">
+                  ORDER SUMMARY
                 </span>
-              </div>
 
-              <div className="food-checkout-info-grid">
-                <div>
-                  <span>
-                    <i className="bi bi-bag-check"></i>
-                  </span>
+                <h2>Payment Details</h2>
 
-                  <div>
-                    <strong>Pickup order</strong>
-                    <small>
-                      Pickup details become available after
-                      successful payment.
-                    </small>
-                  </div>
+                <div className="food-checkout-summary-row">
+                  <span>Order reference</span>
+                  <strong>{order.orderReference}</strong>
                 </div>
 
-                <div>
-                  <span>
-                    <i className="bi bi-key"></i>
-                  </span>
-
-                  <div>
-                    <strong>Unique pickup code</strong>
-                    <small>
-                      You'll receive your pickup code after
-                      payment.
-                    </small>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <aside className="food-checkout-payment-card">
-              <div className="food-checkout-payment-header">
-                <span>PAYMENT SUMMARY</span>
-
-                <div>
-                  <i className="bi bi-lock-fill"></i>
-                  Secure
-                </div>
-              </div>
-
-              <div className="food-checkout-payment-body">
-                <div className="food-checkout-payment-row">
+                <div className="food-checkout-summary-row">
                   <span>Items</span>
-                  <strong>{totalItems}</strong>
+                  <strong>{totalQuantity}</strong>
                 </div>
 
-                <div className="food-checkout-payment-row">
-                  <span>Subtotal</span>
-
-                  <strong>
-                    {formatPrice(order.totalAmount)}
-                  </strong>
+                <div className="food-checkout-summary-row">
+                  <span>Payment status</span>
+                  <strong>{order.paymentStatus}</strong>
                 </div>
 
-                <div className="food-checkout-payment-row">
-                  <span>Service fee</span>
-                  <strong>₦0</strong>
-                </div>
-
-                <div className="food-checkout-payment-divider"></div>
+                <div className="food-checkout-divider"></div>
 
                 <div className="food-checkout-total">
-                  <div>
-                    <span>TOTAL</span>
-                    <small>
-                      Amount due now
-                    </small>
-                  </div>
-
-                  <strong>
-                    {formatPrice(order.totalAmount)}
-                  </strong>
+                  <span>Confirmed order total</span>
+                  <strong>{formatPrice(totalAmount)}</strong>
                 </div>
 
-                <button
-                  type="button"
-                  className="food-checkout-pay-button"
-                  onClick={handlePayment}
-                  disabled={
-                    paying ||
-                    order.orderStatus === "cancelled"
-                  }
-                >
-                  {paying ? (
-                    <>
-                      <span className="food-checkout-button-spinner"></span>
-                      Connecting to Paystack...
-                    </>
-                  ) : (
-                    <>
-                      <span>
-                        Pay {formatPrice(order.totalAmount)}
-                      </span>
+                <p className="food-checkout-note">
+                  This amount was calculated using food prices
+                  from the server when your order was created.
+                </p>
 
-                      <i className="bi bi-arrow-right"></i>
-                    </>
-                  )}
-                </button>
-
-                <div className="food-checkout-paystack">
-                  <span>
-                    <i className="bi bi-shield-check"></i>
-                  </span>
-
-                  <div>
-                    <strong>
-                      Secure payment
-                    </strong>
-
-                    <small>
-                      Powered by Paystack
-                    </small>
+                {error && (
+                  <div
+                    className="food-checkout-error"
+                    role="alert"
+                  >
+                    <i className="bi bi-exclamation-circle"></i>
+                    <span>{error}</span>
                   </div>
-                </div>
+                )}
 
-                <div className="food-checkout-payment-status">
-                  <span>PAYMENT STATUS</span>
-
-                  <strong
-                    className={
-                      order.paymentStatus === "paid"
-                        ? "paid"
-                        : ""
+                {order.paymentStatus === "paid" ? (
+                  <Link
+                    to={`/my-food-orders/${order._id}`}
+                    className="food-checkout-pay"
+                  >
+                    View Paid Order
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="food-checkout-pay"
+                    onClick={handlePayment}
+                    disabled={
+                      loading ||
+                      order.orderStatus === "cancelled" ||
+                      ["refund_pending", "refunded"].includes(
+                        order.paymentStatus
+                      )
                     }
                   >
-                    <i
-                      className={
-                        order.paymentStatus === "paid"
-                          ? "bi bi-check-circle-fill"
-                          : "bi bi-clock-fill"
-                      }
-                    ></i>
+                    {loading ? (
+                      <>
+                        <span className="food-checkout-spinner"></span>
+                        Preparing Payment...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-lock-fill"></i>
+                        Pay Securely
+                        <i className="bi bi-arrow-right"></i>
+                      </>
+                    )}
+                  </button>
+                )}
 
-                    {order.paymentStatus}
-                  </strong>
+                <div className="food-checkout-trust">
+                  <i className="bi bi-shield-check"></i>
+                  Your payment is handled by Paystack
                 </div>
-              </div>
 
-              <div className="food-checkout-payment-footer">
-                <i className="bi bi-info-circle"></i>
-
-                <p>
-                  After successful payment, your order will
-                  be confirmed and your pickup code will be
-                  generated.
-                </p>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="food-checkout-confidence">
-          <div className="food-checkout-confidence-inner">
-            <div>
-              <i className="bi bi-shield-check"></i>
-
-              <span>
-                <strong>Protected payment</strong>
-                <small>
-                  Secure transaction processing
-                </small>
-              </span>
+                <Link
+                  to="/food"
+                  className="food-checkout-continue"
+                >
+                  Continue Shopping
+                </Link>
+              </aside>
             </div>
-
-            <div>
-              <i className="bi bi-receipt-cutoff"></i>
-
-              <span>
-                <strong>Order tracking</strong>
-                <small>
-                  Follow your food from order to pickup
-                </small>
-              </span>
-            </div>
-
-            <div>
-              <i className="bi bi-bag-heart"></i>
-
-              <span>
-                <strong>Easy collection</strong>
-                <small>
-                  Collect with your unique pickup code
-                </small>
-              </span>
-            </div>
-          </div>
-        </section>
+          )}
+        </div>
       </main>
 
       <DetailFooter />

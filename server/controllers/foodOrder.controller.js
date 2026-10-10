@@ -78,132 +78,71 @@ const createFoodOrder = async (req, res) => {
     // BUILD THE FINAL ORDER
     // =====================================
 
-    let totalAmount = 0;
-    let vendorId = null;
+   
+let totalAmount = 0;
+let vendorId = null;
 
-    const orderItems = [];
+const orderItems = [];
 
 for (const [foodId, orderQuantity] of Object.entries(combinedItems)) {
+  if (!mongoose.Types.ObjectId.isValid(foodId)) {
+    return res.status(400).send({
+      message: "Invalid food ID"
+    });
+  }
+
   const food = await FoodModel.findById(foodId);
 
-  for (const [foodId, orderQuantity] of Object.entries(combinedItems)) {
-    if (!mongoose.Types.ObjectId.isValid(foodId)) {
-      return res.status(400).send({
-        message: "Invalid food ID"
-      });
-    }
-
-    const food = await FoodModel.findById(foodId);
+  if (!food) {
+    return res.status(404).send({
+      message: "Food not found"
+    });
   }
-    
 
-      if (!food) {
-        return res.status(404).send({
-          message: "Food not found"
-        });
-      }
+  if (!food.isAvailable) {
+    return res.status(400).send({
+      message: `${food.name} is currently unavailable`
+    });
+  }
 
+  if (food.quantity <= 0) {
+    return res.status(400).send({
+      message: `${food.name} is sold out`
+    });
+  }
 
-      // =====================================
-      // VENDOR DISABLED FOOD?
-      // =====================================
+  if (food.quantity < orderQuantity) {
+    return res.status(400).send({
+      message: `Only ${food.quantity} ${food.name} available`
+    });
+  }
 
-      if (!food.isAvailable) {
-        return res.status(400).send({
-          message:
-            `${food.name} is currently unavailable`
-        });
-      }
+  const currentVendorId = food.createdBy.toString();
 
+  if (!vendorId) {
+    vendorId = currentVendorId;
+  }
 
-      // =====================================
-      // SOLD OUT?
-      // =====================================
+  if (vendorId !== currentVendorId) {
+    return res.status(400).send({
+      message: "You can only order food from one vendor at a time"
+    });
+  }
 
-      if (food.quantity <= 0) {
-        return res.status(400).send({
-          message:
-            `${food.name} is sold out`
-        });
-      }
+  const currentPrice = Number(food.price);
+  const subtotal = currentPrice * orderQuantity;
 
+  totalAmount += subtotal;
 
-      // =====================================
-      // ENOUGH STOCK?
-      // =====================================
+  orderItems.push({
+    food: food._id,
+    name: food.name,
+    price: currentPrice,
+    quantity: orderQuantity,
+    subtotal
+  });
+}
 
-      if (
-        food.quantity <
-        orderQuantity
-      ) {
-        return res.status(400).send({
-          message:
-            `Only ${food.quantity} ${food.name} available`
-        });
-      }
-
-
-      // =====================================
-      // ONE VENDOR PER ORDER
-      // =====================================
-
-      const currentVendorId =
-        food.createdBy.toString();
-
-
-      if (!vendorId) {
-        vendorId =
-          currentVendorId;
-      }
-
-
-      if (
-        vendorId !==
-        currentVendorId
-      ) {
-        return res.status(400).send({
-          message:
-            "You can only order food from one vendor at a time"
-        });
-      }
-
-
-      // =====================================
-      // USE CURRENT DATABASE PRICE
-      // =====================================
-
-      const currentPrice =
-        food.price;
-
-
-      const subtotal =
-        currentPrice *
-        orderQuantity;
-
-
-      totalAmount +=
-        subtotal;
-
-
-      // =====================================
-      // SAVE SNAPSHOT
-      // =====================================
-
-      orderItems.push({
-        food: food._id,
-
-        name:
-          food.name,
-
-        price:
-          currentPrice,
-
-        quantity:
-          orderQuantity,
-
-        subtotal
-      });
-    }
 
 
     // =====================================
