@@ -1110,3 +1110,137 @@
 .food-card-actions .food-order-button {
   box-sizing: border-box;
 }
+
+
+
+.food-listing-quantity {
+  margin-top: 18px;
+  margin-bottom: 14px;
+}
+
+.food-listing-quantity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.food-listing-quantity-heading span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  color: #945c6c;
+}
+
+.food-listing-quantity-heading small {
+  font-size: 10px;
+  color: #a17c86;
+}
+
+.food-listing-quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px;
+  border: 1px solid #efdce2;
+  border-radius: 13px;
+  background: #fffafb;
+}
+
+.food-listing-quantity-controls button {
+  width: 39px;
+  height: 39px;
+  border: none;
+  border-radius: 10px;
+  background: #fbeaf0;
+  color: #71001f;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.food-listing-quantity-controls button:hover:not(:disabled) {
+  background: #f3d8e1;
+}
+
+.food-listing-quantity-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.food-listing-quantity-controls strong {
+  font-size: 17px;
+  color: #510018;
+}
+
+.food-listing-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+.food-listing-add-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: none;
+  border-radius: 13px;
+  background: #71001f;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.food-listing-add-button span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.food-listing-add-button strong {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.food-listing-add-button:hover:not(:disabled) {
+  background: #510018;
+}
+
+.food-listing-add-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.food-listing-details-button {
+  width: 100%;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #efdce2;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #71001f;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.food-listing-details-button:hover {
+  background: #fff2f6;
+}
+
+.food-card-body .food-listing-actions {
+  margin-top: 0;
+}

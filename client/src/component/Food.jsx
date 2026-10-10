@@ -1,9 +1,12 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Navbar from "./Navbar";
 import DetailFooter from "./DetailFooter";
+import { addFoodToCart } from "../utils/foodCart";
 import "../styles/food.css";
+import "../styles/foodDetails.css";
 
 const Food = () => {
   const [foods, setFoods] = useState([]);
@@ -11,6 +14,12 @@ const Food = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [foodQuantities, setFoodQuantities] = useState({});
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "",
+    message: ""
+  });
 
   const categories = [
     { name: "all", label: "All", icon: "bi-grid" },
@@ -41,7 +50,7 @@ const Food = () => {
 
       setError(
         error.response?.data?.message ||
-        "We couldn't load the food menu right now."
+          "We couldn't load the food menu right now."
       );
     } finally {
       setLoading(false);
@@ -58,7 +67,8 @@ const Food = () => {
 
       const vendorName =
         food.createdBy?.businessName ||
-        `${food.createdBy?.firstname || ""} ${food.createdBy?.lastname || ""
+        `${food.createdBy?.firstname || ""} ${
+          food.createdBy?.lastname || ""
         }`;
 
       const matchesSearch =
@@ -77,7 +87,7 @@ const Food = () => {
       style: "currency",
       currency: "NGN",
       maximumFractionDigits: 0
-    }).format(price || 0);
+    }).format(Number(price) || 0);
   };
 
   const getVendorName = (food) => {
@@ -85,8 +95,9 @@ const Food = () => {
       return food.createdBy.businessName;
     }
 
-    const fullName = `${food.createdBy?.firstname || ""} ${food.createdBy?.lastname || ""
-      }`.trim();
+    const fullName = `${food.createdBy?.firstname || ""} ${
+      food.createdBy?.lastname || ""
+    }`.trim();
 
     return fullName || "Vibely Food Vendor";
   };
@@ -99,9 +110,112 @@ const Food = () => {
     return foundCategory?.label || category || "Food";
   };
 
+  const getQuantity = (foodId) => {
+    return foodQuantities[foodId] || 1;
+  };
+
+  const changeQuantity = (foodId, amount, maximum) => {
+    const maxQuantity = Math.max(1, Number(maximum) || 1);
+
+    setFoodQuantities((previous) => ({
+      ...previous,
+      [foodId]: Math.max(
+        1,
+        Math.min(
+          maxQuantity,
+          (previous[foodId] || 1) + amount
+        )
+      )
+    }));
+  };
+
+  const showNotification = (type, message) => {
+    setNotification({
+      show: true,
+      type,
+      message
+    });
+  };
+
+  const handleAddToCart = (food) => {
+    const soldOut =
+      Number(food.quantity || 0) <= 0 ||
+      food.isAvailable === false;
+
+    if (soldOut) {
+      showNotification(
+        "error",
+        "This dish is currently unavailable."
+      );
+      return;
+    }
+
+    const quantity = getQuantity(food._id);
+    const added = addFoodToCart(food, quantity);
+
+    if (!added) {
+      showNotification(
+        "error",
+        "Unable to add this food. Check the available quantity or remove food from another vendor."
+      );
+      return;
+    }
+
+    showNotification(
+      "success",
+      `${quantity} × ${food.name} added to your cart!`
+    );
+
+    setFoodQuantities((previous) => ({
+      ...previous,
+      [food._id]: 1
+    }));
+  };
+
   return (
     <>
       <Navbar />
+
+      {notification.show && (
+        <div
+          className={`food-details-notification ${notification.type}`}
+          role="status"
+        >
+          <div className="food-details-notification-icon">
+            <i
+              className={
+                notification.type === "success"
+                  ? "bi bi-check-lg"
+                  : "bi bi-exclamation-lg"
+              }
+            ></i>
+          </div>
+
+          <div>
+            <span>
+              {notification.type === "success"
+                ? "SUCCESS"
+                : "PLEASE CHECK"}
+            </span>
+
+            <p>{notification.message}</p>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Close notification"
+            onClick={() =>
+              setNotification({
+                show: false,
+                type: "",
+                message: ""
+              })
+            }
+          >
+            <i className="bi bi-x-lg"></i>
+          </button>
+        </div>
+      )}
 
       <main className="food-page">
         <section className="food-hero">
@@ -133,7 +247,9 @@ const Food = () => {
                   type="text"
                   placeholder="Search meals, vendors or categories..."
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
                 />
 
                 {search && (
@@ -200,30 +316,30 @@ const Food = () => {
                   category.name === "all"
                     ? foods.length
                     : foods.filter(
-                      (food) =>
-                        food.category === category.name
-                    ).length;
+                        (food) =>
+                          food.category === category.name
+                      ).length;
 
                 return (
                   <button
                     type="button"
                     key={category.name}
-                    className={`food-category-button ${activeCategory === category.name
-                      ? "active"
-                      : ""
-                      }`}
+                    className={`food-category-button ${
+                      activeCategory === category.name
+                        ? "active"
+                        : ""
+                    }`}
                     onClick={() =>
                       setActiveCategory(category.name)
                     }
                   >
                     <span className="food-category-icon">
-                      <i
-                        className={`bi ${category.icon}`}
-                      ></i>
+                      <i className={`bi ${category.icon}`}></i>
                     </span>
 
                     <span className="food-category-info">
                       <strong>{category.label}</strong>
+
                       <small>
                         {categoryCount}{" "}
                         {categoryCount === 1
@@ -247,13 +363,14 @@ const Food = () => {
                 {activeCategory === "all"
                   ? "Explore all dishes"
                   : `${getCategoryLabel(
-                    activeCategory
-                  )} selection`}
+                      activeCategory
+                    )} selection`}
               </h2>
             </div>
 
             <div className="food-result-count">
               <span>{filteredFoods.length}</span>
+
               {filteredFoods.length === 1
                 ? " dish found"
                 : " dishes found"}
@@ -273,7 +390,6 @@ const Food = () => {
               </div>
 
               <h3>Menu unavailable</h3>
-
               <p>{error}</p>
 
               <button type="button" onClick={fetchFoods}>
@@ -306,12 +422,20 @@ const Food = () => {
           ) : (
             <div className="food-grid">
               {filteredFoods.map((food) => {
-                const soldOut = Number(food.quantity) <= 0;
+                const soldOut =
+                  Number(food.quantity || 0) <= 0 ||
+                  food.isAvailable === false;
+
+                const selectedQuantity = getQuantity(food._id);
+
+                const totalAmount =
+                  Number(food.price || 0) * selectedQuantity;
 
                 return (
                   <article
-                    className={`food-card ${soldOut ? "food-card-sold-out" : ""
-                      }`}
+                    className={`food-card ${
+                      soldOut ? "food-card-sold-out" : ""
+                    }`}
                     key={food._id}
                   >
                     <div className="food-card-image-wrap">
@@ -336,8 +460,9 @@ const Food = () => {
                         </span>
 
                         <span
-                          className={`food-stock-badge ${soldOut ? "sold-out" : ""
-                            }`}
+                          className={`food-stock-badge ${
+                            soldOut ? "sold-out" : ""
+                          }`}
                         >
                           <span></span>
                           {soldOut ? "Sold out" : "Available"}
@@ -357,9 +482,7 @@ const Food = () => {
                           <i className="bi bi-shop"></i>
                         </span>
 
-                        <span>
-                          {getVendorName(food)}
-                        </span>
+                        <span>{getVendorName(food)}</span>
                       </div>
 
                       <h3>{food.name}</h3>
@@ -384,19 +507,83 @@ const Food = () => {
                         )}
                       </div>
 
-                      <Link
-                        to={`/food/${food._id}`}
-                        className={`food-view-button ${soldOut ? "sold-out-button" : ""
-                          }`}
-                      >
-                        <span>
-                          {soldOut
-                            ? "View Details"
-                            : "View & Order"}
-                        </span>
+                      {!soldOut && (
+                        <div className="food-listing-quantity">
+                          <div className="food-listing-quantity-heading">
+                            <span>CHOOSE QUANTITY</span>
+                            <small>
+                              Maximum {food.quantity}
+                            </small>
+                          </div>
 
-                        <i className="bi bi-arrow-up-right"></i>
-                      </Link>
+                          <div className="food-listing-quantity-controls">
+                            <button
+                              type="button"
+                              aria-label={`Decrease ${food.name} quantity`}
+                              onClick={() =>
+                                changeQuantity(
+                                  food._id,
+                                  -1,
+                                  food.quantity
+                                )
+                              }
+                              disabled={selectedQuantity <= 1}
+                            >
+                              <i className="bi bi-dash"></i>
+                            </button>
+
+                            <strong>{selectedQuantity}</strong>
+
+                            <button
+                              type="button"
+                              aria-label={`Increase ${food.name} quantity`}
+                              onClick={() =>
+                                changeQuantity(
+                                  food._id,
+                                  1,
+                                  food.quantity
+                                )
+                              }
+                              disabled={
+                                selectedQuantity >=
+                                Number(food.quantity)
+                              }
+                            >
+                              <i className="bi bi-plus"></i>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="food-listing-actions">
+                        <button
+                          type="button"
+                          className="food-listing-add-button"
+                          onClick={() => handleAddToCart(food)}
+                          disabled={soldOut}
+                        >
+                          <span>
+                            <i className="bi bi-bag-plus"></i>
+                            {soldOut
+                              ? "Unavailable"
+                              : "Add to Cart"}
+                          </span>
+
+                          {!soldOut && (
+                            <strong>
+                              {formatPrice(totalAmount)}
+                            </strong>
+                          )}
+                        </button>
+
+                        <Link
+                          to={`/food/${food._id}`}
+                          className="food-listing-details-button"
+                        >
+                          View Details
+                          <i className="bi bi-arrow-up-right"></i>
+                        </Link>
+                      </div>
                     </div>
                   </article>
                 );
