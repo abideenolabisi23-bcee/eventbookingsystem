@@ -60,7 +60,9 @@ const FoodCart = () => {
       return;
     }
 
-    const newQuantity = Number(currentItem.quantity) + amount;
+   if (newQuantity < 1) {
+  return;
+}
 
     const updated = updateFoodCartQuantity(
       foodId,

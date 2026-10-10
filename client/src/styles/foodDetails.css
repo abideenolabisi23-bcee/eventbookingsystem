@@ -1094,3 +1094,48 @@
   flex-wrap: wrap;
   gap: 12px;
 }
+
+.food-details-cart-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.food-continue-shopping,
+.food-view-cart {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+.food-continue-shopping {
+  border: 1px solid #e7d5da;
+  color: #720020;
+  background: #fff;
+}
+
+.food-view-cart {
+  background: #fff0f4;
+  color: #720020;
+  border: 1px solid #f0cbd6;
+}
+
+.food-continue-shopping:hover,
+.food-view-cart:hover {
+  background: #720020;
+  color: white;
+}
+
+@media (max-width: 480px) {
+  .food-details-cart-actions {
+    flex-direction: column;
+  }
+}

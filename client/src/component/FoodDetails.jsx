@@ -4,6 +4,10 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import DetailFooter from "./DetailFooter";
 import "../styles/foodDetails.css";
+import {
+  addFoodToCart,
+  getFoodCartCount
+} from "../utils/foodCart";
 
 const FoodDetails = () => {
   const { id } = useParams();
@@ -138,10 +142,28 @@ const FoodDetails = () => {
     setQuantity(value);
   };
 
-  const handleCreateOrder = async () => {
-    if (!food || soldOut) {
-      return;
-    }
+  const handleAddToCart = () => {
+  if (!food || soldOut) {
+    return;
+  }
+
+  const added = addFoodToCart(food, quantity);
+
+  if (!added) {
+    showNotification(
+      "error",
+      "Unable to add this food. Please check the available quantity or remove food from another vendor."
+    );
+    return;
+  }
+
+  showNotification(
+    "success",
+    `${quantity} × ${food.name} added to your cart!`
+  );
+
+  setQuantity(1);
+};
 
     const token = localStorage.getItem("userAccessToken");
 
@@ -527,31 +549,30 @@ const FoodDetails = () => {
                     </div>
 
                     <button
-                      type="button"
-                      className="food-place-order-button"
-                      onClick={handleCreateOrder}
-                      disabled={ordering}
-                    >
-                      <span>
-                        {ordering ? (
-                          <>
-                            <span className="food-order-button-loader"></span>
-                            Creating order...
-                          </>
-                        ) : (
-                          <>
-                            Continue to Checkout
-                            <small>
-                              {formatPrice(totalAmount)}
-                            </small>
-                          </>
-                        )}
-                      </span>
+  type="button"
+  className="food-place-order-button"
+  onClick={handleAddToCart}
+>
+  <span>
+    <i className="bi bi-bag-plus"></i>
+    {" "}Add to Cart
+    <small>{formatPrice(totalAmount)}</small>
+  </span>
 
-                      {!ordering && (
-                        <i className="bi bi-arrow-right"></i>
-                      )}
-                    </button>
+  <i className="bi bi-plus-lg"></i>
+</button>
+
+<div className="food-details-cart-actions">
+  <Link to="/food" className="food-continue-shopping">
+    <i className="bi bi-arrow-left"></i>
+    Continue Shopping
+  </Link>
+
+  <Link to="/food-cart" className="food-view-cart">
+    <i className="bi bi-bag-check"></i>
+    View Cart ({getFoodCartCount()})
+  </Link>
+</div>
 
                     <div className="food-details-payment-note">
                       <i className="bi bi-lock-fill"></i>

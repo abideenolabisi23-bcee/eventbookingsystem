@@ -325,3 +325,45 @@ body {
   padding-top: 82px;
 }
 }
+
+.vibely-cart-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #ead7dd;
+  border-radius: 14px;
+  color: #720020;
+  background: #fff7f9;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.vibely-cart-link i {
+  font-size: 21px;
+}
+
+.vibely-cart-link:hover {
+  background: #720020;
+  color: #ffffff;
+}
+
+.vibely-cart-count {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #720020;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border: 2px solid white;
+}
