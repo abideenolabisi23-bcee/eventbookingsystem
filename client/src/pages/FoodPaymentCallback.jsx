@@ -1,12 +1,10 @@
-
 import { useEffect, useState } from "react";
 import {
   Link,
   useNavigate,
   useSearchParams
 } from "react-router-dom";
-import axios from "axios";
-
+import verifyCustomerFoodPayment from "../utils/verifyCustomerFoodPayment";
 import {
   getFoodCart,
   saveFoodCart
@@ -63,14 +61,7 @@ const FoodPaymentCallback = () => {
       }
 
       try {
-        const response = await axios.get(
-          `${API}/food-payments/verify/${encodeURIComponent(reference)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
-        );
+        const response = await verifyCustomerFoodPayment(reference);
 
         if (!active) return;
 
