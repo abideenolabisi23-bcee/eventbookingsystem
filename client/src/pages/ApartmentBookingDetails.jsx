@@ -24,7 +24,7 @@ function ApartmentBookingDetails() {
   useEffect(() => {
     const fetchBooking = async () => {
       const accessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("organizerAccessToken");
 
       if (!accessToken) {
         navigate("/login", {

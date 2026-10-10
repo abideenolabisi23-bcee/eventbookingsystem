@@ -1,76 +1,69 @@
+
 import { useEffect, useState } from "react";
-import {
-  Navigate,
-  Outlet,
-} from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import axios from "axios";
+
+const API_URL =
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const OrganizerProtectedRoute = () => {
   const [status, setStatus] = useState("loading");
 
-  const accessToken =
-    localStorage.getItem("accessToken");
-
   useEffect(() => {
+    let cancelled = false;
+
     const checkOrganizer = async () => {
+     const accessToken = localStorage.getItem("organizerAccessToken");
+
       if (!accessToken) {
-        setStatus("notLoggedIn");
+        if (!cancelled) setStatus("notLoggedIn");
         return;
       }
 
       try {
         const response = await axios.get(
-          "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+          `${API_URL}/profile`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
+            timeout: 15000,
           }
         );
 
+        if (cancelled) return;
+
         const profileData = response.data.data;
+        const user = profileData?.user || profileData;
 
-        const user =
-          profileData?.user || profileData;
-
-        if (user.role !== "organizer") {
+        if (user?.role !== "organizer") {
           setStatus("notOrganizer");
           return;
         }
 
-        if (
-          user.approvalStatus !== "approved"
-        ) {
+        if (user.approvalStatus !== "approved") {
           setStatus("pending");
           return;
         }
 
-        if (
-          user.accountStatus !== "active"
-        ) {
+        if (user.accountStatus !== "active") {
           setStatus("suspended");
           return;
         }
 
         setStatus("approved");
       } catch (error) {
-        console.log(
-          "ORGANIZER ROUTE ERROR:",
-          error
-        );
+        if (cancelled) return;
+
+        console.error("ORGANIZER ROUTE ERROR:", error);
 
         if (error.response?.status === 401) {
-          localStorage.removeItem(
-            "accessToken"
-          );
+          setStatus("sessionExpired");
+          return;
+        }
 
-          localStorage.removeItem(
-            "refreshToken"
-          );
-
-          localStorage.removeItem("role");
-
-          setStatus("notLoggedIn");
+        if (error.response?.status === 403) {
+          setStatus("accessDenied");
           return;
         }
 
@@ -79,64 +72,66 @@ const OrganizerProtectedRoute = () => {
     };
 
     checkOrganizer();
-  }, [accessToken]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (status === "loading") {
     return (
       <div className="organizer-route-loading">
         <div className="organizer-route-spinner"></div>
-
         <h3>Vibely</h3>
-
-        <p>
-          Preparing your organizer workspace...
-        </p>
+        <p>Preparing your organizer workspace...</p>
       </div>
     );
   }
 
   if (status === "notLoggedIn") {
+    return <Navigate to="/organizer/login" replace />;
+  }
+
+  if (status === "sessionExpired") {
     return (
-      <Navigate
-        to="/organizer/login"
-        replace
-      />
+      <div className="organizer-route-loading">
+        <h3>Session expired</h3>
+        <p>Your organizer session has expired. Please sign in again.</p>
+        <a href="/organizer/login">Sign in again</a>
+      </div>
     );
   }
 
   if (status === "notOrganizer") {
-    return (
-      <Navigate
-        to="/"
-        replace
-      />
-    );
+    return <Navigate to="/" replace />;
   }
 
   if (status === "pending") {
-    return (
-      <Navigate
-        to="/organizer/pending"
-        replace
-      />
-    );
+    return <Navigate to="/organizer/pending" replace />;
   }
 
   if (status === "suspended") {
+    return <Navigate to="/organizer/suspended" replace />;
+  }
+
+  if (status === "accessDenied") {
     return (
-      <Navigate
-        to="/organizer/suspended"
-        replace
-      />
+      <div className="organizer-route-loading">
+        <h3>Access denied</h3>
+        <p>Your organizer account does not have access to this page.</p>
+      </div>
     );
   }
 
   if (status === "error") {
     return (
-      <Navigate
-        to="/organizer/login"
-        replace
-      />
+      <div className="organizer-route-loading">
+        <h3>Unable to connect</h3>
+        <p>We couldn't verify your organizer account right now.</p>
+        <button onClick={() => window.location.reload()}>
+          Try again
+        </button>
+      </div>
     );
   }
 

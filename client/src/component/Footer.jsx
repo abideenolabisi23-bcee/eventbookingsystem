@@ -122,11 +122,11 @@ const Footer = () => {
         <p>Lagos, Nigeria</p>
 
         <p>
-          hello@vibely.com
+          abideenolabisi23@gmail.com
         </p>
 
         <p>
-          +234 810 123 4567
+          +234 7030699097
         </p>
 
         <p>

@@ -104,9 +104,9 @@ const EditApartment = () => {
     );
 
     const handleUnauthorized = () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
+        localStorage.removeItem("organizerAccessToken");
+        localStorage.removeItem("organizerRefreshToken");
+        localStorage.removeItem("organizerRole");
         localStorage.removeItem("firstname");
         localStorage.removeItem("lastname");
         navigate("/organizer/login");
@@ -114,7 +114,7 @@ const EditApartment = () => {
 
     useEffect(() => {
         const fetchApartment = async () => {
-            const token = localStorage.getItem("accessToken");
+            const token = localStorage.getItem("organizerAccessToken");
 
             if (!token) {
                 navigate("/organizer/login");
@@ -310,7 +310,7 @@ const EditApartment = () => {
             return;
         }
 
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("organizerAccessToken");
 
         if (!token) {
             navigate("/organizer/login");

@@ -1,894 +1,578 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 import axios from "axios";
-import { useFormik } from "formik";
-import {
-  Link,
-  useNavigate
-} from "react-router-dom";
-import * as yup from "yup";
-import {
-  useEffect,
-  useState
-} from "react";
-
 import vibelyLogo from "../assets/vibely-logo.png";
 import "../styles/organizerRegister.css";
 
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
+const registrationSchema = Yup.object({
+  firstname: Yup.string()
+    .trim()
+    .matches(/^[A-Za-z]+$/, "Use letters only")
+    .min(3, "Enter at least 3 characters")
+    .required("First name is required"),
+  lastname: Yup.string()
+    .trim()
+    .matches(/^[A-Za-z]+$/, "Use letters only")
+    .min(3, "Enter at least 3 characters")
+    .required("Last name is required"),
+  businessName: Yup.string()
+    .trim()
+    .min(2, "Enter your business name")
+    .required("Business name is required"),
+  phone: Yup.string()
+    .matches(
+      /^(?:\+234|234|0)[789][01]\d{8}$/,
+      "Enter a valid Nigerian phone number"
+    )
+    .required("Phone number is required"),
+  email: Yup.string()
+    .email("Enter a valid email address")
+    .required("Email address is required"),
+  password: Yup.string()
+    .min(8, "Use at least 8 characters")
+    .matches(/[A-Z]/, "Include an uppercase letter")
+    .matches(/[a-z]/, "Include a lowercase letter")
+    .matches(/\d/, "Include a number")
+    .matches(/[@$!%*?&]/, "Include a special character")
+    .required("Password is required")
+});
+
+const initialValues = {
+  firstname: "",
+  lastname: "",
+  businessName: "",
+  phone: "",
+  email: "",
+  password: ""
+};
+
+const passwordChecks = [
+  {
+    label: "8+ characters",
+    test: (value) => value.length >= 8
+  },
+  {
+    label: "Uppercase letter",
+    test: (value) => /[A-Z]/.test(value)
+  },
+  {
+    label: "Lowercase letter",
+    test: (value) => /[a-z]/.test(value)
+  },
+  {
+    label: "Number",
+    test: (value) => /\d/.test(value)
+  },
+  {
+    label: "Special character",
+    test: (value) => /[@$!%*?&]/.test(value)
+  }
+];
+
 const OrganizerRegister = () => {
   const navigate = useNavigate();
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [
-    showPassword,
-    setShowPassword
-  ] = useState(false);
-
-  const [
-    notification,
-    setNotification
-  ] = useState(null);
-
-  const nameRegex =
-    /^[A-Za-z]+$/;
-
-  const phoneRegex =
-    /^(?:\+234|234|0)[789][01]\d{8}$/;
-
-  const validationSchema =
-    yup.object({
-      firstname: yup
-        .string()
-        .required(
-          "First name is required"
-        )
-        .test(
-          "firstname-validation",
-          function (value) {
-            if (!value) {
-              return true;
-            }
-
-            if (
-              !nameRegex.test(value)
-            ) {
-              return this.createError({
-                message:
-                  "First name can only contain letters"
-              });
-            }
-
-            if (
-              value.length < 3
-            ) {
-              return this.createError({
-                message:
-                  "First name must be at least 3 characters"
-              });
-            }
-
-            return true;
-          }
-        ),
-
-      lastname: yup
-        .string()
-        .required(
-          "Last name is required"
-        )
-        .test(
-          "lastname-validation",
-          function (value) {
-            if (!value) {
-              return true;
-            }
-
-            if (
-              !nameRegex.test(value)
-            ) {
-              return this.createError({
-                message:
-                  "Last name can only contain letters"
-              });
-            }
-
-            if (
-              value.length < 3
-            ) {
-              return this.createError({
-                message:
-                  "Last name must be at least 3 characters"
-              });
-            }
-
-            return true;
-          }
-        ),
-
-      businessName: yup
-        .string()
-        .trim()
-        .required(
-          "Business name is required"
-        )
-        .min(
-          2,
-          "Business name must be at least 2 characters"
-        ),
-
-      phone: yup
-        .string()
-        .required(
-          "Phone number is required"
-        )
-        .transform((value) =>
-          value
-            ? value.replace(
-              /\s/g,
-              ""
-            )
-            : value
-        )
-        .matches(
-          phoneRegex,
-          "Please enter a valid Nigerian phone number"
-        ),
-
-      email: yup
-        .string()
-        .trim()
-        .required(
-          "Email address is required"
-        )
-        .email(
-          "Please enter a valid email address"
-        ),
-
-      password: yup
-        .string()
-        .required(
-          "Password is required"
-        )
-        .matches(
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-          "Password must meet all requirements below"
-        )
-    });
-
-  const formik = useFormik({
-    initialValues: {
-      firstname: "",
-      lastname: "",
-      businessName: "",
-      phone: "",
-      email: "",
-      password: ""
-    },
-
-    validationSchema,
-
-    validateOnChange: true,
-    validateOnBlur: true,
-
-    onSubmit: async (values) => {
-      try {
-        setLoading(true);
-        setNotification(null);
-
-        const payload = {
-          firstname:
-            values.firstname.trim(),
-
-          lastname:
-            values.lastname.trim(),
-
-          businessName:
-            values.businessName.trim(),
-
-          phone:
-            values.phone.replace(
-              /\s/g,
-              ""
-            ),
-
-          email:
-            values.email
-              .trim()
-              .toLowerCase(),
-
-          password:
-            values.password
-        };
-
-        const response =
-          await axios.post(
-            "https://eventbookingsystem-sooty.vercel.app/api/v1/register-organizer",
-            payload
-          );
-
-        if (
-          response.status === 201
-        ) {
-          setNotification({
-            type: "success",
-            title:
-              "Application submitted successfully",
-            message:
-              "Your organizer application has been received and is awaiting admin approval."
-          });
-
-          formik.resetForm();
-
-          setTimeout(() => {
-            navigate(
-              "/organizer/login",
-              {
-                state: {
-                  notification: {
-                    type:
-                      "success",
-
-                    title:
-                      "Application submitted",
-
-                    message:
-                      "Your organizer application is awaiting approval. Sign in after your account has been approved."
-                  }
-                }
-              }
-            );
-          }, 2500);
-        }
-      } catch (error) {
-        console.log(
-          "ORGANIZER REGISTRATION ERROR:",
-          error
-        );
-
-        setNotification({
-          type: "error",
-
-          title:
-            "Application unsuccessful",
-
-          message:
-            error.response?.data
-              ?.message ||
-            "We couldn't submit your organizer application. Please try again."
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
-    if (
-      !notification ||
-      notification.type ===
-      "success"
-    ) {
-      return;
-    }
+    if (!notification) return;
 
-    const timer = setTimeout(
-      () => {
-        setNotification(null);
-      },
-      4500
-    );
+    const timer = setTimeout(() => {
+      setNotification(null);
+    }, 4500);
 
-    return () =>
-      clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [notification]);
 
-  const handleLiveChange = (
-    event
+  const handleRegister = async (
+    values,
+    { setSubmitting, resetForm }
   ) => {
-    const {
-      name,
-      value
-    } = event.target;
+    try {
+      const response = await axios.post(
+        `${API_URL}/register-organizer`,
+        {
+          firstname: values.firstname.trim(),
+          lastname: values.lastname.trim(),
+          businessName: values.businessName.trim(),
+          phone: values.phone.replace(/\s/g, ""),
+          email: values.email.trim().toLowerCase(),
+          password: values.password
+        }
+      );
 
-    formik.setFieldValue(
-      name,
-      value,
-      true
-    );
+      if (response.status === 201) {
+        setNotification({
+          type: "success",
+          title: "Application submitted successfully",
+          message:
+            "Your organizer application has been received and is awaiting admin approval."
+        });
 
-    formik.setFieldTouched(
-      name,
-      true,
-      false
-    );
+        resetForm();
+
+        setTimeout(() => {
+          navigate("/organizer/login", {
+            state: {
+              notification: {
+                type: "success",
+                title: "Application received",
+                message:
+                  "Your organizer application is awaiting admin approval. You can sign in once your account is approved."
+              }
+            }
+          });
+        }, 2500);
+      }
+    } catch (error) {
+      setNotification({
+        type: "error",
+        title: "Registration unsuccessful",
+        message:
+          error.response?.data?.message ||
+          "We couldn't submit your application. Please try again."
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  const password =
-    formik.values.password;
-
-  const checks = {
-    length:
-      password.length >= 8,
-
-    uppercase:
-      /[A-Z]/.test(password),
-
-    lowercase:
-      /[a-z]/.test(password),
-
-    number:
-      /\d/.test(password),
-
-    special:
-      /[@$!%*?&]/.test(
-        password
-      )
-  };
-
-  const hasError = (field) =>
-    formik.touched[field] &&
-    formik.errors[field];
 
   return (
     <main className="organizer-register-page">
-      <div className="organizer-register-glow organizer-register-glow-one"></div>
+      <div className="organizer-register-glow organizer-register-glow-one" />
+      <div className="organizer-register-glow organizer-register-glow-two" />
+      <div className="organizer-register-ring organizer-register-ring-one" />
+      <div className="organizer-register-ring organizer-register-ring-two" />
 
-      <div className="organizer-register-glow organizer-register-glow-two"></div>
-
-      <Link
-        to="/"
-        className="organizer-register-home"
-      >
-        <i className="bi bi-arrow-left"></i>
-        Back to home
+      <Link to="/organizer" className="organizer-register-back">
+        <i className="bi bi-arrow-left" />
+        Back to organizer portal
       </Link>
 
-      <section className="organizer-register-layout">
-        <div className="organizer-register-intro">
-          <Link
-            to="/"
-            className="organizer-register-brand"
-          >
-            <img
-              src={vibelyLogo}
-              alt="Vibely"
+      {notification && (
+        <div
+          className={`organizer-register-toast organizer-register-toast-${notification.type}`}
+          role="alert"
+        >
+          <div className="organizer-register-toast-icon">
+            <i
+              className={`bi ${
+                notification.type === "success"
+                  ? "bi-check-circle-fill"
+                  : "bi-exclamation-circle-fill"
+              }`}
             />
+          </div>
+
+          <div className="organizer-register-toast-copy">
+            <strong>{notification.title}</strong>
+            <p>{notification.message}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setNotification(null)}
+            aria-label="Close notification"
+          >
+            <i className="bi bi-x-lg" />
+          </button>
+
+          <div className="organizer-register-toast-progress" />
+        </div>
+      )}
+
+      <div className="organizer-register-layout">
+        <section className="organizer-register-intro">
+          <Link to="/" className="organizer-register-brand">
+            <div className="organizer-register-logo">
+              <img src={vibelyLogo} alt="Vibely" />
+            </div>
 
             <div>
-              <h1>Vibely</h1>
-
-              <span>
-                ORGANIZER
-              </span>
+              <h1>Vibely.</h1>
+              <span>ORGANIZER STUDIO</span>
             </div>
           </Link>
 
           <div className="organizer-register-intro-copy">
-            <span>
-              BUILD EXPERIENCES
-            </span>
+            <span>YOUR NEXT CHAPTER STARTS HERE</span>
 
             <h2>
-              Bring your
+              Create the
               <br />
-              events to
-              <br />
-              <em>life.</em>
+              <em>extraordinary.</em>
             </h2>
 
             <p>
-              Join Vibely as an
-              organizer and create
-              unforgettable experiences
-              for your audience.
+              Turn your passion into memorable experiences.
+              Join Vibely Organizer Studio to manage events,
+              showcase apartments, and grow your business.
             </p>
           </div>
 
-          <div className="organizer-register-points">
+          <div className="organizer-register-features">
             <div>
-              <i className="bi bi-calendar-event"></i>
-
-              <span>
-                <strong>
-                  Create events
-                </strong>
-
-                Publish and manage your
-                experiences.
-              </span>
+              <span>01</span>
+              <i className="bi bi-calendar2-heart" />
+              <div>
+                <strong>Create unforgettable events</strong>
+                <p>
+                  Bring people together through experiences
+                  they'll remember.
+                </p>
+              </div>
             </div>
 
             <div>
-              <i className="bi bi-people"></i>
-
-              <span>
-                <strong>
-                  Manage attendees
-                </strong>
-
-                Keep track of bookings
-                and guests.
-              </span>
+              <span>02</span>
+              <i className="bi bi-buildings" />
+              <div>
+                <strong>Showcase beautiful spaces</strong>
+                <p>
+                  Manage your apartments and guest bookings
+                  in one place.
+                </p>
+              </div>
             </div>
 
             <div>
-              <i className="bi bi-graph-up-arrow"></i>
-
-              <span>
-                <strong>
-                  Grow your business
-                </strong>
-
-                Track your activity from
-                one workspace.
-              </span>
+              <span>03</span>
+              <i className="bi bi-graph-up-arrow" />
+              <div>
+                <strong>Grow with confidence</strong>
+                <p>
+                  Stay organized as your bookings and
+                  business grow.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="organizer-register-card-wrap">
+          <div className="organizer-register-note">
+            <i className="bi bi-shield-check" />
+            <p>
+              Organizer applications are reviewed before
+              dashboard access is granted.
+            </p>
+          </div>
+        </section>
+
+        <section className="organizer-register-card-wrap">
+          <div className="organizer-register-badge">
+            <i className="bi bi-stars" />
+            YOUR CREATOR JOURNEY
+          </div>
+
           <div className="organizer-register-card">
-            <div className="organizer-register-mobile-logo">
-              <img
-                src={vibelyLogo}
-                alt="Vibely"
-              />
+            <div className="organizer-register-card-shine" />
 
-              <strong>
-                Vibely
-              </strong>
-            </div>
-
-            {notification && (
-              <div
-                className={`auth-form-message auth-form-message-${notification.type}`}
-              >
-                <div className="auth-form-message-icon">
-                  <i
-                    className={
-                      notification.type ===
-                        "success"
-                        ? "bi bi-check-lg"
-                        : "bi bi-exclamation-lg"
-                    }
-                  ></i>
-                </div>
-
-                <div className="auth-form-message-content">
-                  <strong>
-                    {
-                      notification.title
-                    }
-                  </strong>
-
-                  <p>
-                    {
-                      notification.message
-                    }
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  className="auth-form-message-close"
-                  onClick={() =>
-                    setNotification(
-                      null
-                    )
-                  }
-                >
-                  <i className="bi bi-x-lg"></i>
-                </button>
-
-                <span className="auth-form-message-progress"></span>
-              </div>
-            )}
+            <Link
+              to="/"
+              className="organizer-register-mobile-brand"
+            >
+              <img src={vibelyLogo} alt="Vibely" />
+              <strong>Vibely.</strong>
+            </Link>
 
             <div className="organizer-register-heading">
-              <span>
-                ORGANIZER APPLICATION
-              </span>
-
-              <h2>
-                Become an organizer
-              </h2>
-
+              <span>JOIN ORGANIZER STUDIO</span>
+              <h2>Let's get you started.</h2>
               <p>
-                Tell us about you and
-                your business to get
-                started.
+                Tell us a little about yourself and the
+                business you're building.
               </p>
             </div>
 
-            <form
-              onSubmit={
-                formik.handleSubmit
-              }
-              className="organizer-register-form"
-              noValidate
+            <Formik
+              initialValues={initialValues}
+              validationSchema={registrationSchema}
+              onSubmit={handleRegister}
             >
-              <div className="organizer-register-name-grid">
-                <div className="organizer-register-field">
-                  <label
-                    htmlFor="firstname"
-                  >
-                    First name
-                  </label>
+              {({
+                values,
+                errors,
+                touched,
+                isSubmitting
+              }) => (
+                <Form className="organizer-register-form">
+                  <div className="organizer-register-grid">
+                    <div className="organizer-register-field">
+                      <label htmlFor="organizer-firstname">
+                        First name
+                      </label>
 
-                  <div
-                    className={`organizer-register-input ${hasError(
-                      "firstname"
-                    )
-                      ? "organizer-register-input-error"
-                      : ""
+                      <div
+                        className={`organizer-register-input ${
+                          touched.firstname && errors.firstname
+                            ? "organizer-register-input-error"
+                            : ""
+                        }`}
+                      >
+                        <i className="bi bi-person" />
+                        <Field
+                          id="organizer-firstname"
+                          name="firstname"
+                          placeholder="First name"
+                          autoComplete="given-name"
+                        />
+                      </div>
+
+                      <ErrorMessage
+                        name="firstname"
+                        component="div"
+                        className="organizer-register-error"
+                      />
+                    </div>
+
+                    <div className="organizer-register-field">
+                      <label htmlFor="organizer-lastname">
+                        Last name
+                      </label>
+
+                      <div
+                        className={`organizer-register-input ${
+                          touched.lastname && errors.lastname
+                            ? "organizer-register-input-error"
+                            : ""
+                        }`}
+                      >
+                        <i className="bi bi-person" />
+                        <Field
+                          id="organizer-lastname"
+                          name="lastname"
+                          placeholder="Last name"
+                          autoComplete="family-name"
+                        />
+                      </div>
+
+                      <ErrorMessage
+                        name="lastname"
+                        component="div"
+                        className="organizer-register-error"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="organizer-register-field">
+                    <label htmlFor="organizer-business">
+                      Business name
+                    </label>
+
+                    <div
+                      className={`organizer-register-input ${
+                        touched.businessName && errors.businessName
+                          ? "organizer-register-input-error"
+                          : ""
                       }`}
-                  >
-                    <i className="bi bi-person"></i>
+                    >
+                      <i className="bi bi-briefcase" />
+                      <Field
+                        id="organizer-business"
+                        name="businessName"
+                        placeholder="Your brand or business name"
+                        autoComplete="organization"
+                      />
+                    </div>
 
-                    <input
-                      type="text"
-                      id="firstname"
-                      name="firstname"
-                      placeholder="First name"
-                      value={
-                        formik.values
-                          .firstname
-                      }
-                      onChange={
-                        handleLiveChange
-                      }
-                      onBlur={
-                        formik.handleBlur
-                      }
+                    <ErrorMessage
+                      name="businessName"
+                      component="div"
+                      className="organizer-register-error"
                     />
                   </div>
 
-                  {hasError(
-                    "firstname"
-                  ) && (
-                      <p className="organizer-register-error">
-                        {
-                          formik.errors
-                            .firstname
-                        }
-                      </p>
-                    )}
-                </div>
+                  <div className="organizer-register-grid">
+                    <div className="organizer-register-field">
+                      <label htmlFor="organizer-phone">
+                        Phone number
+                      </label>
 
-                <div className="organizer-register-field">
-                  <label
-                    htmlFor="lastname"
-                  >
-                    Last name
-                  </label>
+                      <div
+                        className={`organizer-register-input ${
+                          touched.phone && errors.phone
+                            ? "organizer-register-input-error"
+                            : ""
+                        }`}
+                      >
+                        <i className="bi bi-telephone" />
+                        <Field
+                          id="organizer-phone"
+                          name="phone"
+                          type="tel"
+                          placeholder="08012345678"
+                          autoComplete="tel"
+                        />
+                      </div>
 
-                  <div
-                    className={`organizer-register-input ${hasError(
-                      "lastname"
-                    )
-                      ? "organizer-register-input-error"
-                      : ""
+                      <ErrorMessage
+                        name="phone"
+                        component="div"
+                        className="organizer-register-error"
+                      />
+                    </div>
+
+                    <div className="organizer-register-field">
+                      <label htmlFor="organizer-email">
+                        Email address
+                      </label>
+
+                      <div
+                        className={`organizer-register-input ${
+                          touched.email && errors.email
+                            ? "organizer-register-input-error"
+                            : ""
+                        }`}
+                      >
+                        <i className="bi bi-envelope" />
+                        <Field
+                          id="organizer-email"
+                          name="email"
+                          type="email"
+                          placeholder="you@example.com"
+                          autoComplete="email"
+                        />
+                      </div>
+
+                      <ErrorMessage
+                        name="email"
+                        component="div"
+                        className="organizer-register-error"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="organizer-register-field">
+                    <label htmlFor="organizer-password">
+                      Create password
+                    </label>
+
+                    <div
+                      className={`organizer-register-input ${
+                        touched.password && errors.password
+                          ? "organizer-register-input-error"
+                          : ""
                       }`}
-                  >
-                    <i className="bi bi-person"></i>
+                    >
+                      <i className="bi bi-lock" />
 
-                    <input
-                      type="text"
-                      id="lastname"
-                      name="lastname"
-                      placeholder="Last name"
-                      value={
-                        formik.values
-                          .lastname
-                      }
-                      onChange={
-                        handleLiveChange
-                      }
-                      onBlur={
-                        formik.handleBlur
-                      }
+                      <Field
+                        id="organizer-password"
+                        name="password"
+                        type={
+                          showPassword ? "text" : "password"
+                        }
+                        placeholder="Create a strong password"
+                        autoComplete="new-password"
+                      />
+
+                      <button
+                        type="button"
+                        className="organizer-register-eye"
+                        onClick={() =>
+                          setShowPassword(!showPassword)
+                        }
+                        aria-label={
+                          showPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
+                      >
+                        <i
+                          className={`bi ${
+                            showPassword
+                              ? "bi-eye-slash"
+                              : "bi-eye"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="organizer-register-error"
                     />
                   </div>
 
-                  {hasError(
-                    "lastname"
-                  ) && (
-                      <p className="organizer-register-error">
-                        {
-                          formik.errors
-                            .lastname
+                  <div className="organizer-register-password-rules">
+                    {passwordChecks.map((rule) => (
+                      <div
+                        key={rule.label}
+                        className={
+                          rule.test(values.password)
+                            ? "passed"
+                            : ""
                         }
-                      </p>
-                    )}
-                </div>
-              </div>
+                      >
+                        <i
+                          className={`bi ${
+                            rule.test(values.password)
+                              ? "bi-check-circle-fill"
+                              : "bi-circle"
+                          }`}
+                        />
+                        {rule.label}
+                      </div>
+                    ))}
+                  </div>
 
-              <div className="organizer-register-field">
-                <label
-                  htmlFor="businessName"
-                >
-                  Business name
-                </label>
-
-                <div
-                  className={`organizer-register-input ${hasError(
-                    "businessName"
-                  )
-                    ? "organizer-register-input-error"
-                    : ""
-                    }`}
-                >
-                  <i className="bi bi-briefcase"></i>
-
-                  <input
-                    type="text"
-                    id="businessName"
-                    name="businessName"
-                    placeholder="Your business or brand name"
-                    value={
-                      formik.values
-                        .businessName
-                    }
-                    onChange={
-                      handleLiveChange
-                    }
-                    onBlur={
-                      formik.handleBlur
-                    }
-                  />
-                </div>
-
-                {hasError(
-                  "businessName"
-                ) && (
-                    <p className="organizer-register-error">
-                      {
-                        formik.errors
-                          .businessName
-                      }
+                  <div className="organizer-register-approval">
+                    <i className="bi bi-info-circle" />
+                    <p>
+                      Your application will be reviewed by
+                      the Vibely admin team. Dashboard access
+                      becomes available after approval.
                     </p>
-                  )}
-              </div>
-
-              <div className="organizer-register-field">
-                <label
-                  htmlFor="phone"
-                >
-                  Phone number
-                </label>
-
-                <div
-                  className={`organizer-register-input ${hasError("phone")
-                    ? "organizer-register-input-error"
-                    : ""
-                    }`}
-                >
-                  <i className="bi bi-telephone"></i>
-
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    placeholder="08012345678"
-                    value={
-                      formik.values.phone
-                    }
-                    onChange={
-                      handleLiveChange
-                    }
-                    onBlur={
-                      formik.handleBlur
-                    }
-                  />
-                </div>
-
-                {hasError("phone") && (
-                  <p className="organizer-register-error">
-                    {
-                      formik.errors.phone
-                    }
-                  </p>
-                )}
-              </div>
-
-              <div className="organizer-register-field">
-                <label
-                  htmlFor="email"
-                >
-                  Email address
-                </label>
-
-                <div
-                  className={`organizer-register-input ${hasError("email")
-                    ? "organizer-register-input-error"
-                    : ""
-                    }`}
-                >
-                  <i className="bi bi-envelope"></i>
-
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    value={
-                      formik.values.email
-                    }
-                    onChange={
-                      handleLiveChange
-                    }
-                    onBlur={
-                      formik.handleBlur
-                    }
-                  />
-                </div>
-
-                {hasError("email") && (
-                  <p className="organizer-register-error">
-                    {
-                      formik.errors.email
-                    }
-                  </p>
-                )}
-              </div>
-
-              <div className="organizer-register-field">
-                <label
-                  htmlFor="password"
-                >
-                  Create password
-                </label>
-
-                <div
-                  className={`organizer-register-input ${hasError(
-                    "password"
-                  )
-                    ? "organizer-register-input-error"
-                    : ""
-                    }`}
-                >
-                  <i className="bi bi-lock"></i>
-
-                  <input
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
-                    id="password"
-                    name="password"
-                    placeholder="Create a strong password"
-                    value={
-                      formik.values
-                        .password
-                    }
-                    onChange={
-                      handleLiveChange
-                    }
-                    onBlur={
-                      formik.handleBlur
-                    }
-                  />
+                  </div>
 
                   <button
-                    type="button"
-                    onClick={() =>
-                      setShowPassword(
-                        !showPassword
-                      )
-                    }
+                    type="submit"
+                    className="organizer-register-submit"
+                    disabled={isSubmitting}
                   >
-                    <i
-                      className={
-                        showPassword
-                          ? "bi bi-eye-slash"
-                          : "bi bi-eye"
-                      }
-                    ></i>
+                    {isSubmitting ? (
+                      <>
+                        <span className="organizer-register-spinner" />
+                        Submitting application...
+                      </>
+                    ) : (
+                      <>
+                        Submit organizer application
+                        <i className="bi bi-arrow-up-right" />
+                      </>
+                    )}
                   </button>
-                </div>
-
-                <div className="organizer-register-password-rules">
-                  <span
-                    className={
-                      checks.length
-                        ? "passed"
-                        : ""
-                    }
-                  >
-                    8+ characters
-                  </span>
-
-                  <span
-                    className={
-                      checks.uppercase
-                        ? "passed"
-                        : ""
-                    }
-                  >
-                    Uppercase
-                  </span>
-
-                  <span
-                    className={
-                      checks.lowercase
-                        ? "passed"
-                        : ""
-                    }
-                  >
-                    Lowercase
-                  </span>
-
-                  <span
-                    className={
-                      checks.number
-                        ? "passed"
-                        : ""
-                    }
-                  >
-                    Number
-                  </span>
-
-                  <span
-                    className={
-                      checks.special
-                        ? "passed"
-                        : ""
-                    }
-                  >
-                    Special
-                  </span>
-                </div>
-              </div>
-
-              <div className="organizer-register-review-note">
-                <i className="bi bi-shield-check"></i>
-
-                <div>
-                  <strong>
-                    Application review
-                  </strong>
-
-                  <p>
-                    Organizer accounts
-                    require admin approval
-                    before dashboard
-                    access.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="organizer-register-submit"
-                disabled={
-                  !formik.isValid ||
-                  !formik.dirty ||
-                  loading
-                }
-              >
-                {loading
-                  ? "Submitting application..."
-                  : "Submit application"}
-
-                {!loading && (
-                  <i className="bi bi-arrow-right"></i>
-                )}
-              </button>
-            </form>
+                </Form>
+              )}
+            </Formik>
 
             <div className="organizer-register-login">
-              <span>
-                Already an organizer?
-              </span>
+              <span>Already an organizer?</span>
 
-              <Link to="/organizer/login">
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/organizer/login")
+                }
+              >
                 Sign in
-              </Link>
+                <i className="bi bi-arrow-right" />
+              </button>
+            </div>
+
+            <div className="organizer-register-secure">
+              <i className="bi bi-shield-lock" />
+              Your information is submitted securely
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 };

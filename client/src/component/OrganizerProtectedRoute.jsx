@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import axios from "axios";
@@ -6,6 +5,55 @@ import axios from "axios";
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
+const getAccountStatus = (data) => {
+  const message = String(data?.message || "").toLowerCase();
+
+  const accountStatus = String(
+    data?.accountStatus ||
+    data?.data?.accountStatus ||
+    data?.data?.organizer?.accountStatus ||
+    ""
+  ).toLowerCase();
+
+  const approvalStatus = String(
+    data?.approvalStatus ||
+    data?.data?.approvalStatus ||
+    data?.data?.organizer?.approvalStatus ||
+    ""
+  ).toLowerCase();
+
+  if (
+    accountStatus === "suspended" ||
+    accountStatus === "inactive" ||
+    message.includes("suspend") ||
+    message.includes("inactive")
+  ) {
+    return "suspended";
+  }
+
+  if (
+    approvalStatus === "rejected" ||
+    message.includes("reject")
+  ) {
+    return "rejected";
+  }
+
+  if (
+    approvalStatus === "pending" ||
+    message.includes("pending") ||
+    message.includes("awaiting") ||
+    message.includes("not approved")
+  ) {
+    return "pending";
+  }
+
+  if (approvalStatus === "approved") {
+    return "approved";
+  }
+
+  return "error";
+};
 
 const OrganizerProtectedRoute = () => {
   const location = useLocation();
@@ -15,7 +63,9 @@ const OrganizerProtectedRoute = () => {
     let active = true;
 
     const checkOrganizer = async () => {
-      const accessToken = localStorage.getItem("organizerAccessToken");
+      const accessToken = localStorage.getItem(
+        "organizerAccessToken"
+      );
 
       if (!accessToken) {
         if (active) setStatus("login");
@@ -36,51 +86,14 @@ const OrganizerProtectedRoute = () => {
 
         const organizer = response.data?.data?.organizer;
 
-        if (!organizer) {
+        if (!organizer || organizer.role !== "organizer") {
           setStatus("error");
           return;
         }
 
-        if (organizer.role && organizer.role !== "organizer") {
-          setStatus("login");
-          return;
-        }
+        const result = getAccountStatus(response.data);
 
-        const accountStatus = String(
-          organizer.accountStatus || ""
-        ).toLowerCase();
-
-        const approvalStatus = String(
-          organizer.approvalStatus || ""
-        ).toLowerCase();
-
-        if (
-          accountStatus === "suspended" ||
-          accountStatus === "inactive"
-        ) {
-          setStatus("suspended");
-          return;
-        }
-
-        if (approvalStatus === "rejected") {
-          setStatus("rejected");
-          return;
-        }
-
-        if (approvalStatus === "pending") {
-          setStatus("pending");
-          return;
-        }
-
-        if (
-          approvalStatus &&
-          approvalStatus !== "approved"
-        ) {
-          setStatus("error");
-          return;
-        }
-
-        setStatus("approved");
+        setStatus(result);
       } catch (error) {
         if (!active) return;
 
@@ -95,33 +108,8 @@ const OrganizerProtectedRoute = () => {
           return;
         }
 
-        if (statusCode === 403) {
-          const message = String(
-            error.response?.data?.message || ""
-          ).toLowerCase();
-
-          if (
-            message.includes("suspend") ||
-            message.includes("inactive")
-          ) {
-            setStatus("suspended");
-            return;
-          }
-
-          if (message.includes("reject")) {
-            setStatus("rejected");
-            return;
-          }
-
-          if (
-            message.includes("pending") ||
-            message.includes("approval")
-          ) {
-            setStatus("pending");
-            return;
-          }
-
-          setStatus("error");
+        if (error.response?.data) {
+          setStatus(getAccountStatus(error.response.data));
           return;
         }
 
@@ -153,68 +141,47 @@ const OrganizerProtectedRoute = () => {
     );
   }
 
-  if (status === "error") {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          background: "#fff4f6",
-          padding: 24
-        }}
-      >
-        <div style={{ textAlign: "center", maxWidth: 420 }}>
-          <h2 style={{ color: "#68001c" }}>
-            Unable to verify your account
-          </h2>
+  if (status !== "approved") {
+    const notifications = {
+      pending: {
+        type: "error",
+        title: "Approval pending",
+        message:
+          "Your organizer application is still awaiting admin approval. You will be able to access your dashboard after approval."
+      },
 
-          <p>
-            We couldn't verify your organizer account.
-            Please try again.
-          </p>
+      rejected: {
+        type: "error",
+        title: "Application rejected",
+        message:
+          "Your organizer application was not approved. Please contact Vibely support."
+      },
 
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            style={{
-              background: "#68001c",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-              padding: "12px 24px",
-              cursor: "pointer"
-            }}
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+      suspended: {
+        type: "error",
+        title: "Account suspended",
+        message:
+          "Your organizer account is currently suspended. Please contact Vibely support."
+      },
 
-  if (status === "login") {
+      error: {
+        type: "error",
+        title: "Account verification failed",
+        message:
+          "We couldn't verify your organizer account. Please try signing in again."
+      }
+    };
+
     return (
       <Navigate
         to="/organizer/login"
         replace
         state={{
-          returnTo: location.pathname + location.search
+          returnTo: location.pathname + location.search,
+          notification: notifications[status] || null
         }}
       />
     );
-  }
-
-  if (status === "pending") {
-    return <Navigate to="/organizer/pending" replace />;
-  }
-
-  if (status === "suspended") {
-    return <Navigate to="/organizer/suspended" replace />;
-  }
-
-  if (status === "rejected") {
-    return <Navigate to="/organizer/rejected" replace />;
   }
 
   return <Outlet />;

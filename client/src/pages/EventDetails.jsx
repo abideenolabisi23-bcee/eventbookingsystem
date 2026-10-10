@@ -7,6 +7,7 @@ import DetailFooter from "../component/DetailFooter";
 import vibelyLogo from "../assets/vibely-logo.png";
 import concertImage from "../assets/concert.jpg";
 import "../styles/eventDetails.css";
+import overallconcert from "../assets/overallconcert.jpg";
 
 const API =
   import.meta.env.VITE_API_URL ||
@@ -392,7 +393,7 @@ if (!accessToken) {
           <section className="vibely-hero">
             <div className="vibely-hero-image">
               <img
-                src={event.image || concertImage}
+                src={event.image || overallconcert}
                 alt={event.title}
               />
 

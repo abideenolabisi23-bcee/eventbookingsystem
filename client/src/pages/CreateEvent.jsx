@@ -134,7 +134,7 @@ const CreateEvent = () => {
       return;
     }
 
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem("organizerAccessToken");
 
     if (!accessToken) {
       navigate("/organizer/login");
@@ -179,9 +179,9 @@ const CreateEvent = () => {
       console.log(error);
 
       if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
+        localStorage.removeItem("organizerAccessToken");
+        localStorage.removeItem("organizerRefreshToken");
+        localStorage.removeItem("organizerRole");
 
         navigate("/organizer/login");
         return;

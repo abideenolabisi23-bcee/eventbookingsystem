@@ -21,7 +21,7 @@ const MyApartments = () => {
 
   const fetchApartments = async () => {
     const token =
-      localStorage.getItem("accessToken");
+      localStorage.getItem("organizerAccessToken");
 
     if (!token) {
       navigate("/organizer/login");
@@ -78,7 +78,7 @@ const MyApartments = () => {
     apartmentId
   ) => {
     const token =
-      localStorage.getItem("accessToken");
+      localStorage.getItem("organizerAccessToken");
 
     if (!token) {
       navigate("/organizer/login");
@@ -100,11 +100,11 @@ const MyApartments = () => {
 
       if (response.status === 401) {
         localStorage.removeItem(
-          "accessToken"
+          "organizerAccessToken"
         );
 
         localStorage.removeItem(
-          "refreshToken"
+          "organizerRefreshToken"
         );
 
         navigate("/organizer/login");
@@ -156,9 +156,18 @@ const MyApartments = () => {
     );
   }
 
+
   return (
     <div className="my-apartments-page">
       <div className="my-apartments-container">
+
+        <button
+  type="button"
+  onClick={() => navigate("/organizer/dashboard")}
+  className="back-dashboard-btn"
+>
+  ← Back to Dashboard
+</button>
         <div className="my-apartments-header">
           <div>
             <span className="apartments-eyebrow">

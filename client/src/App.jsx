@@ -75,6 +75,7 @@ import FoodVendorPickup from "./pages/FoodVendorPickup";
 import FoodVendorMenu from "./pages/FoodVendorMenu";
 import FoodVendorAddFood from "./pages/FoodVendorAddFood";
 import FoodVendorEditFood from "./pages/FoodVendorEditFood";
+import FoodVendorEarnings from "./pages/FoodVendorEarnings";
 
 function App() {
   return (
@@ -325,6 +326,11 @@ function App() {
             path="/food-vendor/pickup"
             element={<FoodVendorPickup />}
           />
+
+          <Route
+  path="/food-vendor/earnings"
+  element={<FoodVendorEarnings />}
+/>
         </Route>
       </Routes>
     </BrowserRouter>

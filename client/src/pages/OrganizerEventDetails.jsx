@@ -26,7 +26,7 @@ const OrganizerEventDetails = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("organizerAccessToken");
 
         if (!token) {
           navigate("/organizer/login");
@@ -45,9 +45,9 @@ const OrganizerEventDetails = () => {
         setEvent(response.data.data);
       } catch (error) {
         if (error.response?.status === 401) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("role");
+          localStorage.removeItem("aorganizerAccessToken");
+          localStorage.removeItem("organizerRefreshToken");
+          localStorage.removeItem("organizerRole");
           navigate("/organizer/login");
           return;
         }

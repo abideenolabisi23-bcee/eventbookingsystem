@@ -5,7 +5,33 @@ import Footer from "../component/Footer";
 import "../styles/events.css";
 
 import vibelyLogo from "../assets/vibely-logo.png";
+import pope from "../assets/pope.jpg";
+import handc from "../assets/handc.jpg";
+import overallconcert from "../assets/overallconcert.jpg";
+import conference from "../assets/conference.jpg";
+import music from "../assets/music.jpg";
+import musci from "../assets/musci.jpg";
+import techconference from "../assets/techconference.jpg";
+import newconcert from "../assets/newconcert.jpg";
 import concertImage from "../assets/concert.jpg";
+
+const eventPictures = [
+  techconference,
+  conference,
+  overallconcert,
+  musci,
+  conference,
+  newconcert,
+  concertImage
+];
+
+const getEventPicture = (event, events) => {
+  const index = events.findIndex((item) => item._id === event._id);
+
+  return eventPictures[
+    (index >= 0 ? index : 0) % eventPictures.length
+  ];
+};
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -158,7 +184,7 @@ const Events = () => {
                             key={event._id}
                           >
                             <img
-                              src={event.image || concertImage}
+                              src={getEventPicture(event, events)}
                               alt={event.title}
                             />
 
@@ -224,7 +250,7 @@ const Events = () => {
         </div>
 
         <div className="hero-image">
-          <img src={concertImage} alt="Live event" />
+          <img src={pope} alt="Live event" />
 
           <a href="#trending" className="hero-arrow">
             →
@@ -273,7 +299,7 @@ const Events = () => {
                   <article className="trending-card" key={event._id}>
                     <div className="trending-image">
                       <img
-                        src={event.image || concertImage}
+                        src={getEventPicture(event, events)}
                         alt={event.title}
                       />
 
@@ -363,7 +389,7 @@ const Events = () => {
                     </div>
 
                     <img
-                      src={event.image || concertImage}
+                      src={getEventPicture(event, events)}
                       alt={event.title}
                     />
 

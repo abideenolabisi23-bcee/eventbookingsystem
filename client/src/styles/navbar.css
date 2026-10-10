@@ -367,3 +367,51 @@ body {
   font-weight: 700;
   border: 2px solid white;
 }
+
+.vibely-navbar .vibely-cart-link {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
+.vibely-navbar .vibely-cart-link i {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.vibely-navbar .vibely-cart-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .vibely-navbar .vibely-cart-link {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 10px;
+  }
+
+  .vibely-navbar .vibely-cart-link i {
+    font-size: 17px;
+  }
+}

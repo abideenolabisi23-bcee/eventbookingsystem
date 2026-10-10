@@ -51,7 +51,7 @@ const EditEvent = () => {
     const fetchEvent = async () => {
       try {
         const token =
-          localStorage.getItem("accessToken");
+          localStorage.getItem("organizerAccessToken");
 
         if (!token) {
           navigate("/organizer/login");
@@ -90,9 +90,9 @@ const EditEvent = () => {
         setPreview(event.image || "");
       } catch (error) {
         if (error.response?.status === 401) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("role");
+          localStorage.removeItem("organizerAccessToken");
+          localStorage.removeItem("organizerRefreshToken");
+          localStorage.removeItem("organizerRole");
           navigate("/organizer/login");
           return;
         }
@@ -172,7 +172,7 @@ const EditEvent = () => {
       setSaving(true);
 
       const token =
-        localStorage.getItem("accessToken");
+        localStorage.getItem("organizerAccessToken");
 
       if (!token) {
         navigate("/organizer/login");
@@ -224,9 +224,9 @@ const EditEvent = () => {
       });
     } catch (error) {
       if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
+        localStorage.removeItem("organizerAccessToken");
+        localStorage.removeItem("organizerRefreshToken");
+        localStorage.removeItem("organizerRole");
         navigate("/organizer/login");
         return;
       }

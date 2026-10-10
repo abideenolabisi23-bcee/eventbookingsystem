@@ -327,12 +327,14 @@ sessionStorage.removeItem(
             )}
 
             <div className="payment-callback-actions">
-              <Link
-                to="/my-food-orders"
-                className="payment-primary-button"
-              >
-                View My Food Orders
-              </Link>
+             
+<Link
+  to="/tickets?tab=food"
+  className="payment-primary-button"
+>
+  View My Food Pass
+</Link>
+
 
               <Link
                 to="/food"
@@ -391,12 +393,14 @@ sessionStorage.removeItem(
             <p>{message}</p>
 
             <div className="payment-callback-actions">
-              <Link
-                to="/my-food-orders"
-                className="payment-primary-button"
-              >
-                View My Food Orders
-              </Link>
+             
+<Link
+  to="/my-tickets?type=food"
+  className="payment-primary-button"
+>
+  View My Food Pass
+</Link>
+
 
               <Link
                 to="/"

@@ -1,3 +1,10 @@
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap");
+
+.events-page {
+  font-family: "DM Sans", sans-serif;
+}
+
 :root {
   --dark-burgundy: #4b0013;
   --burgundy: #68001c;

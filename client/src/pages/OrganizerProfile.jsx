@@ -1,8 +1,12 @@
+
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import vibelyLogo from "../assets/vibely-logo.png";
 import "../styles/organizerProfile.css";
+
+const API_URL =
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const OrganizerProfile = () => {
   const navigate = useNavigate();
@@ -14,14 +18,14 @@ const OrganizerProfile = () => {
     firstname: "",
     lastname: "",
     phone: "",
-    businessName: "",
+    businessName: ""
   });
 
   const [originalFormData, setOriginalFormData] = useState({
     firstname: "",
     lastname: "",
     phone: "",
-    businessName: "",
+    businessName: ""
   });
 
   const [loading, setLoading] = useState(true);
@@ -34,7 +38,7 @@ const OrganizerProfile = () => {
     open: false,
     type: "",
     title: "",
-    message: "",
+    message: ""
   });
 
   const accessToken = localStorage.getItem("organizerAccessToken");
@@ -44,7 +48,7 @@ const OrganizerProfile = () => {
       open: true,
       type,
       title,
-      message,
+      message
     });
   };
 
@@ -53,8 +57,14 @@ const OrganizerProfile = () => {
       open: false,
       type: "",
       title: "",
-      message: "",
+      message: ""
     });
+  };
+
+  const clearOrganizerSession = () => {
+    localStorage.removeItem("organizerAccessToken");
+    localStorage.removeItem("organizerRefreshToken");
+    localStorage.removeItem("organizerRole");
   };
 
   const setProfileInformation = (user) => {
@@ -62,7 +72,7 @@ const OrganizerProfile = () => {
       firstname: user?.firstname || "",
       lastname: user?.lastname || "",
       phone: user?.phone || "",
-      businessName: user?.businessName || "",
+      businessName: user?.businessName || ""
     };
 
     setOrganizer(user);
@@ -79,14 +89,11 @@ const OrganizerProfile = () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+      const response = await axios.get(`${API_URL}/profile`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
         }
-      );
+      });
 
       const profileData = response.data.data;
       const user = profileData?.user || profileData;
@@ -101,10 +108,7 @@ const OrganizerProfile = () => {
       console.log(error);
 
       if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
-
+        clearOrganizerSession();
         navigate("/organizer/login");
         return;
       }
@@ -113,7 +117,7 @@ const OrganizerProfile = () => {
         "error",
         "Unable to load profile",
         error.response?.data?.message ||
-        "Your organizer profile could not be loaded at this time."
+          "Your organizer profile could not be loaded at this time."
       );
     } finally {
       setLoading(false);
@@ -129,25 +133,20 @@ const OrganizerProfile = () => {
 
     setFormData((previous) => ({
       ...previous,
-      [name]: value,
+      [name]: value
     }));
   };
 
   const handleEditProfile = () => {
-    setOriginalFormData({
+    const currentForm = {
       firstname: organizer?.firstname || "",
       lastname: organizer?.lastname || "",
       phone: organizer?.phone || "",
-      businessName: organizer?.businessName || "",
-    });
+      businessName: organizer?.businessName || ""
+    };
 
-    setFormData({
-      firstname: organizer?.firstname || "",
-      lastname: organizer?.lastname || "",
-      phone: organizer?.phone || "",
-      businessName: organizer?.businessName || "",
-    });
-
+    setOriginalFormData(currentForm);
+    setFormData(currentForm);
     setIsEditing(true);
   };
 
@@ -159,9 +158,7 @@ const OrganizerProfile = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!isEditing) {
-      return;
-    }
+    if (!isEditing) return;
 
     if (!formData.firstname.trim()) {
       showFeedback(
@@ -194,17 +191,17 @@ const OrganizerProfile = () => {
       setSaving(true);
 
       const response = await axios.put(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/profile",
+        `${API_URL}/profile`,
         {
           firstname: formData.firstname.trim(),
           lastname: formData.lastname.trim(),
           phone: formData.phone.trim(),
-          businessName: formData.businessName.trim(),
+          businessName: formData.businessName.trim()
         },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+            Authorization: `Bearer ${accessToken}`
+          }
         }
       );
 
@@ -212,14 +209,14 @@ const OrganizerProfile = () => {
 
       const updatedOrganizer = {
         ...organizer,
-        ...updatedData,
+        ...updatedData
       };
 
       const updatedForm = {
         firstname: updatedOrganizer.firstname || "",
         lastname: updatedOrganizer.lastname || "",
         phone: updatedOrganizer.phone || "",
-        businessName: updatedOrganizer.businessName || "",
+        businessName: updatedOrganizer.businessName || ""
       };
 
       setOrganizer(updatedOrganizer);
@@ -236,10 +233,7 @@ const OrganizerProfile = () => {
       console.log(error);
 
       if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
-
+        clearOrganizerSession();
         navigate("/organizer/login");
         return;
       }
@@ -248,7 +242,7 @@ const OrganizerProfile = () => {
         "error",
         "Update failed",
         error.response?.data?.message ||
-        "Your profile could not be updated at this time."
+          "Your profile could not be updated at this time."
       );
     } finally {
       setSaving(false);
@@ -262,15 +256,13 @@ const OrganizerProfile = () => {
   const handlePhotoChange = async (event) => {
     const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",
       "image/png",
-      "image/webp",
+      "image/webp"
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -279,7 +271,6 @@ const OrganizerProfile = () => {
         "Invalid image",
         "Please select a JPG, PNG or WEBP image."
       );
-
       event.target.value = "";
       return;
     }
@@ -290,7 +281,6 @@ const OrganizerProfile = () => {
         "Image too large",
         "Please select an image smaller than 5MB."
       );
-
       event.target.value = "";
       return;
     }
@@ -302,12 +292,12 @@ const OrganizerProfile = () => {
       setUploading(true);
 
       const response = await axios.patch(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/profile-picture",
+        `${API_URL}/profile-picture`,
         photoData,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+            Authorization: `Bearer ${accessToken}`
+          }
         }
       );
 
@@ -322,7 +312,7 @@ const OrganizerProfile = () => {
       if (newProfilePicture) {
         setOrganizer((previous) => ({
           ...previous,
-          profilePicture: newProfilePicture,
+          profilePicture: newProfilePicture
         }));
       } else {
         await fetchProfile();
@@ -337,10 +327,7 @@ const OrganizerProfile = () => {
       console.log(error);
 
       if (error.response?.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
-
+        clearOrganizerSession();
         navigate("/organizer/login");
         return;
       }
@@ -349,7 +336,7 @@ const OrganizerProfile = () => {
         "error",
         "Upload failed",
         error.response?.data?.message ||
-        "Your profile picture could not be updated."
+          "Your profile picture could not be updated."
       );
     } finally {
       setUploading(false);
@@ -358,29 +345,26 @@ const OrganizerProfile = () => {
   };
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("organizerRefreshToken");
+    const refreshToken = localStorage.getItem(
+      "organizerRefreshToken"
+    );
 
     try {
       if (accessToken && refreshToken) {
         await axios.post(
-          "https://eventbookingsystem-sooty.vercel.app/api/v1/logout",
-          {
-            refreshToken,
-          },
+          `${API_URL}/logout`,
+          { refreshToken },
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+              Authorization: `Bearer ${accessToken}`
+            }
           }
         );
       }
     } catch (error) {
       console.log(error);
     } finally {
-      localStorage.removeItem("organizerAccessToken");
-      localStorage.removeItem("organizerRefreshToken");
-      localStorage.removeItem("organizerRole");
-
+      clearOrganizerSession();
       navigate("/organizer/login");
     }
   };
@@ -393,9 +377,7 @@ const OrganizerProfile = () => {
   };
 
   const formatStatus = (status) => {
-    if (!status) {
-      return "Not available";
-    }
+    if (!status) return "Not available";
 
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
@@ -413,8 +395,9 @@ const OrganizerProfile = () => {
   return (
     <div className="organizer-profile-page">
       <aside
-        className={`organizer-profile-sidebar ${sidebarOpen ? "sidebar-open" : ""
-          }`}
+        className={`organizer-profile-sidebar ${
+          sidebarOpen ? "sidebar-open" : ""
+        }`}
       >
         <div className="organizer-profile-brand">
           <div className="organizer-profile-brand-main">
@@ -486,54 +469,40 @@ const OrganizerProfile = () => {
               <i className="bi bi-buildings"></i>
               Apartments
             </NavLink>
-
-            <NavLink
-              to="/organizer/food"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-cup-hot"></i>
-              Food
-            </NavLink>
           </div>
 
           <div className="organizer-profile-nav-section">
             <span>BUSINESS</span>
 
-            <NavLink
-              to="/organizer/bookings"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-receipt"></i>
-              Bookings & Orders
-            </NavLink>
+          
+<NavLink
+  to="/organizer/dashboard#organizer-recent-bookings"
+  onClick={() => setSidebarOpen(false)}
+>
+  <i className="bi bi-people"></i>
+  Bookings & Attendees
+</NavLink>
 
-            <NavLink
-              to="/organizer/customers"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-people"></i>
-              Customers
-            </NavLink>
+<NavLink
+  to="/organizer/dashboard#organizer-revenue"
+  onClick={() => setSidebarOpen(false)}
+>
+  <i className="bi bi-wallet2"></i>
+  Bookings & Revenue
+</NavLink>
 
-            <NavLink
-              to="/organizer/payments"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-wallet2"></i>
-              Payments & Revenue
-            </NavLink>
+<NavLink
+  to="/organizer/check-in"
+  onClick={() => setSidebarOpen(false)}
+>
+  <i className="bi bi-qr-code-scan"></i>
+  QR Check-In
+</NavLink>
+
           </div>
 
           <div className="organizer-profile-nav-section">
             <span>EVENT OPERATIONS</span>
-
-            <NavLink
-              to="/organizer/staff"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className="bi bi-person-badge"></i>
-              Staff
-            </NavLink>
 
             <NavLink
               to="/organizer/events"
@@ -572,8 +541,9 @@ const OrganizerProfile = () => {
       </aside>
 
       <div
-        className={`organizer-profile-overlay ${sidebarOpen ? "show" : ""
-          }`}
+        className={`organizer-profile-overlay ${
+          sidebarOpen ? "show" : ""
+        }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
 
@@ -608,7 +578,9 @@ const OrganizerProfile = () => {
               <strong>
                 {organizer?.firstname} {organizer?.lastname}
               </strong>
-              <span>{organizer?.businessName || "Organizer"}</span>
+              <span>
+                {organizer?.businessName || "Organizer"}
+              </span>
             </section>
           </div>
         </header>
@@ -703,7 +675,9 @@ const OrganizerProfile = () => {
 
                   <section>
                     <small>Email Address</small>
-                    <strong>{organizer?.email || "Not available"}</strong>
+                    <strong>
+                      {organizer?.email || "Not available"}
+                    </strong>
                   </section>
                 </div>
 
@@ -714,7 +688,9 @@ const OrganizerProfile = () => {
 
                   <section>
                     <small>Phone Number</small>
-                    <strong>{organizer?.phone || "Not provided"}</strong>
+                    <strong>
+                      {organizer?.phone || "Not provided"}
+                    </strong>
                   </section>
                 </div>
 
@@ -739,7 +715,9 @@ const OrganizerProfile = () => {
                 disabled={uploading}
               >
                 <i className="bi bi-camera"></i>
-                {uploading ? "Uploading..." : "Change Profile Photo"}
+                {uploading
+                  ? "Uploading..."
+                  : "Change Profile Photo"}
               </button>
             </section>
 
@@ -975,7 +953,9 @@ const OrganizerProfile = () => {
             <div className="organizer-profile-protected-grid">
               <div>
                 <span>Account Type</span>
-                <strong>{formatStatus(organizer?.role)}</strong>
+                <strong>
+                  {formatStatus(organizer?.role)}
+                </strong>
                 <i className="bi bi-lock-fill"></i>
               </div>
 
@@ -1034,7 +1014,6 @@ const OrganizerProfile = () => {
             </span>
 
             <h2>{feedback.title}</h2>
-
             <p>{feedback.message}</p>
 
             <button

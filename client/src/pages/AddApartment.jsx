@@ -162,7 +162,7 @@ const AddApartment = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("organizerAccessToken");
 
     if (!token) {
       navigate("/organizer/login");
@@ -226,7 +226,7 @@ const AddApartment = () => {
       });
 
       const response = await fetch(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/apartments",
+  `${import.meta.env.VITE_API_URL}/apartments`,
         {
           method: "POST",
           headers: {
@@ -236,21 +236,35 @@ const AddApartment = () => {
         }
       );
 
-      const result = await response.json();
+      const responseText = await response.text();
+
+let result;
+
+try {
+  result = JSON.parse(responseText);
+} catch {
+  result = {
+    message: responseText || "The server returned an invalid response"
+  };
+}
+
+console.log("CREATE APARTMENT STATUS:", response.status);
+console.log("CREATE APARTMENT RESPONSE:", result);
 
       if (response.status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("organizerAccessToken");
+        localStorage.removeItem("organizerRefreshToken");
         navigate("/organizer/login");
         return;
       }
 
       if (!response.ok) {
-        throw new Error(
-          result.message || "Unable to create apartment"
-        );
-      }
-
+  throw new Error(
+    result.error ||
+    result.message ||
+    `Apartment creation failed (${response.status})`
+  );
+}
       setMessage("Apartment created successfully");
       setMessageType("success");
 

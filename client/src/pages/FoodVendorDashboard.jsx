@@ -59,6 +59,22 @@ const FoodVendorDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [earningsVisible, setEarningsVisible] = useState(
+  () => localStorage.getItem("vibelyVendorEarningsVisible") === "true"
+);
+
+const toggleEarnings = () => {
+  setEarningsVisible((previous) => {
+    const next = !previous;
+
+    localStorage.setItem(
+      "vibelyVendorEarningsVisible",
+      String(next)
+    );
+
+    return next;
+  });
+};
   const [notification, setNotification] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -545,24 +561,42 @@ const FoodVendorDashboard = () => {
               </div>
             </div>
 
-            <div className="food-vendor-welcome-revenue">
-              <span>REPORTED PAID ORDER VALUE</span>
-              <strong>
-                {formatCurrency(stats.paidRevenue)}
-              </strong>
+           
+<div className="food-vendor-welcome-revenue">
+  <span>REPORTED PAID ORDER VALUE</span>
 
-              <div>
-                <span>
-                  <i className="bi bi-cup-hot" />
-                  {stats.totalFoods} meals
-                </span>
+  <div className="food-vendor-revenue-visibility">
+    <strong>
+      {earningsVisible
+        ? formatCurrency(stats.paidRevenue)
+        : "₦••••••"}
+    </strong>
 
-                <span>
-                  <i className="bi bi-bag" />
-                  {stats.totalOrders} orders
-                </span>
-              </div>
-            </div>
+    <button
+      type="button"
+      onClick={toggleEarnings}
+      aria-label={earningsVisible ? "Hide earnings" : "Show earnings"}
+      title={earningsVisible ? "Hide earnings" : "Show earnings"}
+    >
+      <i
+        className={`bi bi-eye${earningsVisible ? "-slash" : ""}`}
+      />
+    </button>
+  </div>
+
+  <div>
+    <span>
+      <i className="bi bi-cup-hot" />
+      {stats.totalFoods} meals
+    </span>
+
+    <span>
+      <i className="bi bi-bag" />
+      {stats.totalOrders} orders
+    </span>
+  </div>
+</div>
+
           </section>
 
           <section className="food-vendor-dashboard-stats">
@@ -593,7 +627,9 @@ const FoodVendorDashboard = () => {
               },
               {
                 label: "Paid Order Value",
-                value: formatCurrency(stats.paidRevenue),
+                value: earningsVisible
+  ? formatCurrency(stats.paidRevenue)
+  : "₦••••••",
                 note: "Before fees and refunds",
                 icon: "bi-wallet2"
               }

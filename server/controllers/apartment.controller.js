@@ -1,4 +1,8 @@
 const ApartmentModel = require("../models/apartment.model");
+console.log(
+  "EXTRA VIEW EXISTS:",
+  Boolean(ApartmentModel.schema.path("images.extraView"))
+);
 const cloudinary = require("../config/cloudinary");
 const ApartmentBookingModel =
   require("../models/apartmentBooking.model");

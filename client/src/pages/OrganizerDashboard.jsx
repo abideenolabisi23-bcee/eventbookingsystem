@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import "../styles/organizerDashboard.css";
 import vibelyLogo from "../assets/vibely-logo.png";
 
@@ -19,7 +19,6 @@ const formatDate = (value) => {
   if (!value) return "No date";
 
   const date = new Date(value);
-
   if (Number.isNaN(date.getTime())) return "No date";
 
   return date.toLocaleDateString("en-NG", {
@@ -40,26 +39,43 @@ const getCustomerName = (user) => {
 };
 
 const OrganizerDashboard = () => {
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [revenueVisible, setRevenueVisible] = useState(true);
   const [eventOperations, setEventOperations] = useState([]);
   const [operationsLoading, setOperationsLoading] = useState(false);
   const [operationsError, setOperationsError] = useState("");
 
-  const logout = useCallback(() => {
-  [
-    "organizerAccessToken",
-    "organizerRefreshToken",
-    "organizerRole"
-  ].forEach((key) => localStorage.removeItem(key));
+  useEffect(() => {
+    if (loading || !dashboard || !location.hash) return;
 
-  navigate("/organizer/login");
-}, [navigate]);
+    const sectionId = location.hash.substring(1);
+    const section = document.getElementById(sectionId);
+
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+  }, [location.hash, loading, dashboard]);
+
+  const logout = useCallback(() => {
+    [
+      "organizerAccessToken",
+      "organizerRefreshToken",
+      "organizerRole"
+    ].forEach((key) => localStorage.removeItem(key));
+
+    navigate("/organizer/login");
+  }, [navigate]);
+
 
   const fetchDashboard = useCallback(
     async (showLoader = true) => {
@@ -117,7 +133,6 @@ const OrganizerDashboard = () => {
     if (!dashboard) return;
 
     const token = localStorage.getItem("organizerAccessToken");
-
     if (!token) return;
 
     let cancelled = false;
@@ -178,21 +193,19 @@ const OrganizerDashboard = () => {
 
         if (cancelled) return;
 
-        const successful = results
-          .filter((result) => result.status === "fulfilled")
-          .map((result) => result.value);
-
-        setEventOperations(successful);
+        setEventOperations(
+          results
+            .filter((result) => result.status === "fulfilled")
+            .map((result) => result.value)
+        );
 
         if (results.some((result) => result.status === "rejected")) {
           setOperationsError(
-            "Some event ticket statistics are unavailable. Refresh to try again."
+            "Some ticket statistics are unavailable. Refresh to try again."
           );
         }
       } catch (requestError) {
-        if (!cancelled) {
-          setOperationsError(requestError.message);
-        }
+        if (!cancelled) setOperationsError(requestError.message);
       } finally {
         if (!cancelled) setOperationsLoading(false);
       }
@@ -209,13 +222,19 @@ const OrganizerDashboard = () => {
   const stats = dashboard?.stats || {};
   const revenue = dashboard?.revenue || {};
   const recentApartments = dashboard?.recentApartments || [];
-  const recentFoodItems = dashboard?.recentFoodItems || [];
   const recentEventBookings = dashboard?.recentEventBookings || [];
   const recentApartmentBookings = dashboard?.recentApartmentBookings || [];
-  const recentFoodOrders = dashboard?.recentFoodOrders || [];
 
   const initials =
     `${organizer.firstname?.charAt(0) || "V"}${organizer.lastname?.charAt(0) || "O"}`.toUpperCase();
+
+  const totalRevenue =
+    Number(revenue.eventNetRevenue || 0) +
+    Number(revenue.apartmentRevenue || 0);
+
+  const totalBookings =
+    Number(stats.totalEventBookings || 0) +
+    Number(stats.totalApartmentBookings || 0);
 
   const eventTotals = eventOperations.reduce(
     (total, item) => {
@@ -255,19 +274,6 @@ const OrganizerDashboard = () => {
       amount: booking.totalAmount,
       status: booking.bookingStatus,
       createdAt: booking.createdAt
-    })),
-    ...recentFoodOrders.map((order) => ({
-      id: order._id,
-      type: "food",
-      title:
-        order.items?.length > 0
-          ? `${order.items[0].name}${order.items.length > 1 ? ` +${order.items.length - 1} more` : ""}`
-          : "Food order",
-      reference: order.orderReference,
-      customer: getCustomerName(order.user),
-      amount: order.totalAmount,
-      status: order.orderStatus,
-      createdAt: order.createdAt
     }))
   ]
     .sort(
@@ -278,18 +284,17 @@ const OrganizerDashboard = () => {
     .slice(0, 6);
 
   const closeSidebar = () => setSidebarOpen(false);
+  const go = (path) => navigate(path);
 
-  const goToFood = () => {
+  const scrollToSection = (id) => {
     closeSidebar();
-    document.getElementById("food-management")?.scrollIntoView({
+    document.getElementById(id)?.scrollIntoView({
       behavior: "smooth"
     });
   };
 
   const navClass = ({ isActive }) =>
     `organizer-nav-link ${isActive ? "active" : ""}`;
-
-  const go = (path) => navigate(path);
 
   if (loading) {
     return (
@@ -350,7 +355,9 @@ const OrganizerDashboard = () => {
           {organizer.profilePicture ? (
             <img src={organizer.profilePicture} alt="Organizer" />
           ) : (
-            <div className="sidebar-profile-placeholder">{initials}</div>
+            <div className="sidebar-profile-placeholder">
+              {initials}
+            </div>
           )}
 
           <div className="organizer-sidebar-profile-info">
@@ -395,33 +402,30 @@ const OrganizerDashboard = () => {
               <i className="bi bi-buildings"></i>
               <span>Apartments</span>
             </NavLink>
-
-            <button className="organizer-nav-link" onClick={goToFood}>
-              <i className="bi bi-cup-hot"></i>
-              <span>Food</span>
-            </button>
           </div>
 
           <div className="organizer-nav-section">
-            <span className="organizer-nav-title">EVENT OPERATIONS</span>
+            <span className="organizer-nav-title">
+              BOOKING OPERATIONS
+            </span>
 
-            <NavLink
-              to="/organizer/events"
-              className={navClass}
-              onClick={closeSidebar}
+            <button
+              type="button"
+              className="organizer-nav-link"
+              onClick={() => scrollToSection("organizer-recent-bookings")}
             >
               <i className="bi bi-people"></i>
               <span>Bookings & Attendees</span>
-            </NavLink>
+            </button>
 
-            <NavLink
-              to="/organizer/events"
-              className={navClass}
-              onClick={closeSidebar}
+            <button
+              type="button"
+              className="organizer-nav-link"
+              onClick={() => scrollToSection("organizer-revenue")}
             >
-              <i className="bi bi-person-badge"></i>
-              <span>Event Staff</span>
-            </NavLink>
+              <i className="bi bi-wallet2"></i>
+              <span>Bookings & Revenue</span>
+            </button>
 
             <NavLink
               to="/organizer/check-in"
@@ -477,7 +481,9 @@ const OrganizerDashboard = () => {
             </button>
 
             <div>
-              <span className="topbar-eyebrow">Organizer Workspace</span>
+              <span className="topbar-eyebrow">
+                Organizer Workspace
+              </span>
               <h3>
                 {organizer.businessName ||
                   `${organizer.firstname || "Organizer"}'s Workspace`}
@@ -500,7 +506,11 @@ const OrganizerDashboard = () => {
               disabled={refreshing}
               aria-label="Refresh dashboard"
             >
-              <i className={`bi bi-arrow-clockwise ${refreshing ? "spin" : ""}`}></i>
+              <i
+                className={`bi bi-arrow-clockwise ${
+                  refreshing ? "spin" : ""
+                }`}
+              ></i>
             </button>
 
             <div className="topbar-divider"></div>
@@ -510,16 +520,23 @@ const OrganizerDashboard = () => {
               onClick={() => go("/organizer/profile")}
             >
               {organizer.profilePicture ? (
-                <img src={organizer.profilePicture} alt="Organizer" />
+                <img
+                  src={organizer.profilePicture}
+                  alt="Organizer"
+                />
               ) : (
-                <div className="topbar-profile-placeholder">{initials}</div>
+                <div className="topbar-profile-placeholder">
+                  {initials}
+                </div>
               )}
+
               <div>
                 <strong>
                   {organizer.firstname} {organizer.lastname}
                 </strong>
                 <span>Organizer</span>
               </div>
+
               <i className="bi bi-chevron-right"></i>
             </button>
           </div>
@@ -538,9 +555,8 @@ const OrganizerDashboard = () => {
               </h1>
 
               <p>
-                Events, beautiful stays and food experiences all in one
-                workspace. Manage your listings, monitor orders and bookings,
-                and keep an eye on your revenue.
+                Manage your events, apartment stays, guest bookings
+                and payments from one elegant workspace.
               </p>
 
               <div className="welcome-actions">
@@ -563,21 +579,43 @@ const OrganizerDashboard = () => {
             </div>
 
             <div className="welcome-business-card">
-              <span>REPORTED TOTAL REVENUE</span>
-              <strong>{formatCurrency(revenue.totalRevenue)}</strong>
+              <div className="revenue-heading-row">
+                <span>EVENT & APARTMENT REVENUE</span>
+
+                <button
+                  type="button"
+                  className="revenue-visibility-button"
+                  onClick={() =>
+                    setRevenueVisible((current) => !current)
+                  }
+                  aria-label={
+                    revenueVisible ? "Hide revenue" : "Show revenue"
+                  }
+                  aria-pressed={revenueVisible}
+                >
+                  <i
+                    className={`bi ${
+                      revenueVisible ? "bi-eye" : "bi-eye-slash"
+                    }`}
+                  ></i>
+                </button>
+              </div>
+
+              <strong>
+                {revenueVisible
+                  ? formatCurrency(totalRevenue)
+                  : "₦••••••"}
+              </strong>
 
               <div className="welcome-business-meta">
                 <div>
                   <i className="bi bi-calendar-event"></i>
                   <span>{stats.totalEvents || 0} events</span>
                 </div>
+
                 <div>
                   <i className="bi bi-buildings"></i>
                   <span>{stats.totalApartments || 0} stays</span>
-                </div>
-                <div>
-                  <i className="bi bi-cup-hot"></i>
-                  <span>{stats.totalFoodItems || 0} food items</span>
                 </div>
               </div>
             </div>
@@ -588,13 +626,6 @@ const OrganizerDashboard = () => {
 
           <section className="organizer-overview-grid">
             {[
-              {
-                icon: "bi-wallet2",
-                label: "Total Revenue",
-                value: formatCurrency(revenue.totalRevenue),
-                note: "Across your Vibely services",
-                className: "revenue-overview"
-              },
               {
                 icon: "bi-calendar2-heart",
                 label: "Events",
@@ -608,25 +639,17 @@ const OrganizerDashboard = () => {
                 note: `${stats.availableApartments || 0} available`
               },
               {
-                icon: "bi-cup-hot",
-                label: "Food Items",
-                value: stats.totalFoodItems || 0,
-                note: `${stats.availableFoodItems || 0} available`
-              },
-              {
                 icon: "bi-receipt-cutoff",
-                label: "Bookings & Orders",
-                value: stats.totalBookingsAndOrders || 0,
-                note: `${stats.pendingBookingsAndOrders || 0} pending`
+                label: "Bookings",
+                value: totalBookings,
+                note: "Events and apartment stays"
               }
             ].map((item) => (
-              <article
-                className={`overview-card ${item.className || ""}`}
-                key={item.label}
-              >
+              <article className="overview-card" key={item.label}>
                 <div className="overview-icon">
                   <i className={`bi ${item.icon}`}></i>
                 </div>
+
                 <div>
                   <span>{item.label}</span>
                   <h2>{item.value}</h2>
@@ -639,9 +662,13 @@ const OrganizerDashboard = () => {
           <section className="service-management-section">
             <div className="dashboard-section-heading">
               <div>
-                <span className="section-eyebrow">SERVICE MANAGEMENT</span>
+                <span className="section-eyebrow">
+                  SERVICE MANAGEMENT
+                </span>
                 <h2>Run every part of your business</h2>
-                <p>Jump directly into the Vibely service you want to manage.</p>
+                <p>
+                  Manage your events and apartments from one place.
+                </p>
               </div>
             </div>
 
@@ -656,8 +683,8 @@ const OrganizerDashboard = () => {
 
                 <h3>Events</h3>
                 <p>
-                  Create experiences, manage tickets, view bookings,
-                  assign staff and prepare guest check-in.
+                  Create experiences, manage tickets, view guest
+                  bookings and prepare attendee check-in.
                 </p>
 
                 <div className="service-card-stats">
@@ -682,6 +709,7 @@ const OrganizerDashboard = () => {
                   <button
                     className="service-square-button"
                     onClick={() => go("/organizer/events/create")}
+                    aria-label="Create event"
                   >
                     <i className="bi bi-plus-lg"></i>
                   </button>
@@ -693,12 +721,14 @@ const OrganizerDashboard = () => {
                   <div className="service-icon">
                     <i className="bi bi-buildings"></i>
                   </div>
-                  <span>{stats.availableApartments || 0} available</span>
+                  <span>
+                    {stats.availableApartments || 0} available
+                  </span>
                 </div>
 
                 <h3>Apartments</h3>
                 <p>
-                  Manage your stays, availability, apartment galleries,
+                  Manage apartment listings, availability, galleries,
                   prices and guest reservations.
                 </p>
 
@@ -718,214 +748,37 @@ const OrganizerDashboard = () => {
                 </div>
 
                 <div className="service-actions">
-                  <button onClick={() => go("/organizer/apartments")}>
+                  <button
+                    onClick={() => go("/organizer/apartments")}
+                  >
                     Manage Stays
                   </button>
                   <button
                     className="service-square-button"
-                    onClick={() => go("/organizer/apartments/create")}
+                    onClick={() =>
+                      go("/organizer/apartments/create")
+                    }
+                    aria-label="Add apartment"
                   >
                     <i className="bi bi-plus-lg"></i>
                   </button>
                 </div>
               </article>
-
-              <article
-                className="service-card food-service-card"
-                id="food-management"
-              >
-                <div className="service-card-top">
-                  <div className="service-icon">
-                    <i className="bi bi-cup-hot"></i>
-                  </div>
-                  <span>{stats.availableFoodItems || 0} available</span>
-                </div>
-
-                <h3>Food & Orders</h3>
-                <p>
-                  Track your menu inventory and stay on top of new,
-                  active and completed customer food orders.
-                </p>
-
-                <div className="service-card-stats">
-                  <div>
-                    <strong>{stats.totalFoodItems || 0}</strong>
-                    <span>Items</span>
-                  </div>
-                  <div>
-                    <strong>{stats.totalFoodOrders || 0}</strong>
-                    <span>Orders</span>
-                  </div>
-                  <div>
-                    <strong>{stats.activeFoodOrders || 0}</strong>
-                    <span>Active</span>
-                  </div>
-                </div>
-
-                <div className="food-coming-bar">
-                  <i className="bi bi-stars"></i>
-                  <div>
-                    <strong>Food management</strong>
-                    <span>Your dedicated organizer food workspace is next.</span>
-                  </div>
-                </div>
-              </article>
             </div>
           </section>
 
-          <section className="service-management-section">
+          <section
+            className="revenue-section"
+            id="organizer-revenue"
+          >
             <div className="dashboard-section-heading">
               <div>
-                <span className="section-eyebrow">EVENT OPERATIONS</span>
-                <h2>Tickets & Guest Attendance</h2>
+                <span className="section-eyebrow">
+                  FINANCIAL OVERVIEW
+                </span>
+                <h2>Bookings & Revenue</h2>
                 <p>
-                  Monitor tickets issued, guest check-ins, cancellations
-                  and pending ticket refunds.
-                </p>
-              </div>
-
-              <button
-                className="secondary-welcome-button"
-                onClick={() => go("/organizer/check-in")}
-              >
-                <i className="bi bi-qr-code-scan"></i>
-                Open Check-In Center
-              </button>
-            </div>
-
-            {operationsError && (
-              <p style={{ color: "#9b2946", marginBottom: 16 }}>
-                {operationsError}
-              </p>
-            )}
-
-            {operationsLoading ? (
-              <div className="compact-empty-state">
-                Loading event ticket statistics...
-              </div>
-            ) : (
-              <>
-                <div className="organizer-overview-grid">
-                  {[
-                    ["Tickets Issued", eventTotals.issued, "bi-ticket-perforated"],
-                    ["Valid Tickets", eventTotals.valid, "bi-shield-check"],
-                    ["Checked In", eventTotals.used, "bi-check-circle"],
-                    ["Cancelled", eventTotals.cancelled, "bi-x-circle"],
-                    ["Refund Pending", eventTotals.refundPending, "bi-clock-history"]
-                  ].map(([label, value, icon]) => (
-                    <article className="overview-card" key={label}>
-                      <div className="overview-icon">
-                        <i className={`bi ${icon}`}></i>
-                      </div>
-                      <div>
-                        <span>{label}</span>
-                        <h2>{value}</h2>
-                        <p>Across loaded events</p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-
-                <div className="recent-listings-panel" style={{ marginTop: 22 }}>
-                  <div className="panel-heading">
-                    <div>
-                      <span className="section-eyebrow">YOUR EVENTS</span>
-                      <h2>Manage attendees & check-ins</h2>
-                      <p>Select an event to manage its tickets and guests.</p>
-                    </div>
-                  </div>
-
-                  {eventOperations.length === 0 ? (
-                    <div className="compact-empty-state">
-                      No event ticket information is available yet.
-                    </div>
-                  ) : (
-                    <div className="listing-tabs-content">
-                      <div className="listing-group">
-                        {eventOperations.map(({ event, stats: ticketStats }) => (
-                          <div
-                            key={event._id}
-                            className="compact-listing-item"
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              alignItems: "center",
-                              gap: 14,
-                              padding: 18
-                            }}
-                          >
-                            <div className="compact-listing-image">
-                              {event.image ? (
-                                <img src={event.image} alt={event.title} />
-                              ) : (
-                                <i className="bi bi-calendar-heart"></i>
-                              )}
-                            </div>
-
-                            <div
-                              className="compact-listing-info"
-                              style={{ flex: "1 1 180px" }}
-                            >
-                              <strong>{event.title}</strong>
-                              <span>
-                                {formatDate(event.date)} ·{" "}
-                                {ticketStats.ticketsIssued || 0} issued ·{" "}
-                                {ticketStats.usedTickets || 0} checked in
-                              </span>
-                            </div>
-
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 8
-                              }}
-                            >
-                              <button
-                                className="secondary-welcome-button"
-                                onClick={() =>
-                                  go(`/organizer/events/${event._id}/bookings`)
-                                }
-                              >
-                                Attendees
-                              </button>
-
-                              <button
-                                className="secondary-welcome-button"
-                                onClick={() =>
-                                  go(`/organizer/events/${event._id}/staff`)
-                                }
-                              >
-                                Staff
-                              </button>
-
-                              <button
-                                className="primary-welcome-button"
-                                onClick={() =>
-                                  go(`/organizer/events/${event._id}/check-in`)
-                                }
-                              >
-                                <i className="bi bi-qr-code-scan"></i>
-                                Check In
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </section>
-
-          <section className="revenue-section">
-            <div className="dashboard-section-heading">
-              <div>
-                <span className="section-eyebrow">PERFORMANCE</span>
-                <h2>Revenue overview</h2>
-                <p>
-                  A breakdown of your reported paid activity across Vibely.
+                  Revenue reported for your events and apartment stays.
                 </p>
               </div>
             </div>
@@ -936,46 +789,46 @@ const OrganizerDashboard = () => {
                   <i className="bi bi-ticket-perforated"></i>
                 </div>
                 <span>Event Revenue</span>
-                <h3>{formatCurrency(revenue.eventNetRevenue)}</h3>
+                <h3>
+                  {revenueVisible
+                    ? formatCurrency(revenue.eventNetRevenue)
+                    : "₦••••••"}
+                </h3>
                 <div className="revenue-detail-row">
-                  <span>Gross</span>
-                  <strong>{formatCurrency(revenue.eventGrossRevenue)}</strong>
+                  <span>Gross revenue</span>
+                  <strong>
+                    {revenueVisible
+                      ? formatCurrency(revenue.eventGrossRevenue)
+                      : "••••"}
+                  </strong>
                 </div>
                 <div className="revenue-detail-row">
-                  <span>Refunds</span>
-                  <strong>{formatCurrency(revenue.eventRefunds)}</strong>
+                  <span>Event bookings</span>
+                  <strong>{stats.totalEventBookings || 0}</strong>
                 </div>
               </article>
 
               <article className="revenue-card">
                 <div className="revenue-card-icon">
-                  <i className="bi bi-house-heart"></i>
+                  <i className="bi bi-buildings"></i>
                 </div>
                 <span>Apartment Revenue</span>
-                <h3>{formatCurrency(revenue.apartmentRevenue)}</h3>
+                <h3>
+                  {revenueVisible
+                    ? formatCurrency(revenue.apartmentRevenue)
+                    : "₦••••••"}
+                </h3>
                 <div className="revenue-detail-row">
-                  <span>Bookings</span>
-                  <strong>{stats.totalApartmentBookings || 0}</strong>
+                  <span>Apartment bookings</span>
+                  <strong>
+                    {stats.totalApartmentBookings || 0}
+                  </strong>
                 </div>
                 <div className="revenue-detail-row">
-                  <span>Confirmed</span>
-                  <strong>{stats.confirmedApartmentBookings || 0}</strong>
-                </div>
-              </article>
-
-              <article className="revenue-card">
-                <div className="revenue-card-icon">
-                  <i className="bi bi-bag-heart"></i>
-                </div>
-                <span>Food Revenue</span>
-                <h3>{formatCurrency(revenue.foodRevenue)}</h3>
-                <div className="revenue-detail-row">
-                  <span>Orders</span>
-                  <strong>{stats.totalFoodOrders || 0}</strong>
-                </div>
-                <div className="revenue-detail-row">
-                  <span>Completed</span>
-                  <strong>{stats.completedFoodOrders || 0}</strong>
+                  <span>Available apartments</span>
+                  <strong>
+                    {stats.availableApartments || 0}
+                  </strong>
                 </div>
               </article>
             </div>
@@ -984,327 +837,287 @@ const OrganizerDashboard = () => {
           <section className="dashboard-middle-grid">
             <div className="recent-listings-panel">
               <div className="panel-heading">
-                <div>
-                  <span className="section-eyebrow">RECENT LISTINGS</span>
-                  <h2>Your latest additions</h2>
-                  <p>Recently created events, stays and food items.</p>
-                </div>
+                <span className="section-eyebrow">
+                  YOUR LISTINGS
+                </span>
+                <h2>Recent Events & Apartments</h2>
+                <p>Quick access to your latest listings.</p>
               </div>
 
-              <div className="listing-tabs-content">
-                <div className="listing-group">
-                  <div className="listing-group-heading">
-                    <div>
-                      <i className="bi bi-calendar-event"></i>
-                      <span>Events</span>
-                    </div>
-                    <button onClick={() => go("/organizer/events")}>
-                      View all
-                    </button>
+              <div className="listing-group">
+                <div className="listing-group-heading">
+                  <div>
+                    <i className="bi bi-calendar-event"></i>
+                    Events
                   </div>
-
-                  {recentEvents.length > 0 ? (
-                    recentEvents.slice(0, 3).map((event) => (
-                      <button
-                        className="compact-listing-item"
-                        key={event._id}
-                        onClick={() => go(`/organizer/events/${event._id}`)}
-                      >
-                        <div className="compact-listing-image">
-                          {event.image ? (
-                            <img src={event.image} alt={event.title} />
-                          ) : (
-                            <i className="bi bi-calendar-heart"></i>
-                          )}
-                        </div>
-                        <div className="compact-listing-info">
-                          <strong>{event.title}</strong>
-                          <span>
-                            {event.location} · {formatDate(event.date)}
-                          </span>
-                        </div>
-                        <i className="bi bi-chevron-right"></i>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="compact-empty-state">
-                      No events created yet.
-                    </div>
-                  )}
+                  <button onClick={() => go("/organizer/events")}>
+                    View All
+                  </button>
                 </div>
 
-                <div className="listing-group">
-                  <div className="listing-group-heading">
-                    <div>
-                      <i className="bi bi-buildings"></i>
-                      <span>Apartments</span>
-                    </div>
-                    <button onClick={() => go("/organizer/apartments")}>
-                      View all
-                    </button>
-                  </div>
-
-                  {recentApartments.length > 0 ? (
-                    recentApartments.slice(0, 3).map((apartment) => (
-                      <button
-                        className="compact-listing-item"
-                        key={apartment._id}
-                        onClick={() =>
-                          go(`/organizer/apartments/${apartment._id}`)
-                        }
-                      >
-                        <div className="compact-listing-image">
-                          {apartment.images?.exterior ? (
-                            <img
-                              src={apartment.images.exterior}
-                              alt={apartment.title}
-                            />
-                          ) : (
-                            <i className="bi bi-house-heart"></i>
-                          )}
-                        </div>
-                        <div className="compact-listing-info">
-                          <strong>{apartment.title}</strong>
-                          <span>
-                            {apartment.location} ·{" "}
-                            {formatCurrency(apartment.pricePerNight)}/night
-                          </span>
-                        </div>
-                        <i className="bi bi-chevron-right"></i>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="compact-empty-state">
-                      No apartments created yet.
-                    </div>
-                  )}
-                </div>
-
-                <div className="listing-group">
-                  <div className="listing-group-heading">
-                    <div>
-                      <i className="bi bi-cup-hot"></i>
-                      <span>Food</span>
-                    </div>
-                    <span className="coming-soon-label">
-                      Management coming next
-                    </span>
-                  </div>
-
-                  {recentFoodItems.length > 0 ? (
-                    recentFoodItems.slice(0, 3).map((food) => (
-                      <div
-                        className="compact-listing-item static-item"
-                        key={food._id}
-                      >
-                        <div className="compact-listing-image">
-                          {food.image ? (
-                            <img src={food.image} alt={food.name} />
-                          ) : (
-                            <i className="bi bi-egg-fried"></i>
-                          )}
-                        </div>
-                        <div className="compact-listing-info">
-                          <strong>{food.name}</strong>
-                          <span>
-                            {formatCurrency(food.price)} · {food.quantity} left
-                          </span>
-                        </div>
-                        <span
-                          className={`availability-dot ${
-                            food.isAvailable && food.quantity > 0
-                              ? "available"
-                              : "unavailable"
-                          }`}
-                        ></span>
+                {recentEvents.length === 0 ? (
+                  <p>No events yet.</p>
+                ) : (
+                  recentEvents.map((event) => (
+                    <button
+                      key={event._id}
+                      className="compact-listing-item"
+                      onClick={() =>
+                        go(`/organizer/events/${event._id}`)
+                      }
+                    >
+                      <div className="compact-listing-image">
+                        <i className="bi bi-calendar-event"></i>
                       </div>
-                    ))
-                  ) : (
-                    <div className="compact-empty-state">
-                      No food items created yet.
-                    </div>
-                  )}
+                      <div className="compact-listing-info">
+                        <strong>{event.title}</strong>
+                        <span>{formatDate(event.date)}</span>
+                      </div>
+                      <i className="bi bi-chevron-right"></i>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              <div className="listing-group">
+                <div className="listing-group-heading">
+                  <div>
+                    <i className="bi bi-buildings"></i>
+                    Apartments
+                  </div>
+                  <button
+                    onClick={() => go("/organizer/apartments")}
+                  >
+                    View All
+                  </button>
                 </div>
+
+                {recentApartments.length === 0 ? (
+                  <p>No apartments yet.</p>
+                ) : (
+                  recentApartments.map((apartment) => (
+                    <button
+                      key={apartment._id}
+                      className="compact-listing-item"
+                      onClick={() =>
+                        go(`/organizer/apartments/${apartment._id}`)
+                      }
+                    >
+                      <div className="compact-listing-image">
+                        {apartment.images?.exterior ? (
+                          <img
+                            src={apartment.images.exterior}
+                            alt={apartment.title}
+                          />
+                        ) : (
+                          <i className="bi bi-buildings"></i>
+                        )}
+                      </div>
+                      <div className="compact-listing-info">
+                        <strong>{apartment.title}</strong>
+                        <span>
+                          {apartment.location || "Apartment listing"}
+                        </span>
+                      </div>
+                      <i className="bi bi-chevron-right"></i>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
             <div className="quick-actions-panel">
-              <div className="side-panel-heading">
-                <span className="section-eyebrow">SHORTCUTS</span>
-                <h2>Quick Actions</h2>
-                <p>Get to your most important tools faster.</p>
+              <div className="panel-heading">
+                <span className="section-eyebrow">
+                  QUICK ACTIONS
+                </span>
+                <h2>Manage Faster</h2>
+                <p>Go directly to important tools.</p>
               </div>
 
-              {[
-                [
-                  "Create Event",
-                  "Publish a new experience",
-                  "bi-calendar-plus",
-                  "/organizer/events/create"
-                ],
-                [
-                  "Add Apartment",
-                  "Create a beautiful new stay",
-                  "bi-house-add",
-                  "/organizer/apartments/create"
-                ],
-                [
-                  "Event Bookings",
-                  "Select an event to view attendees",
-                  "bi-ticket-perforated",
-                  "/organizer/events"
-                ],
-                [
-                  "QR Check-In",
-                  "Scan and validate event tickets",
-                  "bi-qr-code-scan",
-                  "/organizer/check-in"
-                ],
-                [
-                  "Manage Event Staff",
-                  "Select an event to manage staff",
-                  "bi-person-badge",
-                  "/organizer/events"
-                ],
-                [
-                  "Profile Settings",
-                  "Manage organizer information",
-                  "bi-person-gear",
-                  "/organizer/profile"
-                ]
-              ].map(([title, subtitle, icon, path]) => (
+              <div className="organizer-quick-action-list">
                 <button
-                  className="quick-action-item"
-                  key={title}
-                  onClick={() => go(path)}
+                  onClick={() => go("/organizer/events/create")}
                 >
-                  <div className="quick-action-icon">
-                    <i className={`bi ${icon}`}></i>
-                  </div>
-                  <div>
-                    <strong>{title}</strong>
-                    <span>{subtitle}</span>
-                  </div>
-                  <i className="bi bi-chevron-right"></i>
+                  <i className="bi bi-calendar-plus"></i>
+                  <span>Create Event</span>
+                  <i className="bi bi-arrow-right"></i>
                 </button>
-              ))}
 
-              <div className="account-status-mini">
-                <div className="account-status-mini-icon">
-                  <i className="bi bi-patch-check-fill"></i>
-                </div>
-                <div>
-                  <span>ACCOUNT STATUS</span>
-                  <strong>
-                    {organizer.approvalStatus === "approved"
-                      ? "Approved Organizer"
-                      : organizer.approvalStatus || "Organizer"}
-                  </strong>
-                  <p>Manage your Vibely business workspace.</p>
-                </div>
+                <button
+                  onClick={() =>
+                    go("/organizer/apartments/create")
+                  }
+                >
+                  <i className="bi bi-house-add"></i>
+                  <span>Add Apartment</span>
+                  <i className="bi bi-arrow-right"></i>
+                </button>
+
+                <button
+                  onClick={() => go("/organizer/check-in")}
+                >
+                  <i className="bi bi-qr-code-scan"></i>
+                  <span>QR Check-In</span>
+                  <i className="bi bi-arrow-right"></i>
+                </button>
+
+                <button
+                  onClick={() => go("/organizer/profile")}
+                >
+                  <i className="bi bi-person-circle"></i>
+                  <span>Profile & Settings</span>
+                  <i className="bi bi-arrow-right"></i>
+                </button>
               </div>
             </div>
           </section>
 
-          <section className="recent-activity-section">
-            <div className="dashboard-section-heading activity-heading">
+          <section className="service-management-section">
+            <div className="dashboard-section-heading">
               <div>
-                <span className="section-eyebrow">BUSINESS ACTIVITY</span>
-                <h2>Recent bookings & orders</h2>
+                <span className="section-eyebrow">
+                  TICKET OPERATIONS
+                </span>
+                <h2>Event Ticket Management</h2>
                 <p>
-                  Your latest customer activity across all three services.
+                  Track issued tickets, valid tickets, used tickets
+                  and cancellations.
                 </p>
-              </div>
-
-              <div className="activity-count">
-                <i className="bi bi-activity"></i>
-                {stats.totalBookingsAndOrders || 0} total
               </div>
             </div>
 
-            {recentActivity.length > 0 ? (
-              <div className="activity-table-wrap">
-                <div className="activity-table">
-                  <div className="activity-table-header">
-                    <span>Service</span>
-                    <span>Customer</span>
-                    <span>Reference</span>
-                    <span>Amount</span>
-                    <span>Status</span>
-                  </div>
-
-                  {recentActivity.map((activity) => (
-                    <div
-                      className="activity-table-row"
-                      key={`${activity.type}-${activity.id}`}
-                    >
-                      <div className="activity-service">
-                        <div
-                          className={`activity-service-icon ${activity.type}`}
-                        >
-                          <i
-                            className={`bi ${
-                              activity.type === "event"
-                                ? "bi-ticket-perforated"
-                                : activity.type === "apartment"
-                                ? "bi-buildings"
-                                : "bi-bag-heart"
-                            }`}
-                          ></i>
-                        </div>
-                        <div>
-                          <strong>{activity.title}</strong>
-                          <span>
-                            {activity.type === "apartment"
-                              ? "Stay"
-                              : activity.type === "event"
-                              ? "Event"
-                              : "Food"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className="activity-customer">
-                        {activity.customer}
-                      </span>
-
-                      <span className="activity-reference">
-                        {activity.reference || "—"}
-                      </span>
-
-                      <strong className="activity-amount">
-                        {formatCurrency(activity.amount)}
-                      </strong>
-
-                      <span
-                        className={`activity-status ${String(
-                          activity.status || "pending"
-                        )
-                          .toLowerCase()
-                          .replaceAll("_", "-")}`}
-                      >
-                        {String(activity.status || "pending").replaceAll(
-                          "_",
-                          " "
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="activity-empty-state">
-                <div>
-                  <i className="bi bi-receipt"></i>
-                </div>
-                <h3>No customer activity yet</h3>
-                <p>
-                  Event bookings, apartment reservations and food orders
-                  will appear here when customers begin purchasing your
-                  services.
-                </p>
+            {operationsError && (
+              <div className="organizer-operations-error">
+                {operationsError}
               </div>
             )}
+
+            <div className="organizer-overview-grid">
+              {[
+                {
+                  label: "Issued Tickets",
+                  value: eventTotals.issued,
+                  icon: "bi-ticket-perforated"
+                },
+                {
+                  label: "Valid Tickets",
+                  value: eventTotals.valid,
+                  icon: "bi-check-circle"
+                },
+                {
+                  label: "Used Tickets",
+                  value: eventTotals.used,
+                  icon: "bi-qr-code-scan"
+                }
+              ].map((item) => (
+                <article className="overview-card" key={item.label}>
+                  <div className="overview-icon">
+                    <i className={`bi ${item.icon}`}></i>
+                  </div>
+                  <div>
+                    <span>{item.label}</span>
+                    <h2>
+                      {operationsLoading ? "..." : item.value}
+                    </h2>
+                    <p>Across your events</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="organizer-ticket-extra">
+              <span>
+                Cancelled: <strong>{eventTotals.cancelled}</strong>
+              </span>
+              <span>
+                Refund Pending:{" "}
+                <strong>{eventTotals.refundPending}</strong>
+              </span>
+            </div>
+          </section>
+
+          <section
+            className="recent-activity-section"
+            id="organizer-recent-bookings"
+          >
+            <div className="dashboard-section-heading">
+              <div>
+                <span className="section-eyebrow">
+                  BOOKING ACTIVITY
+                </span>
+                <h2>Bookings & Attendees</h2>
+                <p>
+                  Recent customer bookings for your events and
+                  apartments.
+                </p>
+              </div>
+            </div>
+
+            <div className="organizer-bookings-panel">
+              {recentActivity.length === 0 ? (
+                <div className="organizer-bookings-empty">
+                  <i className="bi bi-calendar-check"></i>
+                  <h3>No recent bookings</h3>
+                  <p>
+                    New event and apartment bookings will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="organizer-bookings-table-wrap">
+                  <table className="organizer-bookings-table">
+                    <thead>
+                      <tr>
+                        <th>Service</th>
+                        <th>Booking</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentActivity.map((booking) => (
+                        <tr
+                          key={`${booking.type}-${booking.id}`}
+                        >
+                          <td>
+                            <span className="booking-service-tag">
+                              <i
+                                className={`bi ${
+                                  booking.type === "event"
+                                    ? "bi-calendar-event"
+                                    : "bi-buildings"
+                                }`}
+                              ></i>
+                              {booking.type === "event"
+                                ? "Event"
+                                : "Apartment"}
+                            </span>
+                          </td>
+                          <td>
+                            <strong>{booking.title}</strong>
+                            <small>
+                              {booking.reference || "No reference"}
+                            </small>
+                          </td>
+                          <td>{booking.customer}</td>
+                          <td>
+                            {formatCurrency(booking.amount)}
+                          </td>
+                          <td>
+                            <span className="booking-status-tag">
+                              {booking.status || "Pending"}
+                            </span>
+                          </td>
+                          <td>{formatDate(booking.createdAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </section>
         </div>
       </main>

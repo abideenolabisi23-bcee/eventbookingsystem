@@ -1250,3 +1250,27 @@
     width: 100%;
   }
 }
+
+.food-vendor-revenue-visibility {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.food-vendor-revenue-visibility strong {
+  font-size: clamp(25px, 2.5vw, 36px);
+  overflow-wrap: anywhere;
+}
+
+.food-vendor-revenue-visibility button {
+  width: 37px;
+  height: 37px;
+  border: 1px solid #ffffff40;
+  background: #ffffff18;
+  color: white;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}

@@ -52,35 +52,33 @@ const ApartmentSchema = new mongoose.Schema(
   images: {
   exterior: {
     type: String,
-    default: null
+    default: ""
   },
-
   livingRoom: {
     type: String,
-    default: null
+    default: ""
   },
-
   bedroom: {
     type: String,
-    default: null
+    default: ""
   },
-
   kitchen: {
     type: String,
-    default: null
+    default: ""
   },
-
   bathroom: {
     type: String,
-    default: null
+    default: ""
   },
-
   balcony: {
     type: String,
-    default: null
+    default: ""
+  },
+  extraView: {
+    type: String,
+    default: ""
   }
 },
-
     isAvailable: {
       type: Boolean,
       default: true

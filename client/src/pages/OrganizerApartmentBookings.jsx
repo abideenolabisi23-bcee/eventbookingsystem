@@ -48,13 +48,13 @@ const OrganizerApartmentBookings = () => {
         useState("all");
 
     const getAccessToken = () => {
-        return localStorage.getItem("accessToken");
+        return localStorage.getItem("organizerAccessToken");
     };
 
     const handleUnauthorized = () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("role");
+        localStorage.removeItem("organizerAccessToken");
+        localStorage.removeItem("organizerRefreshToken");
+        localStorage.removeItem("organizerRole");
 
         navigate("/organizer/login");
     };

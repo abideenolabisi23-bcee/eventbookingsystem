@@ -763,3 +763,19 @@
     font-size: 16px;
   }
 }
+
+.back-dashboard-btn {
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 0;
+  margin-bottom: 18px;
+}
+
+.back-dashboard-btn:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
