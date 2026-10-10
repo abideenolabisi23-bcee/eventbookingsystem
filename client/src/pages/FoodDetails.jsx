@@ -1,35 +1,29 @@
+
 import { useEffect, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../component/Navbar";
 import DetailFooter from "../component/DetailFooter";
+import { addFoodToCart, getFoodCart } from "../utils/foodCart";
 
 import "../styles/foodDetails.css";
+
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const FoodDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [food, setFood] = useState(null);
-  const [quantity, setQuantity] =
-    useState(1);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [orderLoading, setOrderLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [orderError, setOrderError] =
-    useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [orderError, setOrderError] = useState("");
+  const [cartMessage, setCartMessage] = useState("");
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     const fetchFood = async () => {
@@ -38,19 +32,14 @@ const FoodDetails = () => {
         setError("");
 
         const response = await axios.get(
-          `https://eventbookingsystem-sooty.vercel.app/api/v1/foods/${id}`
+          `${API}/foods/${encodeURIComponent(id)}`
         );
 
         setFood(response.data.data);
       } catch (error) {
-        console.log(
-          "FOOD DETAILS ERROR:",
-          error
-        );
-
         setError(
           error.response?.data?.message ||
-          "Cannot load this food item."
+            "Cannot load this food item."
         );
       } finally {
         setLoading(false);
@@ -60,158 +49,100 @@ const FoodDetails = () => {
     fetchFood();
   }, [id]);
 
+  useEffect(() => {
+    const updateCartCount = () => {
+      const cart = getFoodCart();
+
+      setCartCount(
+        cart.reduce(
+          (total, item) => total + item.quantity,
+          0
+        )
+      );
+    };
+
+    updateCartCount();
+
+    window.addEventListener(
+      "vibely-cart-updated",
+      updateCartCount
+    );
+
+    return () => {
+      window.removeEventListener(
+        "vibely-cart-updated",
+        updateCartCount
+      );
+    };
+  }, []);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency: "NGN",
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(price || 0);
   };
 
+  const availableQuantity = Number(food?.quantity || 0);
+
   const increaseQuantity = () => {
-    if (!food) return;
-
-    if (quantity < food.quantity) {
-      setQuantity(
-        (current) => current + 1
-      );
-    }
-  };
-
-  const decreaseQuantity = () => {
     setQuantity((current) =>
-      Math.max(1, current - 1)
+      Math.min(current + 1, availableQuantity)
     );
   };
 
-  const handleOrder = async () => {
-    const accessToken =
-      localStorage.getItem("accessToken");
+  const decreaseQuantity = () => {
+    setQuantity((current) => Math.max(1, current - 1));
+  };
 
-    if (!accessToken) {
-      navigate("/login", {
-        state: {
-          returnTo: `/food/${id}`,
-        },
-      });
+  const handleAddToCart = () => {
+    setOrderError("");
+    setCartMessage("");
 
+    if (!food || availableQuantity <= 0 || food.isAvailable === false) {
+      setOrderError("This food is currently unavailable.");
       return;
     }
 
-    if (!food || food.quantity <= 0) {
-      setOrderError(
-        "This food is sold out."
-      );
+    const existingItem = getFoodCart().find(
+      (item) => item.foodId === String(food._id)
+    );
 
+    const existingQuantity = existingItem?.quantity || 0;
+
+    if (existingQuantity + quantity > availableQuantity) {
+      setOrderError(
+        `Only ${availableQuantity} portions are currently available. You already have ${existingQuantity} in your cart.`
+      );
       return;
     }
 
-    try {
-      setOrderLoading(true);
-      setOrderError("");
+    const added = addFoodToCart(
+      {
+        ...food,
+        vendor: food.vendor || food.createdBy
+      },
+      quantity
+    );
 
-      const orderResponse =
-        await axios.post(
-          "https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders",
-          {
-            foodId: food._id,
-            quantity: Number(quantity),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-      const orderData =
-        orderResponse.data.data;
-
-      const orderId =
-        orderData?._id ||
-        orderData?.order?._id;
-
-      if (!orderId) {
-        setOrderError(
-          "Your order was created but the order ID was not returned."
-        );
-
-        return;
-      }
-
-      const paymentResponse =
-        await axios.post(
-          "https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/initialize",
-          {
-            orderId,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-      const authorizationUrl =
-        paymentResponse.data.data
-          ?.authorizationUrl;
-
-      if (!authorizationUrl) {
-        setOrderError(
-          "Payment link was not returned."
-        );
-
-        return;
-      }
-
-      window.location.href =
-        authorizationUrl;
-    } catch (error) {
-      console.log(
-        "FOOD ORDER ERROR:",
-        error
-      );
-
-      if (
-        error.response?.status === 401
-      ) {
-        localStorage.removeItem(
-          "accessToken"
-        );
-
-        localStorage.removeItem(
-          "refreshToken"
-        );
-
-        navigate("/login", {
-          state: {
-            returnTo: `/food/${id}`,
-          },
-        });
-
-        return;
-      }
-
-      setOrderError(
-        error.response?.data?.message ||
-        "Cannot place your order at this time."
-      );
-    } finally {
-      setOrderLoading(false);
+    if (!added) {
+      setOrderError("Could not add this food to your cart.");
+      return;
     }
+
+    setCartMessage(
+      `${quantity} ${quantity === 1 ? "portion" : "portions"} of ${food.name} added to your cart!`
+    );
   };
 
   if (loading) {
     return (
       <>
         <Navbar />
-
         <div className="food-details-state">
           <div className="food-details-loader"></div>
-
-          <h3>
-            Loading food...
-          </h3>
+          <h3>Loading food...</h3>
         </div>
       </>
     );
@@ -221,36 +152,28 @@ const FoodDetails = () => {
     return (
       <>
         <Navbar />
-
         <div className="food-details-state">
           <div className="food-details-state-icon">
             <i className="bi bi-cup-hot"></i>
           </div>
-
-          <h3>
-            Food unavailable
-          </h3>
-
+          <h3>Food unavailable</h3>
           <p>{error}</p>
-
-          <Link to="/food">
-            Back to Food
-          </Link>
+          <Link to="/food">Back to Food</Link>
         </div>
       </>
     );
   }
 
   const soldOut =
-    Number(food.quantity) <= 0;
+    availableQuantity <= 0 || food.isAvailable === false;
 
-  const total =
-    Number(food.price) * quantity;
+  const total = Number(food.price) * quantity;
 
   const vendorName =
     food.createdBy?.businessName ||
-    `${food.createdBy?.firstname || ""} ${food.createdBy?.lastname || ""
-      }`.trim() ||
+    `${food.createdBy?.firstname || ""} ${
+      food.createdBy?.lastname || ""
+    }`.trim() ||
     "Vibely Vendor";
 
   return (
@@ -264,23 +187,22 @@ const FoodDetails = () => {
               <i className="bi bi-arrow-left"></i>
               Back to Food
             </Link>
+
+            <Link to="/food-cart" className="food-cart-shortcut">
+              <i className="bi bi-bag"></i>
+              My Cart ({cartCount})
+            </Link>
           </div>
 
           <section className="food-details-layout">
             <div className="food-details-left">
               <div className="food-details-image">
                 {food.image ? (
-                  <img
-                    src={food.image}
-                    alt={food.name}
-                  />
+                  <img src={food.image} alt={food.name} />
                 ) : (
                   <div className="food-details-placeholder">
                     <i className="bi bi-cup-hot"></i>
-
-                    <span>
-                      Vibely Food
-                    </span>
+                    <span>Vibely Food</span>
                   </div>
                 )}
 
@@ -300,13 +222,8 @@ const FoodDetails = () => {
                   ABOUT THIS MEAL
                 </span>
 
-                <h2>
-                  {food.name}
-                </h2>
-
-                <p>
-                  {food.description}
-                </p>
+                <h2>{food.name}</h2>
+                <p>{food.description}</p>
               </div>
             </div>
 
@@ -317,44 +234,21 @@ const FoodDetails = () => {
                 </div>
 
                 <span>
-                  <small>
-                    Prepared by
-                  </small>
-
-                  <strong>
-                    {vendorName}
-                  </strong>
+                  <small>Prepared by</small>
+                  <strong>{vendorName}</strong>
                 </span>
               </div>
 
               <div className="food-order-heading">
-                <span>
-                  {food.category}
-                </span>
-
-                <h1>
-                  {food.name}
-                </h1>
-
-                <p>
-                  {food.description}
-                </p>
+                <span>{food.category}</span>
+                <h1>{food.name}</h1>
+                <p>{food.description}</p>
               </div>
 
               <div className="food-order-price">
-                <span>
-                  Price
-                </span>
-
-                <strong>
-                  {formatPrice(
-                    food.price
-                  )}
-                </strong>
-
-                <small>
-                  per item
-                </small>
+                <span>Price</span>
+                <strong>{formatPrice(food.price)}</strong>
+                <small>per item</small>
               </div>
 
               {soldOut ? (
@@ -362,13 +256,9 @@ const FoodDetails = () => {
                   <i className="bi bi-exclamation-circle"></i>
 
                   <div>
-                    <strong>
-                      Currently sold out
-                    </strong>
-
+                    <strong>Currently sold out</strong>
                     <span>
-                      This meal is not
-                      available for ordering
+                      This meal is not available for ordering
                       right now.
                     </span>
                   </div>
@@ -377,42 +267,25 @@ const FoodDetails = () => {
                 <>
                   <div className="food-quantity-section">
                     <div>
-                      <label>
-                        Quantity
-                      </label>
-
-                      <span>
-                        Choose how many you
-                        want
-                      </span>
+                      <label>Quantity</label>
+                      <span>Choose how many you want</span>
                     </div>
 
                     <div className="food-quantity-selector">
                       <button
                         type="button"
-                        onClick={
-                          decreaseQuantity
-                        }
-                        disabled={
-                          quantity <= 1
-                        }
+                        onClick={decreaseQuantity}
+                        disabled={quantity <= 1}
                       >
                         −
                       </button>
 
-                      <strong>
-                        {quantity}
-                      </strong>
+                      <strong>{quantity}</strong>
 
                       <button
                         type="button"
-                        onClick={
-                          increaseQuantity
-                        }
-                        disabled={
-                          quantity >=
-                          food.quantity
-                        }
+                        onClick={increaseQuantity}
+                        disabled={quantity >= availableQuantity}
                       >
                         +
                       </button>
@@ -421,85 +294,61 @@ const FoodDetails = () => {
 
                   <div className="food-order-summary">
                     <div>
-                      <span>
-                        Item
-                      </span>
-
-                      <strong>
-                        {food.name}
-                      </strong>
+                      <span>Item</span>
+                      <strong>{food.name}</strong>
                     </div>
 
                     <div>
-                      <span>
-                        Quantity
-                      </span>
-
-                      <strong>
-                        {quantity}
-                      </strong>
+                      <span>Quantity</span>
+                      <strong>{quantity}</strong>
                     </div>
 
                     <div>
-                      <span>
-                        Price
-                      </span>
-
-                      <strong>
-                        {formatPrice(
-                          food.price
-                        )}
-                      </strong>
+                      <span>Price</span>
+                      <strong>{formatPrice(food.price)}</strong>
                     </div>
 
                     <div className="food-order-total">
-                      <span>
-                        Total
-                      </span>
-
-                      <strong>
-                        {formatPrice(
-                          total
-                        )}
-                      </strong>
+                      <span>Total</span>
+                      <strong>{formatPrice(total)}</strong>
                     </div>
                   </div>
 
                   {orderError && (
                     <div className="food-order-error">
                       <i className="bi bi-exclamation-circle"></i>
-
                       {orderError}
+                    </div>
+                  )}
+
+                  {cartMessage && (
+                    <div className="food-cart-success" role="status">
+                      <i className="bi bi-check-circle-fill"></i>
+                      <span>{cartMessage}</span>
                     </div>
                   )}
 
                   <button
                     type="button"
                     className="food-order-button"
-                    onClick={handleOrder}
-                    disabled={
-                      orderLoading
-                    }
+                    onClick={handleAddToCart}
                   >
-                    {orderLoading ? (
-                      <>
-                        <span className="food-button-loader"></span>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        Order & Continue to
-                        Payment
+                    <i className="bi bi-bag-plus"></i>
+                    Add to Cart
+                    <i className="bi bi-arrow-right"></i>
+                  </button>
 
-                        <i className="bi bi-arrow-right"></i>
-                      </>
-                    )}
+                  <button
+                    type="button"
+                    className="food-cart-view-button"
+                    onClick={() => navigate("/food-cart")}
+                  >
+                    View Cart ({cartCount})
                   </button>
 
                   <div className="food-secure-payment">
                     <i className="bi bi-shield-check"></i>
-                    Secure payment with
-                    Paystack
+                    Add more meals and pay once at checkout
                   </div>
                 </>
               )}

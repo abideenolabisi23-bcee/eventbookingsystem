@@ -1034,3 +1034,63 @@
     min-height: 58px;
   }
 }
+
+
+.food-cart-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid #e8c4d0;
+  border-radius: 12px;
+  color: #650e2e;
+  background: #fff6f9;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.food-cart-shortcut:hover {
+  background: #f8e4eb;
+  color: #650e2e;
+}
+
+.food-cart-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  margin: 16px 0;
+  border: 1px solid #b9e2c8;
+  border-radius: 12px;
+  background: #effaf3;
+  color: #237347;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.food-cart-view-button {
+  width: 100%;
+  padding: 15px 20px;
+  margin-top: 12px;
+  border: 1px solid #650e2e;
+  border-radius: 12px;
+  background: white;
+  color: #650e2e;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.food-cart-view-button:hover {
+  background: #fff0f5;
+}
+
+.food-details-back {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}

@@ -1,18 +1,28 @@
+
 import { useEffect, useState } from "react";
 import {
   Link,
   useNavigate,
-  useSearchParams,
+  useSearchParams
 } from "react-router-dom";
 import axios from "axios";
+
+import {
+  getFoodCart,
+  saveFoodCart
+} from "../utils/foodCart";
+
 import "../styles/paymentCallback.css";
+
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const FoodPaymentCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [status, setStatus] =
-    useState("verifying");
+  const [status, setStatus] = useState("verifying");
 
   const [message, setMessage] = useState(
     "Please wait while we confirm your food payment."
@@ -21,6 +31,8 @@ const FoodPaymentCallback = () => {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
+    let active = true;
+
     const verifyPayment = async () => {
       const accessToken =
         localStorage.getItem("userAccessToken");
@@ -31,11 +43,12 @@ const FoodPaymentCallback = () => {
 
       if (!accessToken) {
         navigate("/login", {
+          replace: true,
           state: {
             returnTo:
               window.location.pathname +
-              window.location.search,
-          },
+              window.location.search
+          }
         });
 
         return;
@@ -51,65 +64,180 @@ const FoodPaymentCallback = () => {
 
       try {
         const response = await axios.get(
-          `https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/verify/${reference}`,
+          `${API}/food-payments/verify/${encodeURIComponent(reference)}`,
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+              Authorization: `Bearer ${accessToken}`
+            }
           }
         );
 
-        const responseData =
-          response.data.data || {};
+        if (!active) return;
+
+        const responseData = response.data?.data || {};
 
         const payment = responseData.payment;
-const verifiedOrder = responseData.order;
+        const verifiedOrder = responseData.order;
 
-if (
-  payment?.status === "paid" &&
-  verifiedOrder?.paymentStatus === "paid"
-) {
-  setOrder(verifiedOrder);
-  setStatus("success");
-  setMessage(
-    "Your food payment was confirmed successfully!"
-  );
-} else if (
-  payment?.status === "refunded" ||
-  payment?.refundStatus === "pending" ||
-  payment?.refundStatus === "refunded"
-) {
-  setStatus("refund");
-  setMessage(
-    response.data.message ||
-    "Your payment has refund activity. Please check your refund status."
-  );
-} else {
-  setStatus("pending");
-  setMessage(
-    response.data.message ||
-    "Your food payment is still being confirmed. Please do not pay again."
-  );
-}
+        if (
+          payment?.status === "paid" &&
+          verifiedOrder?.paymentStatus === "paid"
+        ) {
+          setOrder(verifiedOrder);
+          setStatus("success");
+          setMessage(
+            "Your food payment was confirmed successfully!"
+          );
+
+          const pendingOrderId =
+            sessionStorage.getItem(
+              "vibelyPendingFoodOrderId"
+            );
+
+          const pendingCartData =
+            sessionStorage.getItem(
+              "vibelyPendingFoodCart"
+            );
+
+          const verifiedOrderId = String(
+            verifiedOrder?._id || ""
+          );
+
+          if (
+            pendingOrderId &&
+            pendingOrderId === verifiedOrderId &&
+            pendingCartData
+          ) {
+            try {
+              const purchasedItems =
+                JSON.parse(pendingCartData);
+
+              if (Array.isArray(purchasedItems)) {
+                const purchasedQuantities = new Map();
+
+                for (const item of purchasedItems) {
+                  const foodId = String(
+                    item.foodId || ""
+                  );
+
+                  const quantity = Number(
+                    item.quantity
+                  );
+
+                  if (
+                    foodId &&
+                    Number.isInteger(quantity) &&
+                    quantity > 0
+                  ) {
+                    purchasedQuantities.set(
+                      foodId,
+                      (purchasedQuantities.get(foodId) || 0) +
+                        quantity
+                    );
+                  }
+                }
+
+                const currentCart = getFoodCart();
+
+                const updatedCart = currentCart
+                  .map((item) => {
+                    const purchasedQuantity =
+                      purchasedQuantities.get(
+                        String(item.foodId)
+                      ) || 0;
+
+                    return {
+                      ...item,
+                      quantity: Math.max(
+                        0,
+                        Number(item.quantity) -
+                          purchasedQuantity
+                      )
+                    };
+                  })
+                  .filter(
+                    (item) => item.quantity > 0
+                  );
+
+               saveFoodCart(updatedCart);
+
+sessionStorage.removeItem(
+  "vibelyPendingFoodOrderId"
+);
+
+sessionStorage.removeItem(
+  "vibelyPendingFoodCart"
+);
+
+sessionStorage.removeItem(
+  "vibelyFoodCheckout"
+);
+              }
+            } catch (cartError) {
+              console.error(
+                "FOOD CART UPDATE ERROR:",
+                cartError
+              );
+            }
+          }
+
+          return;
+        }
+
+        if (
+          payment?.status === "refunded" ||
+          payment?.status === "refund_pending" ||
+          payment?.refundStatus === "pending" ||
+          payment?.refundStatus === "refunded"
+        ) {
+          setStatus("refund");
+
+          setMessage(
+            response.data.message ||
+              "Your payment has refund activity. Please check your refund status."
+          );
+
+          return;
+        }
+
+        setStatus("pending");
+
+        setMessage(
+          response.data.message ||
+            "Your food payment is still being confirmed. Please do not pay again."
+        );
       } catch (error) {
-        console.log(
+        if (!active) return;
+
+        console.error(
           "FOOD PAYMENT VERIFY ERROR:",
           error
         );
 
-        const responseData =
-          error.response?.data;
+        const responseData = error.response?.data;
+
+        if (error.response?.status === 401) {
+          navigate("/login", {
+            replace: true,
+            state: {
+              returnTo:
+                window.location.pathname +
+                window.location.search
+            }
+          });
+
+          return;
+        }
 
         if (
           responseData?.refundInitiated ||
-          responseData
-            ?.refundRequiresReconciliation
+          responseData?.refundRequiresReconciliation
         ) {
           setStatus("refund");
 
           setMessage(
             responseData.message ||
-            "Your payment was received, but your order could not be completed. A refund is being processed."
+              "Your payment was received, but your order could not be completed. A refund is being processed."
           );
 
           return;
@@ -122,7 +250,7 @@ if (
 
           setMessage(
             responseData.message ||
-            "Your payment requires verification. Please check your food orders shortly."
+              "Your payment requires verification. Please check your food orders shortly."
           );
 
           return;
@@ -132,12 +260,16 @@ if (
 
         setMessage(
           responseData?.message ||
-          "We could not verify your food payment."
+            "We could not verify your food payment. Please check your orders before attempting another payment."
         );
       }
     };
 
     verifyPayment();
+
+    return () => {
+      active = false;
+    };
   }, [navigate, searchParams]);
 
   return (
@@ -174,6 +306,16 @@ if (
             <h1>Food order confirmed!</h1>
 
             <p>{message}</p>
+
+            {order?.orderReference && (
+              <div className="payment-pickup-code">
+                <span>Order Reference</span>
+
+                <strong>
+                  {order.orderReference}
+                </strong>
+              </div>
+            )}
 
             {order?.pickupCode && (
               <div className="payment-pickup-code">
