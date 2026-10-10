@@ -59,13 +59,19 @@ const FoodVendorPickup = () => {
         { headers: getHeaders() }
       );
 
-      const order = response.data?.data;
+     
+const order = response.data?.data;
 
-      if (!order || !order._id) {
-        throw new Error("No valid order was returned.");
-      }
+if (!order || !order.orderId) {
+  throw new Error("No valid order was returned.");
+}
 
-      setVerifiedOrder(order);
+setVerifiedOrder({
+  ...order,
+  _id: order.orderId,
+  user: order.customer
+});
+
 
       setMessage({
         type: "success",
