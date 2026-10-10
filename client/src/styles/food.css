@@ -944,3 +944,47 @@
     align-items: center;
   }
 }
+.food-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.food-card-actions .food-order-button,
+.food-view-details-button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.food-card-actions .food-order-button {
+  border: none;
+  background: #71001f;
+  color: white;
+}
+
+.food-view-details-button {
+  border: 1px solid #ead6dc;
+  background: white;
+  color: #71001f;
+}
+
+.food-card-actions .food-order-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .food-card-actions {
+    flex-direction: column;
+  }
+}

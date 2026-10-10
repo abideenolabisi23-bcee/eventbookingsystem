@@ -4,6 +4,7 @@ import axios from "axios";
 
 import Navbar from "../component/Navbar";
 import Footer from "../component/Footer";
+import { addFoodToCart } from "../utils/foodCart";
 
 import "../styles/food.css";
 
@@ -13,6 +14,12 @@ const Food = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [notification, setNotification] = useState({
+  show: false,
+  type: "",
+  message: ""
+});
 
   useEffect(() => {
     const fetchFoods = async () => {
@@ -69,10 +76,71 @@ const Food = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleAddToCart = (food) => {
+  if (Number(food.quantity) <= 0 || food.isAvailable === false) {
+    setNotification({
+      show: true,
+      type: "error",
+      message: "This food is currently unavailable."
+    });
+    return;
+  }
+
+  const added = addFoodToCart(food, 1);
+
+  if (!added) {
+    setNotification({
+      show: true,
+      type: "error",
+      message:
+        "Unable to add this food. Check the available quantity or remove food from another vendor."
+    });
+    return;
+  }
+
+  setNotification({
+    show: true,
+    type: "success",
+    message: `${food.name} added to your cart!`
+  });
+};
+
   return (
     <>
       <Navbar />
+{notification.show && (
+  <div className={`food-details-notification ${notification.type}`}>
+    <div className="food-details-notification-icon">
+      <i
+        className={
+          notification.type === "success"
+            ? "bi bi-check-lg"
+            : "bi bi-exclamation-lg"
+        }
+      ></i>
+    </div>
 
+    <div>
+      <span>
+        {notification.type === "success" ? "SUCCESS" : "PLEASE CHECK"}
+      </span>
+      <p>{notification.message}</p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() =>
+        setNotification({
+          show: false,
+          type: "",
+          message: ""
+        })
+      }
+    >
+      <i className="bi bi-x-lg"></i>
+    </button>
+  </div>
+)}
       <main className="food-page">
         <section className="food-hero">
           <div className="container food-hero-container">
@@ -251,7 +319,9 @@ const Food = () => {
             {!loading && !error && filteredFoods.length > 0 && (
               <div className="food-grid">
                 {filteredFoods.map((food) => {
-                  const soldOut = Number(food.quantity) <= 0;
+                  const soldOut =
+  Number(food.quantity || 0) <= 0 ||
+  food.isAvailable === false;
 
                   return (
                     <article className="food-card" key={food._id}>
@@ -324,24 +394,31 @@ const Food = () => {
                         </p>
 
                         <div className="food-card-footer">
-                          <div className="food-price">
-                            <span>PRICE</span>
-                            <strong>{formatPrice(food.price)}</strong>
-                          </div>
+  <div className="food-price">
+    <span>PRICE</span>
+    <strong>{formatPrice(food.price)}</strong>
+  </div>
 
-                          <Link
-                            to={`/food/${food._id}`}
-                            className={
-                              soldOut
-                                ? "food-order-button sold-out"
-                                : "food-order-button"
-                            }
-                          >
-                            {soldOut ? "View dish" : "Order now"}
+  <div className="food-card-actions">
+    <button
+      type="button"
+      className="food-order-button"
+      onClick={() => handleAddToCart(food)}
+      disabled={soldOut}
+    >
+      <i className="bi bi-bag-plus"></i>
+      {soldOut ? "Unavailable" : "Add to Cart"}
+    </button>
 
-                            <i className="bi bi-arrow-right"></i>
-                          </Link>
-                        </div>
+    <Link
+      to={`/food/${food._id}`}
+      className="food-view-details-button"
+    >
+      View Details
+      <i className="bi bi-arrow-up-right"></i>
+    </Link>
+  </div>
+</div>
                       </div>
                     </article>
                   );
