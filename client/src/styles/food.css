@@ -988,3 +988,125 @@
     flex-direction: column;
   }
 }
+
+
+.food-card-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.food-card-quantity {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+.food-card-quantity-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-card-quantity-heading span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #9c6573;
+}
+
+.food-card-quantity-heading small {
+  font-size: 11px;
+  color: #9c6573;
+}
+
+.food-card-quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px;
+  border: 1px solid #efdde2;
+  border-radius: 12px;
+  background: #fff9fa;
+}
+
+.food-card-quantity-controls button {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 9px;
+  background: #fbeaf0;
+  color: #71001f;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.food-card-quantity-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.food-card-quantity-controls strong {
+  font-size: 16px;
+  color: #510018;
+}
+
+.food-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+.food-card-actions .food-order-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border: none;
+  border-radius: 11px;
+  background: #71001f;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.food-card-actions .food-order-button:hover:not(:disabled) {
+  background: #500016;
+}
+
+.food-card-actions .food-order-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.food-view-details-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #efdde2;
+  border-radius: 11px;
+  background: white;
+  color: #71001f;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.food-view-details-button:hover {
+  background: #fff4f7;
+}
+
+.food-card-actions .food-order-button {
+  box-sizing: border-box;
+}
