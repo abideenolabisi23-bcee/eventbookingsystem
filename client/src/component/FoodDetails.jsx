@@ -16,7 +16,7 @@ const FoodDetails = () => {
   const [food, setFood] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [ordering, setOrdering] = useState(false);
+
   const [error, setError] = useState("");
   const [notification, setNotification] = useState({
     show: false,
@@ -81,7 +81,9 @@ const FoodDetails = () => {
     return Number(food.price || 0) * quantity;
   }, [food, quantity]);
 
-  const soldOut = Number(food?.quantity || 0) <= 0;
+  const soldOut =
+  Number(food?.quantity || 0) <= 0 ||
+  food?.isAvailable === false;
 
   const showNotification = (type, message) => {
     setNotification({
@@ -142,7 +144,7 @@ const FoodDetails = () => {
     setQuantity(value);
   };
 
-  const handleAddToCart = () => {
+ const handleAddToCart = () => {
   if (!food || soldOut) {
     return;
   }
@@ -165,69 +167,7 @@ const FoodDetails = () => {
   setQuantity(1);
 };
 
-    const token = localStorage.getItem("userAccessToken");
-
-    if (!token) {
-      showNotification(
-        "error",
-        "Please log in before placing your food order."
-      );
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 1200);
-
-      return;
-    }
-
-    try {
-      setOrdering(true);
-
-      const response = await axios.post(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/food-orders",
-        {
-          items: [
-            {
-              food: food._id,
-              quantity
-            }
-          ]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      const order = response.data?.data;
-
-      if (!order?._id) {
-        throw new Error("Food order was created without an order ID");
-      }
-
-      showNotification(
-        "success",
-        "Your food order has been created successfully."
-      );
-
-      setTimeout(() => {
-        navigate(`/food-checkout/${order._id}`);
-      }, 700);
-    } catch (error) {
-      console.log(error);
-
-      showNotification(
-        "error",
-        error.response?.data?.message ||
-        "Your food order could not be created."
-      );
-    } finally {
-      setOrdering(false);
-    }
-  };
-
-  if (loading) {
+if (loading) {
     return (
       <>
         <Navbar />
