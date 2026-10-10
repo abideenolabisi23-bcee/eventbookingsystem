@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const FoodPaymentSchema = new mongoose.Schema(
@@ -25,6 +26,21 @@ const FoodPaymentSchema = new mongoose.Schema(
       unique: true
     },
 
+    authorizationUrl: {
+      type: String,
+      default: null
+    },
+
+    accessCode: {
+      type: String,
+      default: null
+    },
+
+    initializedAt: {
+      type: Date,
+      default: null
+    },
+
     status: {
       type: String,
       enum: [
@@ -44,19 +60,19 @@ const FoodPaymentSchema = new mongoose.Schema(
     },
 
     stockDeducted: {
-  type: Boolean,
-  default: false
-},
+      type: Boolean,
+      default: false
+    },
 
-stockDeductedAt: {
-  type: Date,
-  default: null
-},
+    stockDeductedAt: {
+      type: Date,
+      default: null
+    },
 
-processingStartedAt: {
-  type: Date,
-  default: null
-},
+    processingStartedAt: {
+      type: Date,
+      default: null
+    },
 
     refundAmount: {
       type: Number,
@@ -84,11 +100,6 @@ processingStartedAt: {
   }
 );
 
-// Prevent more than one ACTIVE payment
-// attempt for the same food order.
-//
-// Failed attempts are allowed to be replaced
-// by a new payment attempt.
 FoodPaymentSchema.index(
   { order: 1 },
   {
@@ -107,10 +118,9 @@ FoodPaymentSchema.index(
   }
 );
 
-const FoodPaymentModel =
-  mongoose.model(
-    "FoodPayment",
-    FoodPaymentSchema
-  );
+const FoodPaymentModel = mongoose.model(
+  "FoodPayment",
+  FoodPaymentSchema
+);
 
 module.exports = FoodPaymentModel;

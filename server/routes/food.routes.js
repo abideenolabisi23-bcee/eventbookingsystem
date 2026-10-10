@@ -1,3 +1,4 @@
+
 const express = require("express");
 
 const {
@@ -16,12 +17,9 @@ const {
   deleteFood
 } = require("../controllers/food.controller");
 
+const uploadFood = require("../middlewares/uploadFood");
+
 const router = express.Router();
-
-
-// =====================================
-// PUBLIC FOOD ROUTES
-// =====================================
 
 router.get(
   "/foods",
@@ -33,11 +31,6 @@ router.get(
   getFoodById
 );
 
-
-// =====================================
-// FOOD VENDOR ROUTES
-// =====================================
-
 router.get(
   "/food-vendor/foods",
   verifyUser,
@@ -46,24 +39,23 @@ router.get(
   getMyFoods
 );
 
-
 router.post(
   "/foods",
   verifyUser,
   isFoodVendor,
   isApprovedProvider,
+  uploadFood.single("image"),
   createFood
 );
-
 
 router.put(
   "/foods/:foodId",
   verifyUser,
   isFoodVendor,
   isApprovedProvider,
+  uploadFood.single("image"),
   updateFood
 );
-
 
 router.patch(
   "/foods/:foodId/availability",
@@ -73,7 +65,6 @@ router.patch(
   toggleFoodAvailability
 );
 
-
 router.delete(
   "/foods/:foodId",
   verifyUser,
@@ -81,6 +72,5 @@ router.delete(
   isApprovedProvider,
   deleteFood
 );
-
 
 module.exports = router;

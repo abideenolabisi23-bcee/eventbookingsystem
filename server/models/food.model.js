@@ -26,18 +26,37 @@ const FoodSchema = new mongoose.Schema(
       min: 0
     },
 
-    category: {
-      type: String,
-      enum: [
-        "rice",
-        "swallow",
-        "snacks",
-        "drinks",
-        "grills",
-        "others"
-      ],
-      required: true
-    },
+   category: {
+  type: String,
+  enum: [
+    "rice",
+    "swallow",
+    "soups",
+    "pasta",
+    "noodles",
+    "pizza",
+    "shawarma",
+    "burgers",
+    "sandwiches",
+    "chicken",
+    "turkey",
+    "grills",
+    "seafood",
+    "small_chops",
+    "snacks",
+    "breakfast",
+    "salads",
+    "desserts",
+    "drinks",
+    "local_delicacies",
+    "beans",
+    "yam",
+    "plantain",
+    "porridge",
+    "others"
+  ],
+  required: true
+},
 
     image: {
       type: String,

@@ -1,4 +1,46 @@
+
 const mongoose = require("mongoose");
+
+const FoodOrderItemSchema = new mongoose.Schema(
+  {
+    food: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Food",
+      required: true
+    },
+
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+      validate: {
+        validator: Number.isInteger,
+        message: "Food quantity must be a whole number"
+      }
+    },
+
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0
+    }
+  },
+  {
+    _id: false
+  }
+);
 
 const FoodOrderSchema = new mongoose.Schema(
   {
@@ -14,40 +56,20 @@ const FoodOrderSchema = new mongoose.Schema(
       required: true
     },
 
-    items: [
-      {
-        food: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Food",
-          required: true
-        },
-
-        name: {
-          type: String,
-          required: true
-        },
-
-        price: {
-          type: Number,
-          required: true
-        },
-
-        quantity: {
-          type: Number,
-          required: true,
-          min: 1
-        },
-
-        subtotal: {
-          type: Number,
-          required: true
-        }
+    items: {
+      type: [FoodOrderItemSchema],
+      required: true,
+      validate: {
+        validator: (items) =>
+          Array.isArray(items) && items.length > 0,
+        message: "An order must contain at least one food"
       }
-    ],
+    },
 
     totalAmount: {
       type: Number,
-      required: true
+      required: true,
+      min: 0
     },
 
     orderReference: {
@@ -56,12 +78,12 @@ const FoodOrderSchema = new mongoose.Schema(
       unique: true
     },
 
-    // Generated only after successful payment
     pickupCode: {
-  type: String,
-  unique: true,
-  sparse: true
-},
+      type: String,
+      unique: true,
+      sparse: true
+    },
+
     orderStatus: {
       type: String,
       enum: [
@@ -96,6 +118,16 @@ const FoodOrderSchema = new mongoose.Schema(
     strict: "throw"
   }
 );
+
+FoodOrderSchema.index({
+  user: 1,
+  createdAt: -1
+});
+
+FoodOrderSchema.index({
+  vendor: 1,
+  createdAt: -1
+});
 
 const FoodOrderModel = mongoose.model(
   "FoodOrder",

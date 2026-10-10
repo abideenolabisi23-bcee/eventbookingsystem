@@ -1,10 +1,6 @@
 const FoodModel = require("../models/food.model");
+const cloudinary = require("../config/cloudinary");
 
-
-// =====================================
-// CREATE FOOD
-// FOOD VENDOR
-// =====================================
 
 const createFood = async (req, res) => {
   try {
@@ -13,14 +9,8 @@ const createFood = async (req, res) => {
       description,
       price,
       quantity,
-      category,
-      image
+      category
     } = req.body;
-
-
-    // =====================================
-    // VALIDATE REQUIRED FIELDS
-    // =====================================
 
     if (
       !name ||
@@ -30,49 +20,56 @@ const createFood = async (req, res) => {
       !category
     ) {
       return res.status(400).send({
-        message:
-          "Name, description, price, quantity and category are required"
+        message: "Name, description, price, quantity and category are required"
       });
     }
-
 
     const foodPrice = Number(price);
     const foodQuantity = Number(quantity);
 
-
-    // =====================================
-    // VALIDATE PRICE
-    // =====================================
-
-    if (
-      !Number.isFinite(foodPrice) ||
-      foodPrice < 0
-    ) {
+    if (!Number.isFinite(foodPrice) || foodPrice < 0) {
       return res.status(400).send({
-        message:
-          "Price must be a valid positive number"
+        message: "Price must be a valid non-negative number"
       });
     }
 
-
-    // =====================================
-    // VALIDATE QUANTITY
-    // =====================================
-
-    if (
-      !Number.isInteger(foodQuantity) ||
-      foodQuantity < 0
-    ) {
+    if (!Number.isInteger(foodQuantity) || foodQuantity < 0) {
       return res.status(400).send({
-        message:
-          "Quantity must be a valid whole number"
+        message: "Quantity must be a valid non-negative whole number"
       });
     }
 
+    const allowedCategories = FoodModel.schema.path("category").enumValues;
 
-    // =====================================
-    // CREATE FOOD
-    // =====================================
+    if (!allowedCategories.includes(category)) {
+      return res.status(400).send({
+        message: "Please select a valid food category"
+      });
+    }
+
+    let imageUrl = null;
+
+    if (req.file) {
+      const uploadedImage = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "vibely/foods",
+            resource_type: "image"
+          },
+          (error, result) => {
+            if (error) {
+              return reject(error);
+            }
+
+            resolve(result);
+          }
+        );
+
+        stream.end(req.file.buffer);
+      });
+
+      imageUrl = uploadedImage.secure_url;
+    }
 
     const food = await FoodModel.create({
       name,
@@ -80,42 +77,24 @@ const createFood = async (req, res) => {
       price: foodPrice,
       quantity: foodQuantity,
       category,
-      image: image || null,
-
-      /*
-        Even if quantity is 0,
-        keep it visible.
-
-        Frontend will show SOLD OUT.
-      */
+      image: imageUrl,
       isAvailable: true,
-
       createdBy: req.user.id
     });
 
-
     return res.status(201).send({
-      message:
-        "Food created successfully",
-
+      message: "Food created successfully",
       data: food
     });
 
   } catch (error) {
-    console.log(error);
+    console.error("CREATE FOOD ERROR:", error);
 
-    return res.status(400).send({
-      message:
-        "Food cannot be created at this time"
+    return res.status(500).send({
+      message: "Food cannot be created at this time"
     });
   }
 };
-
-
-// =====================================
-// GET ALL FOODS
-// PUBLIC
-// =====================================
 
 const getFoods = async (req, res) => {
   try {
@@ -162,12 +141,6 @@ const getFoods = async (req, res) => {
     });
   }
 };
-
-
-// =====================================
-// GET ONE FOOD
-// PUBLIC
-// =====================================
 
 const getFoodById = async (req, res) => {
   try {
@@ -216,11 +189,6 @@ const getFoodById = async (req, res) => {
   }
 };
 
-
-// =====================================
-// GET FOOD VENDOR'S FOODS
-// =====================================
-
 const getMyFoods = async (req, res) => {
   try {
 
@@ -257,239 +225,191 @@ const getMyFoods = async (req, res) => {
   }
 };
 
-
-// =====================================
-// UPDATE FOOD
-// FOOD VENDOR
-// =====================================
-
 const updateFood = async (req, res) => {
   try {
-
     const { foodId } = req.params;
 
-
-    const food =
-      await FoodModel.findById(foodId);
-
+    const food = await FoodModel.findOne({
+      _id: foodId,
+      createdBy: req.user.id
+    });
 
     if (!food) {
       return res.status(404).send({
-        message: "Food not found"
+        message: "Food not found or you are not authorized to update it"
       });
     }
-
-
-    // =====================================
-    // CHECK OWNERSHIP
-    // =====================================
-
-    if (
-      food.createdBy.toString() !==
-      req.user.id.toString()
-    ) {
-      return res.status(403).send({
-        message:
-          "You are not authorized to update this food"
-      });
-    }
-
 
     const {
       name,
       description,
       price,
       quantity,
-      category,
-      image
+      category
     } = req.body;
 
-
-    // =====================================
-    // UPDATE NAME
-    // =====================================
-
     if (name !== undefined) {
-      food.name = name;
-    }
-
-
-    // =====================================
-    // UPDATE DESCRIPTION
-    // =====================================
-
-    if (description !== undefined) {
-      food.description = description;
-    }
-
-
-    // =====================================
-    // UPDATE PRICE
-    // =====================================
-
-    if (price !== undefined) {
-
-      const foodPrice = Number(price);
-
-
-      if (
-        !Number.isFinite(foodPrice) ||
-        foodPrice < 0
-      ) {
+      if (typeof name !== "string" || !name.trim()) {
         return res.status(400).send({
-          message:
-            "Price must be a valid positive number"
+          message: "Food name is required"
         });
       }
 
+      food.name = name.trim();
+    }
+
+    if (description !== undefined) {
+      if (
+        typeof description !== "string" ||
+        !description.trim()
+      ) {
+        return res.status(400).send({
+          message: "Food description is required"
+        });
+      }
+
+      food.description = description.trim();
+    }
+
+    if (price !== undefined) {
+      const foodPrice = Number(price);
+
+      if (!Number.isFinite(foodPrice) || foodPrice < 0) {
+        return res.status(400).send({
+          message: "Price must be a valid non-negative number"
+        });
+      }
 
       food.price = foodPrice;
     }
 
-
-    // =====================================
-    // UPDATE QUANTITY
-    // =====================================
-
     if (quantity !== undefined) {
-
-      const foodQuantity =
-        Number(quantity);
-
+      const foodQuantity = Number(quantity);
 
       if (
         !Number.isInteger(foodQuantity) ||
         foodQuantity < 0
       ) {
         return res.status(400).send({
-          message:
-            "Quantity must be a valid whole number"
+          message: "Quantity must be a valid non-negative whole number"
         });
       }
-
-
-      /*
-        IMPORTANT:
-
-        We ONLY update quantity here.
-
-        We do NOT change isAvailable.
-
-        Example:
-
-        quantity = 0
-        → SOLD OUT
-
-        Later vendor changes:
-        quantity = 50
-        → orderable again
-      */
 
       food.quantity = foodQuantity;
     }
 
-
-    // =====================================
-    // UPDATE CATEGORY
-    // =====================================
-
     if (category !== undefined) {
+      const allowedCategories =
+        FoodModel.schema.path("category").enumValues;
+
+      if (
+        typeof category !== "string" ||
+        !allowedCategories.includes(category)
+      ) {
+        return res.status(400).send({
+          message: "Please select a valid food category"
+        });
+      }
+
       food.category = category;
     }
 
+    let newImagePublicId = null;
 
-    // =====================================
-    // UPDATE IMAGE
-    // =====================================
+    if (req.file) {
+      const uploadedImage = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "vibely/foods",
+            resource_type: "image"
+          },
+          (error, result) => {
+            if (error) {
+              return reject(error);
+            }
 
-    if (image !== undefined) {
-      food.image = image;
+            resolve(result);
+          }
+        );
+
+        stream.end(req.file.buffer);
+      });
+
+      newImagePublicId = uploadedImage.public_id;
+      food.image = uploadedImage.secure_url;
     }
 
+    try {
+      await food.save();
+    } catch (error) {
+      if (newImagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(newImagePublicId);
+        } catch (cleanupError) {
+          console.error("IMAGE CLEANUP ERROR:", cleanupError);
+        }
+      }
 
-    await food.save();
-
+      throw error;
+    }
 
     return res.status(200).send({
-      message:
-        "Food updated successfully",
-
+      message: "Food updated successfully",
       data: food
     });
 
   } catch (error) {
-    console.log(error);
+    console.error("UPDATE FOOD ERROR:", error);
 
-    return res.status(400).send({
-      message:
-        "Food cannot be updated at this time"
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        message: "Invalid food ID"
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).send({
+        message: error.message
+      });
+    }
+
+    return res.status(500).send({
+      message: "Food cannot be updated at this time"
     });
   }
 };
 
 
-// =====================================
-// ENABLE / DISABLE FOOD
-// FOOD VENDOR
-// =====================================
-
-const toggleFoodAvailability = async (
-  req,
-  res
-) => {
+const toggleFoodAvailability = async (req, res) => {
   try {
-
     const { foodId } = req.params;
+    const { isAvailable } = req.body;
 
+    if (typeof isAvailable !== "boolean") {
+      return res.status(400).send({
+        message: "isAvailable must be true or false"
+      });
+    }
 
-    const food =
-      await FoodModel.findById(foodId);
-
+    const food = await FoodModel.findOne({
+      _id: foodId,
+      createdBy: req.user.id
+    });
 
     if (!food) {
       return res.status(404).send({
-        message: "Food not found"
+        message: "Food not found or you are not authorized"
       });
     }
 
-
-    // =====================================
-    // CHECK OWNERSHIP
-    // =====================================
-
-    if (
-      food.createdBy.toString() !==
-      req.user.id.toString()
-    ) {
-      return res.status(403).send({
-        message:
-          "You are not authorized to manage this food"
-      });
-    }
-
-
-    /*
-      IMPORTANT:
-
-      Vendor can enable food even if
-      quantity is 0.
-
-      It will simply show SOLD OUT
-      to customers.
-    */
-
-    food.isAvailable =
-      !food.isAvailable;
-
+    food.isAvailable = isAvailable;
 
     await food.save();
-
 
     return res.status(200).send({
       message: food.isAvailable
         ? "Food enabled successfully"
         : "Food disabled successfully",
-
       data: food
     });
 
@@ -497,11 +417,11 @@ const toggleFoodAvailability = async (
     console.log(error);
 
     return res.status(500).send({
-      message:
-        "Cannot change food availability at this time"
+      message: "Cannot change food availability at this time"
     });
   }
 };
+
 
 
 // =====================================

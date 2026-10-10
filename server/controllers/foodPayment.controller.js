@@ -456,31 +456,18 @@ const confirmFoodPayment = async (reference, paystackData) => {
 };
 
 
-const initializeFoodPayment = async (
-  req,
-  res
-) => {
+
+const initializeFoodPayment = async (req, res) => {
   try {
     const { orderId } = req.body;
 
-    // ==========================================
-    // VALIDATE ORDER ID
-    // ==========================================
-
-    if (!orderId) {
+    if (!mongoose.isValidObjectId(orderId)) {
       return res.status(400).send({
-        message: "Order ID is required"
+        message: "A valid order ID is required"
       });
     }
 
-    // ==========================================
-    // FIND ORDER
-    // ==========================================
-
-    const order =
-      await FoodOrderModel.findById(
-        orderId
-      );
+    const order = await FoodOrderModel.findById(orderId);
 
     if (!order) {
       return res.status(404).send({
@@ -488,132 +475,181 @@ const initializeFoodPayment = async (
       });
     }
 
-    // ==========================================
-    // CUSTOMER CAN ONLY PAY OWN ORDER
-    // ==========================================
-
-    if (
-      order.user.toString() !==
-      req.user.id.toString()
-    ) {
+    if (String(order.user) !== String(req.user.id)) {
       return res.status(403).send({
-        message:
-          "You are not authorized to pay for this order"
+        message: "You are not authorized to pay for this order"
       });
     }
-
-    // ==========================================
-    // CANCELLED ORDER
-    // ==========================================
 
     if (order.orderStatus === "cancelled") {
       return res.status(400).send({
-        message:
-          "Cancelled order cannot be paid"
+        message: "Cancelled orders cannot be paid"
       });
     }
-
-    // ==========================================
-    // ALREADY PAID
-    // ==========================================
 
     if (order.paymentStatus === "paid") {
-      return res.status(400).send({
-        message:
-          "Order has already been paid"
+      return res.status(409).send({
+        message: "This order has already been paid"
       });
     }
-
-    // ==========================================
-    // REFUND
-    // ==========================================
 
     if (
-      order.paymentStatus ===
-        "refund_pending" ||
-      order.paymentStatus === "refunded"
+      ["refund_pending", "refunded"].includes(
+        order.paymentStatus
+      )
     ) {
-      return res.status(400).send({
-        message:
-          "This order is already in the refund process"
+      return res.status(409).send({
+        message: "This order is already in the refund process"
       });
     }
 
-    // ==========================================
-    // CHECK FOR EXISTING ACTIVE PAYMENT
-    // ==========================================
-
-    const existingPayment =
-      await FoodPaymentModel.findOne({
-        order: order._id,
-
-        status: {
-          $in: [
-            "pending",
-            "processing",
-            "paid",
-            "refund_pending",
-            "refunded"
-          ]
-        }
-      }).sort({
-        createdAt: -1
+    if (
+      !Number.isSafeInteger(
+        Math.round(Number(order.totalAmount) * 100)
+      ) ||
+      Number(order.totalAmount) <= 0
+    ) {
+      return res.status(400).send({
+        message: "Invalid order amount"
       });
+    }
+
+    const existingPayment = await FoodPaymentModel.findOne({
+      order: order._id,
+      status: {
+        $in: [
+          "pending",
+          "processing",
+          "paid",
+          "refund_pending",
+          "refunded"
+        ]
+      }
+    }).sort({ createdAt: -1 });
 
     if (existingPayment) {
-      if (
-        existingPayment.status === "paid"
-      ) {
-        return res.status(400).send({
-          message:
-            "This food order has already been paid"
+      if (existingPayment.status === "paid") {
+        return res.status(409).send({
+          message: "This order has already been paid"
         });
       }
 
-      if (
-        existingPayment.status ===
-          "processing"
-      ) {
+      if (existingPayment.status === "processing") {
         return res.status(409).send({
-          message:
-            "This food payment is already being processed"
-        });
-      }
-
-      if (
-        existingPayment.status ===
-          "refund_pending" ||
-        existingPayment.status ===
-          "refunded"
-      ) {
-        return res.status(409).send({
-          message:
-            "This food order is already in the refund process"
-        });
-      }
-
-      if (
-        existingPayment.status ===
-        "pending"
-      ) {
-        return res.status(409).send({
-          message:
-            "A payment has already been initialized for this food order",
-
+          message: "Your payment is being confirmed. Please wait.",
           data: {
-            reference:
+            reference: existingPayment.reference
+          }
+        });
+      }
+
+      if (
+        ["refund_pending", "refunded"].includes(
+          existingPayment.status
+        )
+      ) {
+        return res.status(409).send({
+          message: "This payment is in the refund process"
+        });
+      }
+
+      if (existingPayment.status === "pending") {
+        if (
+          Number(existingPayment.amount) !==
+          Number(order.totalAmount)
+        ) {
+          return res.status(409).send({
+            message:
+              "The saved payment amount does not match the order. Please contact support."
+          });
+        }
+
+        if (!existingPayment.authorizationUrl) {
+          return res.status(409).send({
+            message:
+              "Your previous payment is still being initialized. Please wait before trying again.",
+            data: {
+              reference: existingPayment.reference
+            }
+          });
+        }
+
+        let paystackResult;
+
+        try {
+          const verifyResponse = await fetch(
+            `https://api.paystack.co/transaction/verify/${encodeURIComponent(
               existingPayment.reference
+            )}`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+              }
+            }
+          );
+
+          paystackResult = await verifyResponse.json();
+
+          if (
+            !verifyResponse.ok ||
+            !paystackResult.status ||
+            !paystackResult.data
+          ) {
+            return res.status(409).send({
+              message:
+                "We could not confirm your previous payment status. Please try again shortly.",
+              data: {
+                reference: existingPayment.reference
+              }
+            });
+          }
+        } catch (error) {
+          console.error("PAYSTACK PAYMENT CHECK ERROR:", error);
+
+          return res.status(503).send({
+            message:
+              "Paystack is temporarily unavailable. Please try again shortly."
+          });
+        }
+
+        const paystackStatus = paystackResult.data.status;
+
+        if (paystackStatus === "success") {
+          return res.status(409).send({
+            message:
+              "Paystack reports this payment as successful. Please verify your payment instead of paying again.",
+            data: {
+              reference: existingPayment.reference
+            }
+          });
+        }
+
+        if (paystackStatus !== "abandoned" &&
+            paystackStatus !== "ongoing" &&
+            paystackStatus !== "pending") {
+          return res.status(409).send({
+            message:
+              "Your previous payment requires review before another payment can be started.",
+            data: {
+              reference: existingPayment.reference
+            }
+          });
+        }
+
+        return res.status(200).send({
+          message: "Existing food payment resumed successfully",
+          data: {
+            authorizationUrl: existingPayment.authorizationUrl,
+            accessCode: existingPayment.accessCode,
+            reference: existingPayment.reference,
+            amount: existingPayment.amount,
+            resumed: true
           }
         });
       }
     }
 
-    // ==========================================
-    // CHECK STOCK BEFORE PAYSTACK
-    // ==========================================
-
-    const stockCheck =
-      await checkOrderStock(order);
+    const stockCheck = await checkOrderStock(order);
 
     if (!stockCheck.available) {
       return res.status(400).send({
@@ -621,130 +657,100 @@ const initializeFoodPayment = async (
       });
     }
 
-    // ==========================================
-    // GET CUSTOMER EMAIL
-    // ==========================================
+    const populatedOrder = await FoodOrderModel.findById(
+      order._id
+    ).populate("user", "email");
 
-    const populatedOrder =
-      await FoodOrderModel
-        .findById(orderId)
-        .populate(
-          "user",
-          "email"
-        );
+    const customerEmail = populatedOrder?.user?.email;
 
-    if (
-      !populatedOrder.user ||
-      !populatedOrder.user.email
-    ) {
+    if (!customerEmail) {
       return res.status(400).send({
-        message:
-          "Customer email not found"
+        message: "Customer email not found"
       });
     }
 
-    // ==========================================
-    // GENERATE REFERENCE
-    // ==========================================
-
-    const reference =
-      `FOOD-PAY-${Date.now()}-${Math.floor(
-        1000 + Math.random() * 9000
-      )}`;
-
-    // ==========================================
-    // CREATE PAYMENT RECORD
-    // ==========================================
+    const reference = `FOOD-PAY-${Date.now()}-${crypto
+      .randomBytes(6)
+      .toString("hex")}`;
 
     let payment;
 
     try {
-      payment =
-        await FoodPaymentModel.create({
-          user: req.user.id,
-          order: order._id,
-          amount: order.totalAmount,
-          reference,
-          status: "pending"
-        });
+      payment = await FoodPaymentModel.create({
+        user: req.user.id,
+        order: order._id,
+        amount: order.totalAmount,
+        reference,
+        status: "pending"
+      });
     } catch (error) {
-      /*
-        If two Pay button requests arrive
-        at almost exactly the same time,
-        the unique active-payment index
-        protects us.
-      */
-
       if (error.code === 11000) {
         return res.status(409).send({
           message:
-            "A payment has already been initialized for this food order"
+            "Another payment request is already in progress. Please wait and try again."
         });
       }
 
       throw error;
     }
 
-    // ==========================================
-    // INITIALIZE PAYSTACK
-    // ==========================================
+    let paystackResponse;
+    let paystackResult;
 
-    const paystackResponse =
-      await fetch(
+    try {
+      paystackResponse = await fetch(
         "https://api.paystack.co/transaction/initialize",
         {
           method: "POST",
-
           headers: {
-            Authorization:
-              `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-
-            "Content-Type":
-              "application/json"
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+            "Content-Type": "application/json"
           },
-
-        body: JSON.stringify({
-  email:
-    populatedOrder.user.email,
-
-  amount:
-    Math.round(
-      order.totalAmount * 100
-    ),
-
-  reference,
-
-  // callback_url:
-  //   "https://eventbookingsystem-gkh7.vercel.app/food-payment/callback",
-
-  callback_url: getPaymentCallbackUrl(
-  req,
-  "/food-payment/callback"
-),
-
-  metadata: {
-    type: "food",
-
-    orderId:
-      order._id.toString(),
-
-    userId:
-      req.user.id.toString()
-  }
-})
+          body: JSON.stringify({
+            email: customerEmail,
+            amount: Math.round(Number(order.totalAmount) * 100),
+            reference,
+            callback_url: getPaymentCallbackUrl(
+              req,
+              "/food-payment/callback"
+            ),
+            metadata: {
+              type: "food",
+              orderId: String(order._id),
+              userId: String(req.user.id)
+            }
+          })
         }
       );
 
-    const paystackResult =
-      await paystackResponse.json();
+      paystackResult = await paystackResponse.json();
+    } catch (error) {
+      console.error("PAYSTACK INITIALIZATION ERROR:", error);
+
+      return res.status(503).send({
+        message:
+          "Paystack did not respond. Your payment reference has been reserved to prevent duplicate charges. Please contact support if this persists.",
+        data: {
+          reference
+        }
+      });
+    }
 
     if (
       !paystackResponse.ok ||
       !paystackResult.status
     ) {
-      payment.status = "failed";
-
-      await payment.save();
+      await FoodPaymentModel.updateOne(
+        {
+          _id: payment._id,
+          status: "pending"
+        },
+        {
+          $set: {
+            status: "failed"
+          }
+        }
+      );
 
       return res.status(400).send({
         message:
@@ -753,40 +759,71 @@ const initializeFoodPayment = async (
       });
     }
 
-    return res.status(200).send({
-      message:
-        "Food payment initialized successfully",
+    const authorizationUrl =
+      paystackResult.data?.authorization_url;
 
-      data: {
-        authorizationUrl:
-          paystackResult.data
-            .authorization_url,
+    const accessCode = paystackResult.data?.access_code;
 
-        accessCode:
-          paystackResult.data
-            .access_code,
+    if (
+      !authorizationUrl ||
+      !accessCode ||
+      paystackResult.data?.reference !== reference
+    ) {
+      return res.status(502).send({
+        message:
+          "Paystack returned incomplete payment information. Please contact support with your payment reference.",
+        data: {
+          reference
+        }
+      });
+    }
 
-        reference:
-          paystackResult.data
-            .reference,
-
-        amount:
-          order.totalAmount
+    const savedPayment = await FoodPaymentModel.findOneAndUpdate(
+      {
+        _id: payment._id,
+        status: "pending"
+      },
+      {
+        $set: {
+          authorizationUrl,
+          accessCode,
+          initializedAt: new Date()
+        }
+      },
+      {
+        new: true
       }
-    });
-
-  } catch (error) {
-    console.log(
-      "INITIALIZE FOOD PAYMENT ERROR:",
-      error
     );
 
+    if (!savedPayment) {
+      return res.status(409).send({
+        message:
+          "The payment status changed while checkout was being prepared. Please verify the payment before continuing.",
+        data: {
+          reference
+        }
+      });
+    }
+
+    return res.status(200).send({
+      message: "Food payment initialized successfully",
+      data: {
+        authorizationUrl: savedPayment.authorizationUrl,
+        accessCode: savedPayment.accessCode,
+        reference: savedPayment.reference,
+        amount: savedPayment.amount,
+        resumed: false
+      }
+    });
+  } catch (error) {
+    console.error("INITIALIZE FOOD PAYMENT ERROR:", error);
+
     return res.status(500).send({
-      message:
-        "Cannot initialize food payment at this time"
+      message: "Cannot initialize food payment at this time"
     });
   }
 };
+
 
 const verifyFoodPayment = async (req, res) => {
   try {

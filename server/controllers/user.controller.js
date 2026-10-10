@@ -1139,26 +1139,13 @@ const reviewApplication = async (req, res) => {
 };
 
 const isFoodVendor = (req, res, next) => {
-  try {
-    const { role } = req.user;
-
-    if (
-      role !== "food_vendor" &&
-      role !== "organizer"
-    ) {
-      return res.status(403).send({
-        message: "Food management access only"
-      });
-    }
-
-    next();
-  } catch (error) {
-    console.log(error);
-
-    return res.status(500).send({
-      message: "Cannot verify food management access"
+  if (req.user.role !== "food_vendor") {
+    return res.status(403).send({
+      message: "Food vendor access only"
     });
   }
+
+  next();
 };
 
 const logoutUser = async (req, res) => {

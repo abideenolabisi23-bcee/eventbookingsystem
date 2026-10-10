@@ -1,20 +1,17 @@
+const mongoose = require("mongoose");
+const crypto = require("crypto");
+
 const FoodModel = require("../models/food.model");
 const FoodOrderModel = require("../models/foodOrder.model");
-const FoodPaymentModel =
-  require("../models/foodPayment.model");
+const FoodPaymentModel = require("../models/foodPayment.model");
 
-const refundFoodPayment =
-  require("../utils/refundFoodPayment");
+const refundFoodPayment = require("../utils/refundFoodPayment");
 
 
 const createFoodOrder = async (req, res) => {
   try {
     console.log("FOOD ORDER BODY:", req.body);
     const { items } = req.body;
-
-    // =====================================
-    // CHECK ITEMS
-    // =====================================
 
     if (
       !items ||
