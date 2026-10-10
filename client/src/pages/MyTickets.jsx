@@ -42,6 +42,9 @@ const formatStatus = (value) => {
     used: "Checked in",
     confirmed: "Confirmed",
     pending: "Pending",
+    packing: "Packing",
+    ready: "Ready for pickup",
+    collected: "Collected",
     paid: "Paid",
     cancelled: "Cancelled",
     refunded: "Refunded",
@@ -156,6 +159,7 @@ export default function MyTickets() {
 
   const [eventTickets, setEventTickets] = useState([]);
   const [apartmentTickets, setApartmentTickets] = useState([]);
+  const [foodOrders, setFoodOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -189,9 +193,10 @@ export default function MyTickets() {
       };
 
       const results = await Promise.allSettled([
-        axios.get(`${API}/tickets/my`, { headers, signal }),
-        axios.get(`${API}/apartment-tickets/my`, { headers, signal })
-      ]);
+  axios.get(`${API}/tickets/my`, { headers, signal }),
+  axios.get(`${API}/apartment-tickets/my`, { headers, signal }),
+  axios.get(`${API}/food-orders/my`, { headers, signal })
+]);
 
       if (signal?.aborted) return;
 
@@ -226,12 +231,25 @@ export default function MyTickets() {
         setApartmentTickets([]);
         failures.push("apartment tickets");
       }
+    if (results[2].status === "fulfilled") {
+  const response = results[2].value.data;
 
+  const orders =
+    response?.data?.orders ||
+    response?.data ||
+    response?.orders ||
+    [];
+
+  setFoodOrders(Array.isArray(orders) ? orders : []);
+} else {
+  setFoodOrders([]);
+  failures.push("food orders");
+}
       setFailedSections(failures);
 
-      if (failures.length === 2) {
-        setError("We couldn't load your tickets. Please try again.");
-      }
+      if (failures.length === 3) {
+  setError("We couldn't load your tickets. Please try again.");
+}
     } catch (err) {
       if (axios.isCancel(err)) return;
 
@@ -283,19 +301,34 @@ export default function MyTickets() {
       };
     });
 
-    return [...events, ...apartments].sort(
-      (a, b) =>
-        new Date(b.date || 0).getTime() -
-        new Date(a.date || 0).getTime()
-    );
-  }, [eventTickets, apartmentTickets]);
+    const foods = foodOrders
+  .filter((order) => order.paymentStatus === "paid")
+  .map((order) => ({
+    key: `food-${order._id}`,
+    type: "food",
+    date: order.createdAt || "",
+    status: order.orderStatus || "pending",
+    title: "Vibely Food Pass",
+    location:
+      order.vendor?.businessName ||
+      "Vibely Food Vendor",
+    reference: order.orderReference || "",
+    order
+  }));
+
+return [...events, ...apartments, ...foods].sort(
+  (a, b) =>
+    new Date(b.date || 0).getTime() -
+    new Date(a.date || 0).getTime()
+);
+ }, [eventTickets, apartmentTickets, foodOrders]);
 
   const counts = useMemo(
     () => ({
       all: items.length,
       events: items.filter((item) => item.type === "events").length,
       apartments: items.filter((item) => item.type === "apartments").length,
-      food: 0
+      food: items.filter((item) => item.type === "food").length
     }),
     [items]
   );
@@ -350,6 +383,9 @@ export default function MyTickets() {
     link.click();
     link.remove();
   };
+
+  const selectedFoodOrder =
+  selectedItem?.type === "food" ? selectedItem.order : null;
 
   const selectedEvent =
     selectedItem?.type === "events" ? selectedItem.ticket : null;
@@ -436,11 +472,15 @@ export default function MyTickets() {
               <option value="checked_out">Checked out</option>
               <option value="refund_pending">Refund pending</option>
               <option value="cancelled">Cancelled</option>
+              <option value="pending">Pending</option>
+<option value="packing">Packing</option>
+<option value="ready">Ready for pickup</option>
+<option value="collected">Collected</option>
             </select>
           </div>
         </div>
 
-        {!loading && failedSections.length === 1 && (
+       {!loading && failedSections.length > 0 && !error && (
           <div className="vtickets-notice">
             Some information could not be loaded:{" "}
             {failedSections.join(", ")}.
@@ -468,15 +508,7 @@ export default function MyTickets() {
               <Link to="/login">Sign in</Link>
             )}
           </div>
-        ) : activeTab === "food" ? (
-          <div className="vtickets-empty">
-            <span>✧</span>
-            <h2>Food confirmations are coming next</h2>
-            <p>
-              Your Food tab is ready. We'll connect your food orders
-              when we build the food ordering system.
-            </p>
-          </div>
+
         ) : visibleItems.length === 0 ? (
           <div className="vtickets-empty">
             <span>✧</span>
@@ -508,6 +540,116 @@ export default function MyTickets() {
         ) : (
           <div className="vtickets-grid">
             {visibleItems.map((item) => {
+             if (item.type === "food") {
+  const order = item.order;
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+
+  return (
+    <article key={item.key} className="vfood-ticket">
+      <div className="vfood-ticket-header">
+        <div className="vfood-ticket-brand">
+          <span>✦ VIBELY</span>
+          <small>FOOD & EXPERIENCES</small>
+        </div>
+
+        <span className="vfood-ticket-icon">
+          <i className="bi bi-bag-heart"></i>
+        </span>
+
+        <span className="vfood-ticket-eyebrow">
+          YOUR OFFICIAL FOOD PASS
+        </span>
+
+        <h2>Your delicious moment awaits.</h2>
+
+        <p>Paid, confirmed and reserved just for you.</p>
+      </div>
+
+      <div className="vfood-ticket-body">
+        <div className="vfood-pickup-panel">
+          <span>YOUR PICKUP CODE</span>
+          <strong>{order.pickupCode || "Not available"}</strong>
+          <small>Present this code to your food vendor</small>
+
+          {order.pickupCode && (
+            <button
+              type="button"
+              onClick={() =>
+                navigator.clipboard.writeText(order.pickupCode)
+              }
+            >
+              <i className="bi bi-copy"></i>
+              Copy pickup code
+            </button>
+          )}
+        </div>
+
+        <div className="vfood-order-items">
+          <div className="vfood-section-title">
+            <span>YOUR ORDER</span>
+            <span>
+              {orderItems.reduce(
+                (total, food) => total + Number(food.quantity || 0),
+                0
+              )}{" "}
+              items
+            </span>
+          </div>
+
+          {orderItems.map((food, index) => (
+            <div className="vfood-order-item" key={food._id || index}>
+              <span className="vfood-item-quantity">
+                {food.quantity}×
+              </span>
+
+              <strong>{food.name || "Food item"}</strong>
+
+              <span>
+                {formatPrice(
+                  Number(food.price || 0) * Number(food.quantity || 0)
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="vfood-ticket-total">
+          <span>TOTAL PAID</span>
+          <strong>{formatPrice(order.totalAmount)}</strong>
+        </div>
+
+        <div className="vfood-ticket-status">
+          <div>
+            <small>PAYMENT</small>
+            <strong className="vfood-paid">
+              <i className="bi bi-check-circle-fill"></i>
+              {formatStatus(order.paymentStatus)}
+            </strong>
+          </div>
+
+          <div>
+            <small>ORDER STATUS</small>
+            <strong>{formatStatus(order.orderStatus)}</strong>
+          </div>
+        </div>
+
+        <div className="vfood-ticket-footer">
+          <span>ORDER REFERENCE</span>
+          <strong>{order.orderReference}</strong>
+
+          <button
+            type="button"
+            onClick={() => setSelectedItem(item)}
+          >
+            View Order Details
+            <i className="bi bi-arrow-up-right"></i>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
               if (item.type === "apartments") {
                 const ticket = item.ticket;
                 const booking = ticket.booking || {};
@@ -779,18 +921,106 @@ export default function MyTickets() {
               ✦ VIBELY
             </div>
 
-            <span className="vtickets-eyebrow">
-              {selectedApartmentTicket
-                ? "YOUR STAY CONFIRMATION"
-                : "YOUR DIGITAL INVITATION"}
-            </span>
+           <span className="vtickets-eyebrow">
+  {selectedFoodOrder
+    ? "YOUR FOOD ORDER CONFIRMATION"
+    : selectedApartmentTicket
+      ? "YOUR STAY CONFIRMATION"
+      : "YOUR DIGITAL INVITATION"}
+</span>
 
-            <h2>
-              {selectedApartmentTicket
-                ? selectedApartment.title || "Apartment Reservation"
-                : selectedEvent?.event?.title || "Vibely Experience"}
-            </h2>
+<h2>
+  {selectedFoodOrder
+    ? "Your Vibely Food Pass"
+    : selectedApartmentTicket
+      ? selectedApartment.title || "Apartment Reservation"
+      : selectedEvent?.event?.title || "Vibely Experience"}
+</h2>
 
+{selectedFoodOrder && (
+  <>
+    <div className="vfood-modal-pickup">
+      <span>YOUR PICKUP CODE</span>
+
+      <strong>
+        {selectedFoodOrder.pickupCode || "Not available"}
+      </strong>
+
+      <p>Present this code to your vendor when collecting your food.</p>
+
+      {selectedFoodOrder.pickupCode && (
+        <button
+          type="button"
+          onClick={() =>
+            navigator.clipboard.writeText(
+              selectedFoodOrder.pickupCode
+            )
+          }
+        >
+          <i className="bi bi-copy"></i> Copy pickup code
+        </button>
+      )}
+    </div>
+
+    <div className="vtickets-modal-details">
+      <p>
+        <span>Order reference</span>
+        <strong>{selectedFoodOrder.orderReference || "—"}</strong>
+      </p>
+
+      <p>
+        <span>Order date</span>
+        <strong>
+          {formatDate(selectedFoodOrder.createdAt, true)}
+        </strong>
+      </p>
+
+      <p>
+        <span>Payment status</span>
+        <strong>
+          {formatStatus(selectedFoodOrder.paymentStatus)}
+        </strong>
+      </p>
+
+      <p>
+        <span>Order status</span>
+        <strong>
+          {formatStatus(selectedFoodOrder.orderStatus)}
+        </strong>
+      </p>
+    </div>
+
+    <div className="vfood-modal-items">
+      <h3>Your order</h3>
+
+      {(selectedFoodOrder.items || []).map((food, index) => (
+        <div key={food._id || index}>
+          <span>
+            {food.quantity}× {food.name || "Food item"}
+          </span>
+
+          <strong>
+            {formatPrice(
+              Number(food.price || 0) *
+              Number(food.quantity || 0)
+            )}
+          </strong>
+        </div>
+      ))}
+    </div>
+
+    <div className="vfood-modal-total">
+      <span>Total paid</span>
+      <strong>{formatPrice(selectedFoodOrder.totalAmount)}</strong>
+    </div>
+
+    <p className="vtickets-modal-note">
+      Your order is linked to your Vibely account. Keep your
+      pickup code safe and show it to the vendor when collecting
+      your food.
+    </p>
+  </>
+)}
             {selectedEvent && (
               <>
                 {selectedEvent.qrCode ? (

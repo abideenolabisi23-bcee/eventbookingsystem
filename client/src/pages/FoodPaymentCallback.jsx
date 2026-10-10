@@ -71,9 +71,11 @@ const FoodPaymentCallback = () => {
         const verifiedOrder = responseData.order;
 
         if (
-          payment?.status === "paid" &&
-          verifiedOrder?.paymentStatus === "paid"
-        ) {
+  payment?.status === "paid" &&
+  verifiedOrder?.paymentStatus === "paid" &&
+  verifiedOrder?.orderStatus !== "cancelled" &&
+  verifiedOrder?.pickupCode
+) {
           setOrder(verifiedOrder);
           setStatus("success");
           setMessage(

@@ -7,7 +7,7 @@ import DetailFooter from "../component/DetailFooter";
 
 import {
   getFoodCart,
-  saveFoodCart,
+  updateFoodCartQuantity,
   removeFoodFromCart,
   clearFoodCart
 } from "../utils/foodCart";
@@ -27,6 +27,7 @@ const FoodCart = () => {
 
   const [items, setItems] = useState(() => getFoodCart());
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
@@ -43,34 +44,45 @@ const FoodCart = () => {
     };
   }, []);
 
+  const showMessage = (text, type = "success") => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
   const updateQuantity = (foodId, amount) => {
     setMessage("");
 
-    const updatedItems = getFoodCart()
-      .map((item) => {
-        if (String(item.foodId) !== String(foodId)) {
-          return item;
-        }
+    const currentItem = getFoodCart().find(
+      (item) => String(item.foodId) === String(foodId)
+    );
 
-        return {
-          ...item,
-          quantity: Math.max(
-            0,
-            (Number(item.quantity) || 0) + amount
-          )
-        };
-      })
-      .filter((item) => item.quantity > 0);
+    if (!currentItem) {
+      return;
+    }
 
-    saveFoodCart(updatedItems);
-    setItems(updatedItems);
+    const newQuantity = Number(currentItem.quantity) + amount;
+
+    const updated = updateFoodCartQuantity(
+      foodId,
+      newQuantity
+    );
+
+    if (!updated) {
+      showMessage(
+        "You cannot add more portions than are currently available.",
+        "error"
+      );
+      return;
+    }
+
+    setItems(getFoodCart());
   };
 
   const handleRemove = (foodId) => {
     const updatedItems = removeFoodFromCart(foodId);
 
     setItems(updatedItems);
-    setMessage("Food removed from your cart.");
+    showMessage("Food removed from your cart.");
   };
 
   const handleClearCart = () => {
@@ -78,11 +90,54 @@ const FoodCart = () => {
 
     setItems([]);
     setShowClearConfirm(false);
-    setMessage("Your cart has been cleared.");
+    showMessage("Your cart has been cleared.");
   };
 
   const handleCheckout = () => {
-    if (items.length === 0) {
+    setMessage("");
+
+    const cart = getFoodCart();
+
+    if (cart.length === 0) {
+      showMessage(
+        "Your cart is empty. Add some food before checkout.",
+        "error"
+      );
+      return;
+    }
+
+    const vendorIds = [
+      ...new Set(
+        cart.map((item) => String(item.vendorId || ""))
+      )
+    ];
+
+    if (
+      vendorIds.length !== 1 ||
+      !vendorIds[0] ||
+      vendorIds[0] === "[object Object]"
+    ) {
+      showMessage(
+        "Your cart must contain food from one vendor only. Please review your items.",
+        "error"
+      );
+      return;
+    }
+
+    const invalidItem = cart.some(
+      (item) =>
+        !item.foodId ||
+        !Number.isInteger(Number(item.quantity)) ||
+        Number(item.quantity) < 1 ||
+        !Number.isFinite(Number(item.price)) ||
+        Number(item.price) < 0
+    );
+
+    if (invalidItem) {
+      showMessage(
+        "Some cart items are invalid. Please review your cart.",
+        "error"
+      );
       return;
     }
 
@@ -146,9 +201,25 @@ const FoodCart = () => {
           {message && (
             <div
               className="vibely-cart-message"
-              role="status"
+              role={messageType === "error" ? "alert" : "status"}
+              style={
+                messageType === "error"
+                  ? {
+                      background: "#fff1f2",
+                      border: "1px solid #fecdd3",
+                      color: "#9f1239"
+                    }
+                  : undefined
+              }
             >
-              <i className="bi bi-check-circle"></i>
+              <i
+                className={
+                  messageType === "error"
+                    ? "bi bi-exclamation-circle"
+                    : "bi bi-check-circle"
+                }
+              ></i>
+
               {message}
             </div>
           )}
@@ -220,9 +291,7 @@ const FoodCart = () => {
                       <button
                         type="button"
                         className="vibely-cart-remove"
-                        onClick={() =>
-                          handleRemove(item.foodId)
-                        }
+                        onClick={() => handleRemove(item.foodId)}
                       >
                         <i className="bi bi-x-circle"></i>
                         Remove
@@ -248,6 +317,12 @@ const FoodCart = () => {
                           aria-label={`Increase ${item.name}`}
                           onClick={() =>
                             updateQuantity(item.foodId, 1)
+                          }
+                          disabled={
+                            item.availableQuantity !== null &&
+                            item.availableQuantity !== undefined &&
+                            Number(item.quantity) >=
+                              Number(item.availableQuantity)
                           }
                         >
                           +
@@ -350,9 +425,7 @@ const FoodCart = () => {
             <div className="vibely-cart-modal-actions">
               <button
                 type="button"
-                onClick={() =>
-                  setShowClearConfirm(false)
-                }
+                onClick={() => setShowClearConfirm(false)}
               >
                 Keep Items
               </button>

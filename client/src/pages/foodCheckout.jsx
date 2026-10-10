@@ -141,9 +141,9 @@ const handlePayment = async () => {
         `${API}/food-orders`,
         {
           items: currentCart.map((item) => ({
-            foodId: item.foodId,
-            quantity: Number(item.quantity)
-          }))
+  food: item.foodId,
+  quantity: Number(item.quantity)
+}))
         },
         {
           headers: {
