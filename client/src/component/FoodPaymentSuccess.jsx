@@ -4,6 +4,7 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import DetailFooter from "./DetailFooter";
 import "../styles/foodPaymentSuccess.css";
+import verifyCustomerFoodPayment from "../utils/verifyCustomerFoodPayment";
 
 const FoodPaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -55,7 +56,7 @@ const FoodPaymentSuccess = () => {
   };
 
   const verifyPayment = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("userAccessToken");
 
     if (!token) {
       navigate("/login");
@@ -74,14 +75,7 @@ const FoodPaymentSuccess = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(
-        `https://eventbookingsystem-sooty.vercel.app/api/v1/food-payments/verify/${reference}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+    const response = await verifyCustomerFoodPayment(reference);
 
       const responseData = response.data?.data || response.data;
 
