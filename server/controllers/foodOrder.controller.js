@@ -90,20 +90,16 @@ const createFoodOrder = async (req, res) => {
     ) {
 
       const food =
-        await FoodModel.findById(foodId);for (
-  const [foodId, orderQuantity]
-  of Object.entries(combinedItems)
-) {
-
+        await FoodModel.findById(foodId);
+        for (const [foodId, orderQuantity] of Object.entries(combinedItems)) {
   if (!mongoose.Types.ObjectId.isValid(foodId)) {
     return res.status(400).send({
       message: "Invalid food ID"
     });
   }
 
-  const food =
-    await FoodModel.findById(foodId);
-
+  const food = await FoodModel.findById(foodId);
+}
 
       // =====================================
       // FOOD EXISTS?
