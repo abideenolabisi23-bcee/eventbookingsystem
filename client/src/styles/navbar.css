@@ -415,3 +415,27 @@ body {
     font-size: 17px;
   }
 }
+
+@media (max-width: 600px) {
+  .vibely-navbar-links {
+    justify-content: center;
+    gap: 25px;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .vibely-navbar-links a {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  body:has(.vibely-navbar-links a[href="/events"].active)
+    .vibely-navbar-links,
+  body:has(.vibely-navbar-links a[href="/apartments"].active)
+    .vibely-navbar-links,
+  body:has(.vibely-navbar-links a[href="/food"].active)
+    .vibely-navbar-links {
+    gap: 40px;
+  }
+}
