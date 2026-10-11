@@ -137,7 +137,7 @@ const ApartmentQRCheckIn = () => {
     localStorage.getItem("firstname") || "Organizer";
 
   const getAccessToken = () => {
-    return localStorage.getItem("accessToken");
+    return localStorage.getItem("organizerAccessToken");
   };
 
   const showMessage = (text, type = "error") => {
