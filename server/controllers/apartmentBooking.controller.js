@@ -642,9 +642,9 @@ const checkInApartmentGuest = async (req, res) => {
 
     const now = new Date();
 
-    const allowedCheckIn = new Date(
-      booking.checkInDate
-    );
+    // const allowedCheckIn = new Date(
+    //   booking.checkInDate
+    // );
 
     const checkInDeadline = new Date(
       booking.checkOutDate
@@ -660,32 +660,32 @@ const checkInApartmentGuest = async (req, res) => {
       });
     }
 
-    if (booking.expectedCheckInTime) {
-      const [hours, minutes] = booking.expectedCheckInTime
-        .split(":")
-        .map(Number);
+    // if (booking.expectedCheckInTime) {
+    //   const [hours, minutes] = booking.expectedCheckInTime
+    //     .split(":")
+    //     .map(Number);
 
-      allowedCheckIn.setHours(
-        hours,
-        minutes,
-        0,
-        0
-      );
-    } else {
-      allowedCheckIn.setHours(
-        0,
-        0,
-        0,
-        0
-      );
-    }
+    //   allowedCheckIn.setHours(
+    //     hours,
+    //     minutes,
+    //     0,
+    //     0
+    //   );
+    // } else {
+    //   allowedCheckIn.setHours(
+    //     0,
+    //     0,
+    //     0,
+    //     0
+    //   );
+    // }
 
-    if (now < allowedCheckIn) {
-      return res.status(400).send({
-        message: "Guest cannot check in before the scheduled check-in time",
-        checkInTime: allowedCheckIn
-      });
-    }
+    // if (now < allowedCheckIn) {
+    //   return res.status(400).send({
+    //     message: "Guest cannot check in before the scheduled check-in time",
+    //     checkInTime: allowedCheckIn
+    //   });
+    // }
 
     if (now >= checkInDeadline) {
       return res.status(400).send({
