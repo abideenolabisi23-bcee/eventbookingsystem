@@ -96,6 +96,7 @@ function App() {
         <Route element={<UserProtectedRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/my-tickets" element={<MyTickets />} />
+          <Route path="/tickets" element={<MyTickets />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/my-refunds" element={<MyRefunds />} />
           <Route
@@ -135,9 +136,9 @@ function App() {
             element={<ApartmentPaymentCallback />}
           />
           <Route
-  path="/food-payment/callback"
-  element={<FoodPaymentCallback />}
-/>
+            path="/food-payment/callback"
+            element={<FoodPaymentCallback />}
+          />
         </Route>
 
         <Route
@@ -326,11 +327,10 @@ function App() {
             path="/food-vendor/pickup"
             element={<FoodVendorPickup />}
           />
-
           <Route
-  path="/food-vendor/earnings"
-  element={<FoodVendorEarnings />}
-/>
+            path="/food-vendor/earnings"
+            element={<FoodVendorEarnings />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>
