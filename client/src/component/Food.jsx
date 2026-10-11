@@ -6,7 +6,42 @@ import Navbar from "./Navbar";
 import DetailFooter from "./DetailFooter";
 import { addFoodToCart } from "../utils/foodCart";
 import "../styles/food.css";
-import "../styles/foodDetails.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
+const categories = [
+  { name: "all", label: "All Food", icon: "bi-grid" },
+  { name: "rice", label: "Rice", icon: "bi-bowl-hot" },
+  { name: "swallow", label: "Swallow", icon: "bi-circle" },
+  { name: "snacks", label: "Snacks", icon: "bi-cookie" },
+  { name: "drinks", label: "Drinks", icon: "bi-cup-straw" },
+  { name: "grills", label: "Grills", icon: "bi-fire" },
+  { name: "others", label: "Others", icon: "bi-three-dots" }
+];
+
+const formatPrice = (price) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0
+  }).format(Number(price) || 0);
+
+const getVendorName = (food) => {
+  if (food.createdBy?.businessName) {
+    return food.createdBy.businessName;
+  }
+
+  const fullName = [
+    food.createdBy?.firstname,
+    food.createdBy?.lastname
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return fullName || "Vibely Food Vendor";
+};
 
 const Food = () => {
   const [foods, setFoods] = useState([]);
@@ -14,6 +49,8 @@ const Food = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("featured");
+  const [visibleCount, setVisibleCount] = useState(12);
   const [foodQuantities, setFoodQuantities] = useState({});
   const [notification, setNotification] = useState({
     show: false,
@@ -21,35 +58,21 @@ const Food = () => {
     message: ""
   });
 
-  const categories = [
-    { name: "all", label: "All", icon: "bi-grid" },
-    { name: "rice", label: "Rice", icon: "bi-bowl-hot" },
-    { name: "swallow", label: "Swallow", icon: "bi-circle" },
-    { name: "snacks", label: "Snacks", icon: "bi-cookie" },
-    { name: "drinks", label: "Drinks", icon: "bi-cup-straw" },
-    { name: "grills", label: "Grills", icon: "bi-fire" },
-    { name: "others", label: "Others", icon: "bi-three-dots" }
-  ];
-
-  useEffect(() => {
-    fetchFoods();
-  }, []);
-
   const fetchFoods = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(
-        "https://eventbookingsystem-sooty.vercel.app/api/v1/foods"
+      const response = await axios.get(`${API_URL}/foods`);
+
+      setFoods(
+        Array.isArray(response.data?.data)
+          ? response.data.data
+          : []
       );
-
-      setFoods(response.data?.data || []);
-    } catch (error) {
-      console.log(error);
-
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
+        err.response?.data?.message ||
           "We couldn't load the food menu right now."
       );
     } finally {
@@ -57,76 +80,99 @@ const Food = () => {
     }
   };
 
-  const filteredFoods = useMemo(() => {
-    return foods.filter((food) => {
-      const searchValue = search.trim().toLowerCase();
+  useEffect(() => {
+    fetchFoods();
+  }, []);
 
+  const menuCategories = useMemo(() => {
+    const known = new Set(categories.map((item) => item.name));
+
+    const extra = [
+      ...new Set(
+        foods
+          .map((food) => food.category?.toLowerCase())
+          .filter(Boolean)
+      )
+    ]
+      .filter((category) => !known.has(category))
+      .map((category) => ({
+        name: category,
+        label:
+          category.charAt(0).toUpperCase() +
+          category.slice(1),
+        icon: "bi-egg-fried"
+      }));
+
+    return [...categories, ...extra];
+  }, [foods]);
+
+  const filteredFoods = useMemo(() => {
+    const searchValue = search.trim().toLowerCase();
+
+    const result = foods.filter((food) => {
       const matchesCategory =
         activeCategory === "all" ||
-        food.category === activeCategory;
+        food.category?.toLowerCase() === activeCategory;
 
-      const vendorName =
-        food.createdBy?.businessName ||
-        `${food.createdBy?.firstname || ""} ${
-          food.createdBy?.lastname || ""
-        }`;
+      const vendorName = getVendorName(food);
 
       const matchesSearch =
         !searchValue ||
-        food.name?.toLowerCase().includes(searchValue) ||
-        food.description?.toLowerCase().includes(searchValue) ||
-        food.category?.toLowerCase().includes(searchValue) ||
-        vendorName.toLowerCase().includes(searchValue);
+        [
+          food.name,
+          food.description,
+          food.category,
+          vendorName
+        ].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(searchValue)
+        );
 
       return matchesCategory && matchesSearch;
     });
-  }, [foods, search, activeCategory]);
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      maximumFractionDigits: 0
-    }).format(Number(price) || 0);
-  };
-
-  const getVendorName = (food) => {
-    if (food.createdBy?.businessName) {
-      return food.createdBy.businessName;
+    if (sortBy === "price-low") {
+      result.sort(
+        (a, b) => Number(a.price) - Number(b.price)
+      );
     }
 
-    const fullName = `${food.createdBy?.firstname || ""} ${
-      food.createdBy?.lastname || ""
-    }`.trim();
+    if (sortBy === "price-high") {
+      result.sort(
+        (a, b) => Number(b.price) - Number(a.price)
+      );
+    }
 
-    return fullName || "Vibely Food Vendor";
-  };
+    if (sortBy === "name") {
+      result.sort((a, b) =>
+        String(a.name || "").localeCompare(
+          String(b.name || "")
+        )
+      );
+    }
+
+    return result;
+  }, [foods, search, activeCategory, sortBy]);
+
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [search, activeCategory, sortBy]);
+
+  const visibleFoods = filteredFoods.slice(0, visibleCount);
+
+  const heroFood = foods.find(
+    (food) => typeof food.image === "string" && food.image
+  );
 
   const getCategoryLabel = (category) => {
-    const foundCategory = categories.find(
-      (item) => item.name === category
+    return (
+      menuCategories.find(
+        (item) => item.name === category
+      )?.label ||
+      category ||
+      "Food"
     );
-
-    return foundCategory?.label || category || "Food";
-  };
-
-  const getQuantity = (foodId) => {
-    return foodQuantities[foodId] || 1;
-  };
-
-  const changeQuantity = (foodId, amount, maximum) => {
-    const maxQuantity = Math.max(1, Number(maximum) || 1);
-
-    setFoodQuantities((previous) => ({
-      ...previous,
-      [foodId]: Math.max(
-        1,
-        Math.min(
-          maxQuantity,
-          (previous[foodId] || 1) + amount
-        )
-      )
-    }));
   };
 
   const showNotification = (type, message) => {
@@ -137,26 +183,47 @@ const Food = () => {
     });
   };
 
-  const handleAddToCart = (food) => {
-    const soldOut =
-      Number(food.quantity || 0) <= 0 ||
-      food.isAvailable === false;
+  const getFoodQuantity = (foodId) => {
+  return foodQuantities[foodId] || 1;
+};
 
-    if (soldOut) {
-      showNotification(
-        "error",
-        "This dish is currently unavailable."
-      );
-      return;
-    }
+const changeFoodQuantity = (food, amount) => {
+  const foodId = food._id;
 
-    const quantity = getQuantity(food._id);
+  setFoodQuantities((previous) => {
+    const current = previous[foodId] || 1;
+    const maximum = Number(food.quantity) || 1;
+
+    return {
+      ...previous,
+      [foodId]: Math.max(1, Math.min(current + amount, maximum))
+    };
+  });
+};
+const handleAddToCart = (food) => {
+  const quantity = getFoodQuantity(food._id);
+
+  const soldOut =
+    Number(food.quantity || 0) <= 0 ||
+    food.isAvailable === false;
+
+  if (soldOut) {
+    showNotification("error", "This dish is currently unavailable.");
+    return;
+  }
+
+  if (quantity > Number(food.quantity)) {
+    showNotification("error", "Selected quantity exceeds available stock.");
+    return;
+  }
+
+  try {
     const added = addFoodToCart(food, quantity);
 
     if (!added) {
       showNotification(
         "error",
-        "Unable to add this food. Check the available quantity or remove food from another vendor."
+        "Unable to add this food. Check stock or remove food from another vendor."
       );
       return;
     }
@@ -170,7 +237,14 @@ const Food = () => {
       ...previous,
       [food._id]: 1
     }));
-  };
+  } catch {
+    showNotification(
+      "error",
+      "Something went wrong while adding this food."
+    );
+  }
+};
+
 
   return (
     <>
@@ -178,10 +252,10 @@ const Food = () => {
 
       {notification.show && (
         <div
-          className={`food-details-notification ${notification.type}`}
+          className={`vibely-food-toast ${notification.type}`}
           role="status"
         >
-          <div className="food-details-notification-icon">
+          <span className="vibely-food-toast-icon">
             <i
               className={
                 notification.type === "success"
@@ -189,15 +263,14 @@ const Food = () => {
                   : "bi bi-exclamation-lg"
               }
             ></i>
-          </div>
+          </span>
 
           <div>
-            <span>
+            <strong>
               {notification.type === "success"
-                ? "SUCCESS"
-                : "PLEASE CHECK"}
-            </span>
-
+                ? "Added successfully"
+                : "Please check"}
+            </strong>
             <p>{notification.message}</p>
           </div>
 
@@ -219,14 +292,11 @@ const Food = () => {
 
       <main className="food-page">
         <section className="food-hero">
-          <div className="food-hero-glow food-hero-glow-one"></div>
-          <div className="food-hero-glow food-hero-glow-two"></div>
-
           <div className="food-hero-inner">
             <div className="food-hero-copy">
               <div className="food-eyebrow">
                 <span></span>
-                VIBELY FOOD
+                VIBELY FOOD EXPERIENCE
               </div>
 
               <h1>
@@ -236,15 +306,17 @@ const Food = () => {
               </h1>
 
               <p>
-                Discover delicious meals, snacks, grills and drinks
-                from trusted food vendors on Vibely.
+                From comforting local favourites to
+                irresistible grills, snacks and treats.
+                Discover delicious meals from food vendors
+                on Vibely.
               </p>
 
               <div className="food-hero-search">
                 <i className="bi bi-search"></i>
 
                 <input
-                  type="text"
+                  type="search"
                   placeholder="Search meals, vendors or categories..."
                   value={search}
                   onChange={(event) =>
@@ -256,39 +328,52 @@ const Food = () => {
                   <button
                     type="button"
                     className="food-clear-search"
-                    onClick={() => setSearch("")}
                     aria-label="Clear search"
+                    onClick={() => setSearch("")}
                   >
                     <i className="bi bi-x-lg"></i>
                   </button>
                 )}
               </div>
+
+              <div className="food-hero-highlights">
+                <span>
+                  <i className="bi bi-patch-check"></i>
+                  Trusted vendors
+                </span>
+                <span>
+                  <i className="bi bi-bag-heart"></i>
+                  Easy ordering
+                </span>
+              </div>
             </div>
 
-            <div className="food-hero-card">
-              <div className="food-hero-card-icon">
-                <i className="bi bi-bag-heart-fill"></i>
+            <div className="food-hero-visual">
+              <div className="food-hero-image">
+                {heroFood ? (
+                  <img
+                    src={heroFood.image}
+                    alt="Delicious food available on Vibely"
+                  />
+                ) : (
+                  <div className="food-hero-placeholder">
+                    <i className="bi bi-egg-fried"></i>
+                    <span>Delicious moments await</span>
+                  </div>
+                )}
               </div>
 
-              <span className="food-hero-card-label">
-                YOUR NEXT CRAVING
-              </span>
-
-              <h3>Made for the moment.</h3>
-
-              <p>
-                Browse. Pick your favourite. Pay securely. Enjoy.
-              </p>
-
-              <div className="food-hero-card-bottom">
+              <div className="food-hero-floating-label">
+                <i className="bi bi-stars"></i>
                 <div>
-                  <strong>{foods.length}</strong>
-                  <span>Menu items</span>
+                  <strong>Fresh flavours</strong>
+                  <span>Made for every craving</span>
                 </div>
+              </div>
 
-                <div className="food-hero-mini-icon">
-                  <i className="bi bi-arrow-down"></i>
-                </div>
+              <div className="food-hero-count">
+                <strong>{foods.length}+</strong>
+                <span>Menu choices</span>
               </div>
             </div>
           </div>
@@ -301,29 +386,29 @@ const Food = () => {
                 <span className="food-small-heading">
                   EXPLORE THE MENU
                 </span>
-
                 <h2>What are you craving?</h2>
               </div>
 
               <p>
-                Find something delicious for every kind of mood.
+                Find something delicious for every mood.
               </p>
             </div>
 
             <div className="food-category-list">
-              {categories.map((category) => {
-                const categoryCount =
+              {menuCategories.map((category) => {
+                const count =
                   category.name === "all"
                     ? foods.length
                     : foods.filter(
                         (food) =>
-                          food.category === category.name
+                          food.category?.toLowerCase() ===
+                          category.name
                       ).length;
 
                 return (
                   <button
-                    type="button"
                     key={category.name}
+                    type="button"
                     className={`food-category-button ${
                       activeCategory === category.name
                         ? "active"
@@ -332,21 +417,13 @@ const Food = () => {
                     onClick={() =>
                       setActiveCategory(category.name)
                     }
+                    aria-pressed={
+                      activeCategory === category.name
+                    }
                   >
-                    <span className="food-category-icon">
-                      <i className={`bi ${category.icon}`}></i>
-                    </span>
-
-                    <span className="food-category-info">
-                      <strong>{category.label}</strong>
-
-                      <small>
-                        {categoryCount}{" "}
-                        {categoryCount === 1
-                          ? "item"
-                          : "items"}
-                      </small>
-                    </span>
+                    <i className={`bi ${category.icon}`}></i>
+                    <span>{category.label}</span>
+                    <small>{count}</small>
                   </button>
                 );
               })}
@@ -366,14 +443,35 @@ const Food = () => {
                       activeCategory
                     )} selection`}
               </h2>
+
+              <p>
+                {filteredFoods.length}{" "}
+                {filteredFoods.length === 1
+                  ? "delicious dish"
+                  : "delicious dishes"}{" "}
+                to explore
+              </p>
             </div>
 
-            <div className="food-result-count">
-              <span>{filteredFoods.length}</span>
+            <div className="food-menu-tools">
+              <label htmlFor="food-sort">Sort by</label>
 
-              {filteredFoods.length === 1
-                ? " dish found"
-                : " dishes found"}
+              <select
+                id="food-sort"
+                value={sortBy}
+                onChange={(event) =>
+                  setSortBy(event.target.value)
+                }
+              >
+                <option value="featured">Featured</option>
+                <option value="price-low">
+                  Price: Low to High
+                </option>
+                <option value="price-high">
+                  Price: High to Low
+                </option>
+                <option value="name">Name: A to Z</option>
+              </select>
             </div>
           </div>
 
@@ -385,10 +483,7 @@ const Food = () => {
             </div>
           ) : error ? (
             <div className="food-state-card">
-              <div className="food-state-icon">
-                <i className="bi bi-exclamation-circle"></i>
-              </div>
-
+              <i className="bi bi-exclamation-circle"></i>
               <h3>Menu unavailable</h3>
               <p>{error}</p>
 
@@ -398,14 +493,9 @@ const Food = () => {
             </div>
           ) : filteredFoods.length === 0 ? (
             <div className="food-state-card">
-              <div className="food-state-icon">
-                <i className="bi bi-search-heart"></i>
-              </div>
-
+              <i className="bi bi-search-heart"></i>
               <h3>No dishes found</h3>
-
               <p>
-                We couldn't find anything matching your search.
                 Try another category or search term.
               </p>
 
@@ -420,175 +510,161 @@ const Food = () => {
               </button>
             </div>
           ) : (
-            <div className="food-grid">
-              {filteredFoods.map((food) => {
-                const soldOut =
-                  Number(food.quantity || 0) <= 0 ||
-                  food.isAvailable === false;
+            <>
+              <div className="food-grid">
+                {visibleFoods.map((food) => {
+                  const soldOut =
+                    Number(food.quantity || 0) <= 0 ||
+                    food.isAvailable === false;
 
-                const selectedQuantity = getQuantity(food._id);
+                  return (
+                    <article
+                      key={food._id}
+                      className={`food-card ${
+                        soldOut
+                          ? "food-card-sold-out"
+                          : ""
+                      }`}
+                    >
+                      <Link
+                        to={`/food/${food._id}`}
+                        className="food-card-image-wrap"
+                        aria-label={`View ${food.name}`}
+                      >
+                        {food.image ? (
+                          <img
+                            src={food.image}
+                            alt={food.name}
+                            className="food-card-image"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="food-image-placeholder">
+                            <i className="bi bi-image"></i>
+                            <span>Vibely Food</span>
+                          </div>
+                        )}
 
-                const totalAmount =
-                  Number(food.price || 0) * selectedQuantity;
-
-                return (
-                  <article
-                    className={`food-card ${
-                      soldOut ? "food-card-sold-out" : ""
-                    }`}
-                    key={food._id}
-                  >
-                    <div className="food-card-image-wrap">
-                      {food.image ? (
-                        <img
-                          src={food.image}
-                          alt={food.name}
-                          className="food-card-image"
-                        />
-                      ) : (
-                        <div className="food-image-placeholder">
-                          <i className="bi bi-image"></i>
-                          <span>Vibely Food</span>
-                        </div>
-                      )}
-
-                      <div className="food-card-image-overlay"></div>
-
-                      <div className="food-card-top">
                         <span className="food-category-badge">
                           {getCategoryLabel(food.category)}
                         </span>
 
-                        <span
-                          className={`food-stock-badge ${
-                            soldOut ? "sold-out" : ""
-                          }`}
-                        >
-                          <span></span>
-                          {soldOut ? "Sold out" : "Available"}
-                        </span>
-                      </div>
-
-                      {soldOut && (
-                        <div className="food-sold-overlay">
-                          <span>SOLD OUT</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="food-card-body">
-                      <div className="food-vendor-line">
-                        <span className="food-vendor-avatar">
-                          <i className="bi bi-shop"></i>
-                        </span>
-
-                        <span>{getVendorName(food)}</span>
-                      </div>
-
-                      <h3>{food.name}</h3>
-
-                      <p className="food-description">
-                        {food.description}
-                      </p>
-
-                      <div className="food-card-meta">
-                        <div className="food-price">
-                          <span>FROM</span>
-                          <strong>
-                            {formatPrice(food.price)}
-                          </strong>
-                        </div>
-
-                        {!soldOut && (
-                          <div className="food-quantity-left">
-                            <i className="bi bi-box-seam"></i>
-                            {food.quantity} left
-                          </div>
-                        )}
-                      </div>
-
-                      {!soldOut && (
-                        <div className="food-listing-quantity">
-                          <div className="food-listing-quantity-heading">
-                            <span>CHOOSE QUANTITY</span>
-                            <small>
-                              Maximum {food.quantity}
-                            </small>
-                          </div>
-
-                          <div className="food-listing-quantity-controls">
-                            <button
-                              type="button"
-                              aria-label={`Decrease ${food.name} quantity`}
-                              onClick={() =>
-                                changeQuantity(
-                                  food._id,
-                                  -1,
-                                  food.quantity
-                                )
-                              }
-                              disabled={selectedQuantity <= 1}
-                            >
-                              <i className="bi bi-dash"></i>
-                            </button>
-
-                            <strong>{selectedQuantity}</strong>
-
-                            <button
-                              type="button"
-                              aria-label={`Increase ${food.name} quantity`}
-                              onClick={() =>
-                                changeQuantity(
-                                  food._id,
-                                  1,
-                                  food.quantity
-                                )
-                              }
-                              disabled={
-                                selectedQuantity >=
-                                Number(food.quantity)
-                              }
-                            >
-                              <i className="bi bi-plus"></i>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="food-listing-actions">
-                        <button
-                          type="button"
-                          className="food-listing-add-button"
-                          onClick={() => handleAddToCart(food)}
-                          disabled={soldOut}
-                        >
-                          <span>
-                            <i className="bi bi-bag-plus"></i>
-                            {soldOut
-                              ? "Unavailable"
-                              : "Add to Cart"}
+                        {soldOut && (
+                          <span className="food-sold-overlay">
+                            Sold out
                           </span>
+                        )}
+                      </Link>
 
-                          {!soldOut && (
+                      <div className="food-card-body">
+                        <div className="food-vendor-line">
+                          <i className="bi bi-shop"></i>
+                          <span>
+                            {getVendorName(food)}
+                          </span>
+                        </div>
+
+                        <Link
+                          to={`/food/${food._id}`}
+                          className="food-card-title-link"
+                        >
+                          <h3>{food.name}</h3>
+                        </Link>
+
+                        <p className="food-description">
+                          {food.description ||
+                            "Deliciously prepared for your enjoyment."}
+                        </p>
+
+                        <div className="food-card-bottom">
+                          <div className="food-price">
+                            <small>PRICE</small>
                             <strong>
-                              {formatPrice(totalAmount)}
+                              {formatPrice(food.price)}
                             </strong>
-                          )}
-                        </button>
+                          </div>
+
+                          <div className="food-card-actions">
+  {!soldOut && (
+    <div className="food-quantity-control">
+      <button
+        type="button"
+        onClick={() => changeFoodQuantity(food, -1)}
+        disabled={getFoodQuantity(food._id) <= 1}
+      >
+        <i className="bi bi-dash"></i>
+      </button>
+
+      <span>{getFoodQuantity(food._id)}</span>
+
+      <button
+        type="button"
+        onClick={() => changeFoodQuantity(food, 1)}
+        disabled={
+          getFoodQuantity(food._id) >= Number(food.quantity)
+        }
+      >
+        <i className="bi bi-plus"></i>
+      </button>
+    </div>
+  )}
+
+  <button
+    type="button"
+    className="food-listing-add-button"
+    disabled={soldOut}
+    onClick={() => handleAddToCart(food)}
+    aria-label={
+      soldOut
+        ? `${food.name} unavailable`
+        : `Add ${food.name} to cart`
+    }
+  >
+    <i
+      className={
+        soldOut ? "bi bi-x-lg" : "bi bi-plus-lg"
+      }
+    ></i>
+
+    <span>{soldOut ? "Sold out" : "Add"}</span>
+  </button>
+</div>
+                        </div>
 
                         <Link
                           to={`/food/${food._id}`}
                           className="food-listing-details-button"
                         >
-                          View Details
+                          View details
                           <i className="bi bi-arrow-up-right"></i>
                         </Link>
                       </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              {visibleCount < filteredFoods.length && (
+                <div className="food-load-more">
+                  <p>
+                    Showing {visibleFoods.length} of{" "}
+                    {filteredFoods.length} dishes
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleCount(
+                        (previous) => previous + 12
+                      )
+                    }
+                  >
+                    Load More Foods
+                    <i className="bi bi-arrow-down"></i>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
 
@@ -596,7 +672,6 @@ const Food = () => {
           <div className="food-bottom-banner-inner">
             <div>
               <span>VIBELY FOOD</span>
-
               <h2>
                 Your favourites,
                 <em> one order away.</em>
