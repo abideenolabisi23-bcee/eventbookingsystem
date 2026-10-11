@@ -146,7 +146,8 @@ const tabs = [
 export default function MyTickets() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const requestedType = searchParams.get("type");
+  const requestedType =
+  searchParams.get("type") || searchParams.get("tab");
   const requestedBooking = searchParams.get("booking");
 
   const activeTab = ["events", "apartments", "food"].includes(requestedType)
