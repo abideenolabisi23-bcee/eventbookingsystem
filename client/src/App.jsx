@@ -77,6 +77,7 @@ import FoodVendorAddFood from "./pages/FoodVendorAddFood";
 import FoodVendorEditFood from "./pages/FoodVendorEditFood";
 import FoodVendorEarnings from "./pages/FoodVendorEarnings";
 
+import ForgotPassword from "./pages/ForgotPassword";
 function App() {
   return (
     <BrowserRouter>
@@ -89,9 +90,10 @@ function App() {
         <Route path="/food" element={<Food />} />
         <Route path="/food/:id" element={<FoodDetails />} />
         <Route path="/food-cart" element={<FoodCart />} />
-
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        
+<Route path="/login" element={<Login />} />
+<Route path="/signup" element={<Signup />} />
+<Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route element={<UserProtectedRoute />}>
           <Route path="/profile" element={<Profile />} />
