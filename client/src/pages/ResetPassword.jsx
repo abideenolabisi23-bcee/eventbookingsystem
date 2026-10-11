@@ -10,12 +10,13 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
   const [feedback, setFeedback] = useState({
     show: false,
     type: "",
     message: "",
   });
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -25,6 +26,15 @@ const ResetPassword = () => {
         show: true,
         type: "error",
         message: "Invalid password reset link.",
+      });
+      return;
+    }
+
+    if (!password || !confirmPassword) {
+      setFeedback({
+        show: true,
+        type: "error",
+        message: "Please fill in both password fields.",
       });
       return;
     }
@@ -49,23 +59,29 @@ const ResetPassword = () => {
 
     try {
       setLoading(true);
-      setFeedback({ show: false, type: "", message: "" });
+
+      setFeedback({
+        show: false,
+        type: "",
+        message: "",
+      });
 
       const response = await axios.patch(
-  `https://eventbookingsystem-sooty.vercel.app/api/v1/reset-password/${encodeURIComponent(token)}`,
-  {
-    password,
-    confirmPassword,
-  }
-);
+        `https://eventbookingsystem-sooty.vercel.app/api/v1/reset-password/${encodeURIComponent(token)}`,
+        {
+          password,
+          confirmPassword,
+        }
+      );
 
       setSuccess(true);
+
       setFeedback({
         show: true,
         type: "success",
         message:
           response.data?.message ||
-          "Your password has been reset successfully.",
+          "Your password has been reset successfully. You can now log in.",
       });
 
       setPassword("");
@@ -76,7 +92,7 @@ const ResetPassword = () => {
         type: "error",
         message:
           error.response?.data?.message ||
-          "Unable to reset password. The link may have expired.",
+          "Unable to reset password. Your reset link may have expired. Please request a new link.",
       });
     } finally {
       setLoading(false);
@@ -86,16 +102,24 @@ const ResetPassword = () => {
   return (
     <main className="admin-password-page">
       <div className="admin-password-card">
-        <div className="admin-password-logo">V</div>
+        <div className="admin-password-logo">
+          V
+        </div>
 
         <span className="admin-password-label">
           VIBELY ACCOUNT
         </span>
 
-        <h1>Reset your password</h1>
+        <h1>
+          {success
+            ? "Password reset successful!"
+            : "Reset your password"}
+        </h1>
 
         <p className="admin-password-description">
-          Create a new password to securely access your Vibely account.
+          {success
+            ? "Your Vibely account password has been updated. You can now sign in with your new password."
+            : "Enter your new password below to securely regain access to your Vibely account."}
         </p>
 
         {feedback.show && (
@@ -109,7 +133,8 @@ const ResetPassword = () => {
                   ? "bi bi-check-circle-fill"
                   : "bi bi-exclamation-circle-fill"
               }
-            />
+            ></i>
+
             <span>{feedback.message}</span>
           </div>
         )}
@@ -117,17 +142,23 @@ const ResetPassword = () => {
         {!success ? (
           <form onSubmit={handleSubmit}>
             <div className="admin-password-field">
-              <label htmlFor="new-password">New password</label>
+              <label htmlFor="new-password">
+                New password
+              </label>
 
               <div className="admin-password-input">
                 <i className="bi bi-lock"></i>
+
                 <input
                   id="new-password"
                   type="password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) =>
+                    setPassword(event.target.value)
+                  }
                   placeholder="Enter new password"
                   autoComplete="new-password"
+                  minLength={8}
                   required
                 />
               </div>
@@ -140,6 +171,7 @@ const ResetPassword = () => {
 
               <div className="admin-password-input">
                 <i className="bi bi-shield-lock"></i>
+
                 <input
                   id="confirm-password"
                   type="password"
@@ -149,6 +181,7 @@ const ResetPassword = () => {
                   }
                   placeholder="Confirm new password"
                   autoComplete="new-password"
+                  minLength={8}
                   required
                 />
               </div>
@@ -159,19 +192,29 @@ const ResetPassword = () => {
               className="admin-password-button"
               disabled={loading}
             >
-              {loading ? "Resetting password..." : "Reset Password"}
+              {loading
+                ? "Resetting password..."
+                : "Reset Password"}
             </button>
           </form>
         ) : (
-          <Link to="/login" className="admin-password-back">
+          <Link
+            to="/login"
+            className="admin-password-back"
+          >
             Continue to Login
           </Link>
         )}
 
-        <Link to="/login" className="admin-password-back">
-          <i className="bi bi-arrow-left"></i>
-          Back to Login
-        </Link>
+        {!success && (
+          <Link
+            to="/login"
+            className="admin-password-back"
+          >
+            <i className="bi bi-arrow-left"></i>
+            Back to Login
+          </Link>
+        )}
 
         <div className="admin-password-secure">
           <i className="bi bi-shield-lock"></i>
