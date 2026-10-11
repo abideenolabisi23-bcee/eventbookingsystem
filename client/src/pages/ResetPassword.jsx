@@ -51,13 +51,13 @@ const ResetPassword = () => {
       setLoading(true);
       setFeedback({ show: false, type: "", message: "" });
 
-      const response = await axios.post(
-        `https://eventbookingsystem-sooty.vercel.app/api/v1/reset-password/${encodeURIComponent(token)}`,
-        {
-          password,
-          confirmPassword,
-        }
-      );
+      const response = await axios.patch(
+  `https://eventbookingsystem-sooty.vercel.app/api/v1/reset-password/${encodeURIComponent(token)}`,
+  {
+    password,
+    confirmPassword,
+  }
+);
 
       setSuccess(true);
       setFeedback({
