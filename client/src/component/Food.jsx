@@ -622,11 +622,11 @@ const handleAddToCart = (food) => {
   >
     <i
       className={
-        soldOut ? "bi bi-x-lg" : "bi bi-plus-lg"
+        soldOut ? "bi bi-x-lg" : "bi bi-bag-plus"
       }
     ></i>
 
-    <span>{soldOut ? "Sold out" : "Add"}</span>
+    <span>{soldOut ? "Sold out" : "Add to Cart"}</span>
   </button>
 </div>
                         </div>

@@ -1075,3 +1075,29 @@
     padding: 0;
   }
 }
+
+.food-card-actions .food-listing-add-button {
+  width: auto;
+  min-width: 105px;
+  height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+@media (max-width: 600px) {
+  .food-card-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .food-card-actions .food-listing-add-button {
+    min-width: 95px;
+    width: auto;
+    padding: 0 9px;
+  }
+
+  .food-card-actions .food-listing-add-button span {
+    display: inline;
+  }
+}
