@@ -2149,7 +2149,7 @@
 
 .vtickets-grid:has(.vfood-ticket) {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 22px;
 }
@@ -2245,9 +2245,115 @@
   width: 100%;
 }
 
-.vtickets-grid > .vfood-ticket {
-  width: 100%;
-  max-width: 850px;
-  margin-left: auto;
-  margin-right: auto;
+
+.vtickets-page .vfood-ticket {
+  height: auto;
+  min-height: 0;
+  align-self: start;
+}
+
+.vtickets-page .vfood-ticket-header {
+  padding: 15px 22px;
+}
+
+.vtickets-page .vfood-ticket-eyebrow {
+  margin-top: 12px;
+}
+
+.vtickets-page .vfood-ticket-header h2 {
+  margin: 6px 0;
+  font-size: 23px;
+}
+
+.vtickets-page .vfood-ticket-body {
+  padding: 14px 20px;
+}
+
+.vtickets-page .vfood-pickup-panel {
+  padding: 12px;
+  gap: 5px;
+}
+
+.vtickets-page .vfood-pickup-panel > strong {
+  font-size: 25px;
+}
+
+.vtickets-page .vfood-pickup-panel button {
+  margin-top: 4px;
+  padding: 8px 14px;
+}
+
+.vtickets-page .vfood-order-items {
+  padding: 10px 0;
+}
+
+.vtickets-page .vfood-section-title {
+  margin-bottom: 5px;
+}
+
+.vtickets-page .vfood-order-item {
+  padding: 5px 0;
+}
+
+.vtickets-page .vfood-ticket-total {
+  padding: 9px 0;
+}
+
+.vtickets-page .vfood-ticket-status {
+  padding: 10px 0;
+}
+
+.vtickets-page .vfood-ticket-footer {
+  padding-top: 10px;
+  gap: 5px;
+}
+
+.vtickets-page .vfood-ticket-footer button {
+  margin-top: 5px;
+  padding: 10px 15px;
+}
+
+.vtickets-page .vfood-ticket {
+  height: auto;
+  min-height: 0;
+}
+
+.vtickets-page .vfood-ticket-header {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.vtickets-page .vfood-ticket-body {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.vtickets-page .vfood-pickup-panel {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.vtickets-page .vfood-order-item {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.vtickets-page .vfood-ticket-total,
+.vtickets-page .vfood-ticket-status {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.vtickets-page .vfood-ticket-footer {
+  padding-top: 7px;
+}
+
+.vtickets-page .vfood-ticket-body {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.vtickets-page .vfood-pickup-panel {
+  margin-top: 0;
+  padding: 16px;
 }

@@ -565,7 +565,7 @@ return [...events, ...apartments, ...foods].sort(
 
   return (
     <article key={item.key} className="vfood-ticket">
-      <div className="vfood-ticket-header">
+      {/* <div className="vfood-ticket-header">
         <div className="vfood-ticket-brand">
           <span>✦ VIBELY</span>
           <small>FOOD & EXPERIENCES</small>
@@ -582,7 +582,7 @@ return [...events, ...apartments, ...foods].sort(
         <h2>Your delicious moment awaits.</h2>
 
         <p>Paid, confirmed and reserved just for you.</p>
-      </div>
+      </div> */}
 
       <div className="vfood-ticket-body">
         <div className="vfood-pickup-panel">
