@@ -19,9 +19,9 @@ const OrganizerCheckIn = () => {
     localStorage.getItem("firstname") || "Organizer";
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("role");
+    localStorage.removeItem("organizerAccessToken");
+    localStorage.removeItem("organizerRefreshToken");
+    localStorage.removeItem("organizerRole");
     localStorage.removeItem("firstname");
     localStorage.removeItem("lastname");
 

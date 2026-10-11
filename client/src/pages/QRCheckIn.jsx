@@ -235,7 +235,7 @@ const QRCheckIn = () => {
     if (requestRef.current) return;
 
     const accessToken =
-      localStorage.getItem("accessToken");
+      localStorage.getItem("organizerAccessToken");
 
     if (!accessToken) {
       resetResult();
@@ -522,7 +522,7 @@ const QRCheckIn = () => {
     }
 
     const accessToken =
-      localStorage.getItem("accessToken");
+      localStorage.getItem("organizerAccessToken");
 
     if (!accessToken) {
       setMessage(

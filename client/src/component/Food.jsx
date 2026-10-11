@@ -575,22 +575,16 @@ const handleAddToCart = (food) => {
                           {food.description ||
                             "Deliciously prepared for your enjoyment."}
                         </p>
+{!soldOut && (
+  <div className="food-quantity-row">
+    <span className="food-quantity-label">Quantity</span>
 
-                        <div className="food-card-bottom">
-                          <div className="food-price">
-                            <small>PRICE</small>
-                            <strong>
-                              {formatPrice(food.price)}
-                            </strong>
-                          </div>
-
-                          <div className="food-card-actions">
-  {!soldOut && (
     <div className="food-quantity-control">
       <button
         type="button"
         onClick={() => changeFoodQuantity(food, -1)}
         disabled={getFoodQuantity(food._id) <= 1}
+        aria-label={`Decrease ${food.name} quantity`}
       >
         <i className="bi bi-dash"></i>
       </button>
@@ -603,11 +597,25 @@ const handleAddToCart = (food) => {
         disabled={
           getFoodQuantity(food._id) >= Number(food.quantity)
         }
+        aria-label={`Increase ${food.name} quantity`}
       >
         <i className="bi bi-plus"></i>
       </button>
     </div>
-  )}
+  </div>
+)}
+                        
+
+                        <div className="food-card-bottom">
+                          <div className="food-price">
+                            <small>PRICE</small>
+                            <strong>
+                              {formatPrice(food.price)}
+                            </strong>
+                          </div>
+
+                          <div className="food-card-actions">
+  
 
   <button
     type="button"
