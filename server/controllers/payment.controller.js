@@ -1294,26 +1294,116 @@ const verifyRefund = async (req, res) => {
   }
 };
 
-
 const getMyRefunds = async (req, res) => {
   const { id } = req.user;
 
   try {
-    const refunds = await RefundModel.find({
-      user: id
-    })
-      .populate({
-        path: "booking",
-        populate: {
-          path: "event",
-          select: "title location date"
-        }
-      })
-      .populate({
-        path: "tickets",
-        select: "ticketType ticketPrice ticketCode status"
-      })
-      .sort({ createdAt: -1 });
+    const [eventRefunds, apartmentRefunds, foodRefunds] =
+      await Promise.all([
+        RefundModel.find({ user: id })
+          .populate({
+            path: "booking",
+            populate: {
+              path: "event",
+              select: "title location date"
+            }
+          })
+          .populate({
+            path: "tickets",
+            select: "ticketType ticketPrice ticketCode status"
+          })
+          .lean(),
+
+        ApartmentPaymentModel.find({
+          user: id,
+          refundStatus: {
+            $in: ["pending", "refunded", "failed"]
+          }
+        })
+          .populate({
+            path: "booking",
+            populate: {
+              path: "apartment",
+              select: "title name location"
+            }
+          })
+          .lean(),
+
+        FoodPaymentModel.find({
+          user: id,
+          $or: [
+            {
+              status: {
+                $in: ["refund_pending", "refunded"]
+              }
+            },
+            {
+              refundReference: {
+                $type: "string",
+                $ne: ""
+              }
+            },
+            {
+              refundAmount: { $gt: 0 }
+            }
+          ]
+        })
+          .populate("order")
+          .lean()
+      ]);
+
+    const refunds = [
+      ...eventRefunds.map((refund) => ({
+        ...refund,
+        paymentType: "event"
+      })),
+
+      ...apartmentRefunds.map((payment) => ({
+        _id: payment._id,
+        paymentType: "apartment",
+        booking: payment.booking,
+        amount:
+          Number(payment.refundedAmount) > 0
+            ? Number(payment.refundedAmount)
+            : Number(payment.amount),
+        refundedAmount: Number(payment.refundedAmount) || 0,
+        status:
+          payment.refundStatus === "refunded"
+            ? "processed"
+            : payment.refundStatus,
+        paymentReference: payment.paymentReference,
+        paystackRefundId: payment.paystackRefundId,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt
+      })),
+
+      ...foodRefunds.map((payment) => ({
+        _id: payment._id,
+        paymentType: "food",
+        order: payment.order,
+        amount:
+          Number(payment.refundAmount) > 0
+            ? Number(payment.refundAmount)
+            : Number(payment.amount),
+        refundedAmount: Number(payment.refundAmount) || 0,
+        status:
+          payment.status === "refunded"
+            ? "processed"
+            : payment.status === "refund_pending"
+              ? "pending"
+              : "pending",
+        refundReference: payment.refundReference,
+        refundReason: payment.refundReason,
+        paymentReference: payment.reference,
+        refundedAt: payment.refundedAt,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt
+      }))
+    ].sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime()
+    );
 
     return res.status(200).send({
       message: "Refunds fetched successfully",
@@ -2122,25 +2212,63 @@ const getMyPayments = async (req, res) => {
   const { id } = req.user;
 
   try {
-    const payments = await PaymentModel.find({
-      user: id
-    })
-      .populate({
-        path: "booking",
-        populate: {
-          path: "event",
-          select: "title location date image"
-        }
-      })
-      .sort({ createdAt: -1 });
+    const [eventPayments, apartmentPayments, foodPayments] =
+      await Promise.all([
+        PaymentModel.find({ user: id })
+          .populate({
+            path: "booking",
+            populate: {
+              path: "event",
+              select: "title location date image"
+            }
+          })
+          .lean(),
+
+        ApartmentPaymentModel.find({ user: id })
+          .populate({
+            path: "booking",
+            populate: {
+              path: "apartment",
+              select: "title name location images image"
+            }
+          })
+          .lean(),
+
+        FoodPaymentModel.find({ user: id })
+          .populate({
+            path: "order"
+          })
+          .lean()
+      ]);
+
+    const payments = [
+      ...eventPayments.map((payment) => ({
+        ...payment,
+        paymentType: "event"
+      })),
+
+      ...apartmentPayments.map((payment) => ({
+        ...payment,
+        paymentType: "apartment"
+      })),
+
+      ...foodPayments.map((payment) => ({
+        ...payment,
+        paymentReference: payment.reference,
+        paymentType: "food"
+      }))
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    );
 
     return res.status(200).send({
       message: "Payments fetched successfully",
       data: payments
     });
-
   } catch (error) {
-    console.log("GET MY PAYMENTS ERROR:", error);
+    console.error("GET MY PAYMENTS ERROR:", error);
 
     return res.status(500).send({
       message: "Cannot fetch payments at this time"
