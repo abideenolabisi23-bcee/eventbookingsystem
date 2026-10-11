@@ -6,7 +6,7 @@ import Navbar from "../component/Navbar";
 import DetailFooter from "../component/DetailFooter";
 
 import vibelyLogo from "../assets/vibely-logo.png";
-import pope from "../assets/pope.jpg";
+import concertImage from "../assets/concert.jpg";
 
 import "../styles/profile.css";
 
@@ -1260,7 +1260,7 @@ const handleSaveProfile = async () => {
                             src={
                               ticket.event
                                 ?.image ||
-                              pope
+                              concertImage
                             }
                             alt={
                               ticket.event

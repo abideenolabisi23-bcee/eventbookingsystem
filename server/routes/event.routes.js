@@ -52,7 +52,7 @@ router.put(
   verifyUser,
   isOrganizer,
   isApprovedProvider,
-  upload.single("Image"),
+  upload.single("image"),
   updateEvent
 );
 

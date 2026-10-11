@@ -1,12 +1,6 @@
-import {
-  useEffect,
-  useRef,
-  useState
-} from "react";
-import {
-  useNavigate,
-  useParams
-} from "react-router-dom";
+
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import {
   ArrowLeft,
@@ -19,6 +13,8 @@ import {
   ImagePlus
 } from "lucide-react";
 import "../styles/editEvent.css";
+
+const API_URL = "https://eventbookingsystem-sooty.vercel.app/api/v1";
 
 const EditEvent = () => {
   const { id } = useParams();
@@ -35,11 +31,11 @@ const EditEvent = () => {
     isAvailable: true
   });
 
+  const [eventHasTicketTypes, setEventHasTicketTypes] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [feedback, setFeedback] = useState({
     open: false,
     type: "",
@@ -50,8 +46,7 @@ const EditEvent = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const token =
-          localStorage.getItem("organizerAccessToken");
+        const token = localStorage.getItem("organizerAccessToken");
 
         if (!token) {
           navigate("/organizer/login");
@@ -59,7 +54,7 @@ const EditEvent = () => {
         }
 
         const response = await axios.get(
-          `https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
+          `${API_URL}/events/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -69,10 +64,16 @@ const EditEvent = () => {
 
         const event = response.data.data;
 
+        setEventHasTicketTypes(
+          Array.isArray(event.ticketTypes) &&
+          event.ticketTypes.length > 0
+        );
+
         const formattedDate = event.date
-          ? new Date(event.date)
-            .toISOString()
-            .slice(0, 16)
+          ? new Date(
+              new Date(event.date).getTime() -
+              new Date(event.date).getTimezoneOffset() * 60000
+            ).toISOString().slice(0, 16)
           : "";
 
         setFormData({
@@ -81,10 +82,8 @@ const EditEvent = () => {
           location: event.location || "",
           date: formattedDate,
           price: event.price ?? "",
-          totalTickets:
-            event.totalTickets ?? "",
-          isAvailable:
-            event.isAvailable !== false
+          totalTickets: event.totalTickets ?? "",
+          isAvailable: event.isAvailable !== false
         });
 
         setPreview(event.image || "");
@@ -102,7 +101,9 @@ const EditEvent = () => {
           type: "error",
           title: "Unable to load event",
           message:
+            error.response?.data?.error ||
             error.response?.data?.message ||
+            error.message ||
             "The event information could not be loaded."
         });
       } finally {
@@ -114,13 +115,11 @@ const EditEvent = () => {
   }, [id, navigate]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } =
-      e.target;
+    const { name, value, type, checked } = e.target;
 
     setFormData((previous) => ({
       ...previous,
-      [name]:
-        type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : value
     }));
   };
 
@@ -140,10 +139,9 @@ const EditEvent = () => {
         open: true,
         type: "error",
         title: "Invalid image",
-        message:
-          "Please select a JPG, PNG or WEBP image."
+        message: "Please select a JPG, PNG or WEBP image."
       });
-
+      e.target.value = "";
       return;
     }
 
@@ -152,27 +150,25 @@ const EditEvent = () => {
         open: true,
         type: "error",
         title: "Image is too large",
-        message:
-          "Your event image must be 5MB or smaller."
+        message: "Your event image must be 5MB or smaller."
       });
-
+      e.target.value = "";
       return;
     }
 
     setImage(selectedImage);
-    setPreview(
-      URL.createObjectURL(selectedImage)
-    );
+    setPreview(URL.createObjectURL(selectedImage));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (saving) return;
+
     try {
       setSaving(true);
 
-      const token =
-        localStorage.getItem("organizerAccessToken");
+      const token = localStorage.getItem("organizerAccessToken");
 
       if (!token) {
         navigate("/organizer/login");
@@ -181,32 +177,23 @@ const EditEvent = () => {
 
       const data = new FormData();
 
-      data.append("title", formData.title);
-      data.append(
-        "description",
-        formData.description
-      );
-      data.append(
-        "location",
-        formData.location
-      );
-      data.append("date", formData.date);
-      data.append("price", formData.price);
-      data.append(
-        "totalTickets",
-        formData.totalTickets
-      );
-      data.append(
-        "isAvailable",
-        formData.isAvailable
-      );
+      data.append("title", formData.title.trim());
+      data.append("description", formData.description.trim());
+      data.append("location", formData.location.trim());
+      data.append("date", new Date(formData.date).toISOString());
+      data.append("isAvailable", String(formData.isAvailable));
+
+      if (!eventHasTicketTypes) {
+        data.append("price", String(formData.price));
+        data.append("totalTickets", String(formData.totalTickets));
+      }
 
       if (image) {
         data.append("image", image);
       }
 
-      await axios.put(
-        `https://eventbookingsystem-sooty.vercel.app/api/v1/events/${id}`,
+      const response = await axios.put(
+        `${API_URL}/events/${id}`,
         data,
         {
           headers: {
@@ -220,9 +207,16 @@ const EditEvent = () => {
         type: "success",
         title: "Event updated",
         message:
+          response.data?.message ||
           "Your event changes have been saved successfully."
       });
     } catch (error) {
+      console.error("UPDATE EVENT ERROR:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
       if (error.response?.status === 401) {
         localStorage.removeItem("organizerAccessToken");
         localStorage.removeItem("organizerRefreshToken");
@@ -231,13 +225,23 @@ const EditEvent = () => {
         return;
       }
 
+      const serverError = error.response?.data?.error;
+      const serverMessage = error.response?.data?.message;
+
+      const errorMessage =
+        (typeof serverError === "string" && serverError) ||
+        (typeof serverMessage === "string" && serverMessage) ||
+        (error.response
+          ? `Request failed with status ${error.response.status}.`
+          : error.message === "Network Error"
+            ? "Unable to connect to the server. Please check your internet connection and the API server."
+            : error.message || "Your event could not be updated at this time.");
+
       setFeedback({
         open: true,
         type: "error",
         title: "Unable to update event",
-        message:
-          error.response?.data?.message ||
-          "Your event could not be updated at this time."
+        message: errorMessage
       });
     } finally {
       setSaving(false);
@@ -273,11 +277,7 @@ const EditEvent = () => {
         <div className="edit-event-topbar">
           <button
             type="button"
-            onClick={() =>
-              navigate(
-                `/organizer/events/${id}`
-              )
-            }
+            onClick={() => navigate(`/organizer/events/${id}`)}
           >
             <ArrowLeft size={18} />
             Event Details
@@ -297,19 +297,16 @@ const EditEvent = () => {
             <section className="edit-event-card">
               <div className="edit-card-heading">
                 <span>01</span>
-
                 <div>
                   <h2>Event Information</h2>
                   <p>
-                    Update the information your
-                    customers see.
+                    Update the information your customers see.
                   </p>
                 </div>
               </div>
 
               <div className="edit-form-group">
                 <label>Event title</label>
-
                 <input
                   type="text"
                   name="title"
@@ -321,7 +318,6 @@ const EditEvent = () => {
 
               <div className="edit-form-group">
                 <label>Description</label>
-
                 <textarea
                   name="description"
                   value={formData.description}
@@ -336,7 +332,6 @@ const EditEvent = () => {
                   <MapPin size={16} />
                   Location
                 </label>
-
                 <input
                   type="text"
                   name="location"
@@ -351,7 +346,6 @@ const EditEvent = () => {
                   <CalendarDays size={16} />
                   Date & time
                 </label>
-
                 <input
                   type="datetime-local"
                   name="date"
@@ -365,12 +359,10 @@ const EditEvent = () => {
             <section className="edit-event-card">
               <div className="edit-card-heading">
                 <span>02</span>
-
                 <div>
                   <h2>Ticket Information</h2>
                   <p>
-                    Manage your price and event
-                    capacity.
+                    Manage your price and event capacity.
                   </p>
                 </div>
               </div>
@@ -381,17 +373,16 @@ const EditEvent = () => {
                     <Wallet size={16} />
                     Ticket price
                   </label>
-
                   <div className="edit-price-input">
                     <span>₦</span>
-
                     <input
                       type="number"
                       name="price"
                       min="0"
                       value={formData.price}
                       onChange={handleChange}
-                      required
+                      disabled={eventHasTicketTypes}
+                      required={!eventHasTicketTypes}
                     />
                   </div>
                 </div>
@@ -401,38 +392,39 @@ const EditEvent = () => {
                     <Ticket size={16} />
                     Total tickets
                   </label>
-
                   <input
                     type="number"
                     name="totalTickets"
                     min="0"
-                    value={
-                      formData.totalTickets
-                    }
+                    step="1"
+                    value={formData.totalTickets}
                     onChange={handleChange}
-                    required
+                    disabled={eventHasTicketTypes}
+                    required={!eventHasTicketTypes}
                   />
                 </div>
               </div>
 
+              {eventHasTicketTypes && (
+                <p>
+                  This event uses ticket categories. The displayed
+                  price and capacity are calculated from those
+                  categories and cannot be changed here.
+                </p>
+              )}
+
               <label className="edit-availability">
                 <div>
-                  <strong>
-                    Event availability
-                  </strong>
-
+                  <strong>Event availability</strong>
                   <span>
-                    Allow customers to book this
-                    event.
+                    Allow customers to book this event.
                   </span>
                 </div>
 
                 <input
                   type="checkbox"
                   name="isAvailable"
-                  checked={
-                    formData.isAvailable
-                  }
+                  checked={formData.isAvailable}
                   onChange={handleChange}
                 />
 
@@ -445,21 +437,17 @@ const EditEvent = () => {
             <section className="edit-event-card edit-image-card">
               <div className="edit-card-heading">
                 <span>03</span>
-
                 <div>
                   <h2>Event Image</h2>
                   <p>
-                    Replace your current event
-                    cover.
+                    Replace your current event cover.
                   </p>
                 </div>
               </div>
 
               <div
                 className="edit-image-preview"
-                onClick={() =>
-                  fileInputRef.current?.click()
-                }
+                onClick={() => fileInputRef.current?.click()}
               >
                 {preview ? (
                   <img
@@ -498,20 +486,13 @@ const EditEvent = () => {
               disabled={saving}
             >
               <Save size={18} />
-
-              {saving
-                ? "Saving Changes..."
-                : "Save Changes"}
+              {saving ? "Saving Changes..." : "Save Changes"}
             </button>
 
             <button
               type="button"
               className="edit-cancel-button"
-              onClick={() =>
-                navigate(
-                  `/organizer/events/${id}`
-                )
-              }
+              onClick={() => navigate(`/organizer/events/${id}`)}
             >
               Cancel
             </button>
@@ -525,9 +506,7 @@ const EditEvent = () => {
             <div
               className={`edit-feedback-icon ${feedback.type}`}
             >
-              {feedback.type === "success"
-                ? "✓"
-                : "!"}
+              {feedback.type === "success" ? "✓" : "!"}
             </div>
 
             <span className="edit-feedback-label">
@@ -537,7 +516,6 @@ const EditEvent = () => {
             </span>
 
             <h2>{feedback.title}</h2>
-
             <p>{feedback.message}</p>
 
             <button

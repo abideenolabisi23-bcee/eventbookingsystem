@@ -18,11 +18,12 @@ import concertImage from "../assets/concert.jpg";
 const eventPictures = [
   techconference,
   conference,
-  overallconcert,
+  concertImage,
   musci,
   conference,
   newconcert,
-  concertImage
+  overallconcert, 
+  pope
 ];
 
 const getEventPicture = (event, events) => {

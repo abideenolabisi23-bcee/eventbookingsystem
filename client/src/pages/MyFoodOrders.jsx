@@ -365,28 +365,36 @@ const MyFoodOrders = () => {
                   <div className="my-food-orders-grid">
                     {orders.map(
                       (order, index) => {
-                        const food =
-                          order.food;
+           const food = order.food;
 
-                        return (
+const orderFoodImage =
+  food?.image ||
+  order.items?.find(
+    (item) => item.food?.image || item.image
+  )?.food?.image ||
+  order.items?.find(
+    (item) => item.food?.image || item.image
+  )?.image ||
+  order.foodImage ||
+  "";
+
+return (
                           <article
                             className="my-food-order-card"
                             key={order._id}
                           >
                             <div className="my-food-order-image">
-                              {food?.image ? (
-                                <img
-                                  src={food.image}
-                                  alt={
-                                    food?.name ||
-                                    "Food"
-                                  }
-                                />
-                              ) : (
-                                <div className="my-food-image-placeholder">
-                                  <i className="bi bi-cup-hot"></i>
-                                </div>
-                              )}
+                        {orderFoodImage ? (
+  <img
+    src={orderFoodImage}
+    alt="Ordered food"
+    loading="lazy"
+  />
+) : (
+  <div className="my-food-image-placeholder">
+    <i className="bi bi-cup-hot"></i>
+  </div>
+)}
 
                               <div className="my-food-image-overlay"></div>
 

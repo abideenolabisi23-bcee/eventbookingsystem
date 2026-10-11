@@ -14,7 +14,7 @@ function FoodOrderDetails() {
 
   useEffect(() => {
     const fetchOrder = async () => {
-      const accessToken = localStorage.getItem("accessToken");
+      const accessToken = localStorage.getItem("userAccessToken");
 
       if (!accessToken) {
         navigate("/login", {

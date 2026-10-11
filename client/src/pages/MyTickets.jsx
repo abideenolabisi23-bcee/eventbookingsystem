@@ -167,6 +167,24 @@ export default function MyTickets() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
   const [failedSections, setFailedSections] = useState([]);
+  const [copiedPickupCode, setCopiedPickupCode] = useState("");
+
+const copyPickupCode = async (code) => {
+  if (!code) return;
+
+  try {
+    await navigator.clipboard.writeText(code);
+
+    setCopiedPickupCode(code);
+
+    setTimeout(() => {
+      setCopiedPickupCode("");
+    }, 5000);
+  } catch (error) {
+    setCopiedPickupCode("");
+    window.prompt("Copy your pickup code:", code);
+  }
+};
 
   const changeTab = (tab) => {
     setSearchParams(tab === "all" ? {} : { type: tab });
@@ -573,16 +591,22 @@ return [...events, ...apartments, ...foods].sort(
           <small>Present this code to your food vendor</small>
 
           {order.pickupCode && (
-            <button
-              type="button"
-              onClick={() =>
-                navigator.clipboard.writeText(order.pickupCode)
-              }
-            >
-              <i className="bi bi-copy"></i>
-              Copy pickup code
-            </button>
-          )}
+  <button
+    type="button"
+    onClick={() => copyPickupCode(order.pickupCode)}
+  >
+    <i
+      className={`bi ${
+        copiedPickupCode === order.pickupCode
+          ? "bi-check-circle-fill"
+          : "bi-copy"
+      }`}
+    ></i>
+    {copiedPickupCode === order.pickupCode
+      ? "Copied successfully!"
+      : "Copy pickup code"}
+  </button>
+)}
         </div>
 
         <div className="vfood-order-items">
@@ -953,9 +977,23 @@ return [...events, ...apartments, ...foods].sort(
         <button
           type="button"
           onClick={() =>
-            navigator.clipboard.writeText(
-              selectedFoodOrder.pickupCode
-            )
+            <button
+  type="button"
+  onClick={() =>
+    copyPickupCode(selectedFoodOrder.pickupCode)
+  }
+>
+  <i
+    className={`bi ${
+      copiedPickupCode === selectedFoodOrder.pickupCode
+        ? "bi-check-circle-fill"
+        : "bi-copy"
+    }`}
+  ></i>
+  {copiedPickupCode === selectedFoodOrder.pickupCode
+    ? "Copied successfully!"
+    : "Copy pickup code"}
+</button>
           }
         >
           <i className="bi bi-copy"></i> Copy pickup code

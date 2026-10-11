@@ -45,7 +45,7 @@ const OrganizerEventDetails = () => {
         setEvent(response.data.data);
       } catch (error) {
         if (error.response?.status === 401) {
-          localStorage.removeItem("aorganizerAccessToken");
+          localStorage.removeItem("orrganizerAccessToken");
           localStorage.removeItem("organizerRefreshToken");
           localStorage.removeItem("organizerRole");
           navigate("/organizer/login");

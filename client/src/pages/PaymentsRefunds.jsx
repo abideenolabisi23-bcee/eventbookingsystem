@@ -8,29 +8,137 @@ import vibelyLogo from "../assets/vibely-logo.png";
 
 import "../styles/paymentsRefunds.css";
 
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://eventbookingsystem-sooty.vercel.app/api/v1";
+
+const formatPrice = (amount) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0
+  }).format(Number(amount) || 0);
+
+const formatDate = (value) => {
+  if (!value) return "Unavailable";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "Unavailable";
+
+  return new Intl.DateTimeFormat("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
+};
+
+const formatStatus = (status) =>
+  String(status || "pending")
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const isSuccessfulPayment = (payment) =>
+  ["paid", "success", "successful", "partially_refunded", "refunded"].includes(
+    payment.status
+  );
+
+const isCompletedRefund = (refund) =>
+  ["processed", "refunded"].includes(refund.status);
+
+const getCategory = (item) => {
+  if (item.paymentType === "apartment") {
+    return {
+      name: "Apartment",
+      icon: "bi bi-house-door",
+      title:
+        item.booking?.apartment?.title ||
+        item.booking?.apartment?.name ||
+        "Apartment Booking",
+      location: item.booking?.apartment?.location,
+      detailLabel: "BOOKING REFERENCE",
+      detail:
+        item.booking?.bookingReference ||
+        item.booking?._id ||
+        "—"
+    };
+  }
+
+  if (item.paymentType === "food") {
+    return {
+      name: "Food",
+      icon: "bi bi-basket2",
+      title:
+        item.order?.orderNumber
+          ? `Food Order ${item.order.orderNumber}`
+          : "Food Order",
+      location: null,
+      detailLabel: "ORDER REFERENCE",
+      detail:
+        item.order?.orderReference ||
+        item.order?.orderNumber ||
+        item.order?._id ||
+        "—"
+    };
+  }
+
+  return {
+    name: "Event",
+    icon: "bi bi-ticket-perforated",
+    title:
+      item.booking?.event?.title ||
+      "Event Ticket",
+    location: item.booking?.event?.location,
+    detailLabel: "TICKET CATEGORY",
+    detail:
+      item.booking?.ticketType ||
+      (Array.isArray(item.booking?.selections)
+        ? item.booking.selections
+            .map((selection) => selection.ticketType)
+            .filter(Boolean)
+            .join(", ")
+        : "") ||
+      "—"
+  };
+};
+
+const getStatusIcon = (status, isRefund = false) => {
+  if (
+    isRefund
+      ? ["processed", "refunded"].includes(status)
+      : ["paid", "success", "successful", "partially_refunded", "refunded"].includes(status)
+  ) {
+    return "bi bi-check-circle-fill";
+  }
+
+  if (status === "failed") return "bi bi-x-circle-fill";
+
+  return "bi bi-clock-fill";
+};
+
 const PaymentsRefunds = () => {
   const navigate = useNavigate();
 
   const [payments, setPayments] = useState([]);
   const [refunds, setRefunds] = useState([]);
-  const [activeTab, setActiveTab] =
-    useState("payments");
-
+  const [activeTab, setActiveTab] = useState("payments");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
+
     const fetchData = async () => {
-      const accessToken =
-        localStorage.getItem("userAccessToken");
+      const accessToken = localStorage.getItem("userAccessToken");
 
       if (!accessToken) {
         navigate("/login", {
-          state: {
-            returnTo: "/payments-refunds",
-          },
+          replace: true,
+          state: { returnTo: "/payments-refunds" }
         });
-
         return;
       }
 
@@ -39,128 +147,93 @@ const PaymentsRefunds = () => {
         setError("");
 
         const headers = {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`
         };
 
-        const [
-          paymentsResponse,
-          refundsResponse,
-        ] = await Promise.all([
-          axios.get(
-            "https://eventbookingsystem-sooty.vercel.app/api/v1/payments/my",
-            {
-              headers,
-            }
-          ),
-
-          axios.get(
-            "https://eventbookingsystem-sooty.vercel.app/api/v1/refunds/my",
-            {
-              headers,
-            }
-          ),
+        const [paymentsResponse, refundsResponse] = await Promise.all([
+          axios.get(`${API}/payments/my`, { headers }),
+          axios.get(`${API}/refunds/my`, { headers })
         ]);
 
+        if (!active) return;
+
+        const paymentData = paymentsResponse.data.data || [];
+        const refundData = refundsResponse.data.data || [];
+
         setPayments(
-          paymentsResponse.data.data || []
+          [...paymentData].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() -
+              new Date(a.createdAt).getTime()
+          )
         );
 
         setRefunds(
-          refundsResponse.data.data || []
+          [...refundData].sort(
+            (a, b) =>
+              new Date(b.updatedAt || b.createdAt).getTime() -
+              new Date(a.updatedAt || a.createdAt).getTime()
+          )
         );
-      } catch (error) {
-        console.log(
-          "PAYMENTS AND REFUNDS ERROR:",
-          error
-        );
+      } catch (requestError) {
+        if (!active) return;
 
-       if (error.response?.status === 401) {
-  localStorage.removeItem("userAccessToken");
-  localStorage.removeItem("userRefreshToken");
-  localStorage.removeItem("userRole");
+        if (requestError.response?.status === 401) {
+          localStorage.removeItem("userAccessToken");
+          localStorage.removeItem("userRefreshToken");
+          localStorage.removeItem("userRole");
 
-  navigate("/login", {
-    replace: true,
-    state: {
-      returnTo: "/payments-refunds",
-    },
-  });
+          navigate("/login", {
+            replace: true,
+            state: { returnTo: "/payments-refunds" }
+          });
+          return;
+        }
 
-  return;
-}
         setError(
-          error.response?.data?.message ||
+          requestError.response?.data?.message ||
           "Unable to load your payment activity."
         );
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchData();
+
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
-  const formatPrice = (amount) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
-  const formatDate = (date) => {
-    if (!date) {
-      return "Unavailable";
-    }
-
-    return new Intl.DateTimeFormat("en-NG", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(date));
-  };
-
-  const formatStatus = (status) => {
-    if (!status) {
-      return "Pending";
-    }
-
-    return status
-      .replaceAll("_", " ")
-      .replace(/\b\w/g, (letter) =>
-        letter.toUpperCase()
-      );
-  };
-
-  const successfulPayments =
-    payments.filter(
-      (payment) =>
-        payment.status === "success" ||
-        payment.status === "successful" ||
-        payment.status === "paid"
-    ).length;
+  const successfulPayments = payments.filter(isSuccessfulPayment).length;
 
   const totalPaid = payments.reduce(
-    (total, payment) => {
-      if (
-        payment.status === "success" ||
-        payment.status === "successful" ||
-        payment.status === "paid"
-      ) {
-        return total + (payment.amount || 0);
-      }
-
-      return total;
-    },
+    (total, payment) =>
+      isSuccessfulPayment(payment)
+        ? total + Number(payment.amount || 0)
+        : total,
     0
   );
 
-  const totalRefunded = refunds.reduce(
-    (total, refund) =>
-      total + (refund.amount || 0),
+  const completedRefunds = refunds.filter(isCompletedRefund);
+
+  const totalRefunded = completedRefunds.reduce(
+    (total, refund) => total + Number(refund.amount || 0),
     0
+  );
+
+  const renderInformation = (icon, label, value) => (
+    <div>
+      <div className="payment-info-icon">
+        <i className={icon}></i>
+      </div>
+
+      <div>
+        <span>{label}</span>
+        <strong>{value || "—"}</strong>
+      </div>
+    </div>
   );
 
   if (loading) {
@@ -170,15 +243,8 @@ const PaymentsRefunds = () => {
 
         <div className="payment-page-loading">
           <div className="payment-loader"></div>
-
-          <h3>
-            Loading payment activity...
-          </h3>
-
-          <p>
-            We're getting your transactions
-            ready.
-          </p>
+          <h3>Loading payment activity...</h3>
+          <p>We're getting your transactions ready.</p>
         </div>
 
         <DetailFooter />
@@ -197,42 +263,29 @@ const PaymentsRefunds = () => {
 
           <div className="payments-hero-inner">
             <div className="payments-hero-copy">
-              <span className="payments-eyebrow">
-                YOUR ACCOUNT
-              </span>
+              <span className="payments-eyebrow">YOUR ACCOUNT</span>
 
               <h1>
-                Payments &
-                <em> Refunds.</em>
+                Payments & <em>Refunds.</em>
               </h1>
 
               <p>
-                Keep track of your Vibely
-                transactions, payments and
+                Keep track of your Vibely transactions, payments and
                 refund activity in one place.
               </p>
             </div>
 
             <div className="payments-hero-card">
-              <img
-                src={vibelyLogo}
-                alt="Vibely"
-              />
+              <img src={vibelyLogo} alt="Vibely" />
 
               <div>
-                <span>
-                  TRANSACTION HISTORY
-                </span>
+                <span>TRANSACTION HISTORY</span>
 
                 <strong>
-                  {payments.length +
-                    refunds.length}{" "}
-                  Transactions
+                  {payments.length + refunds.length} Transactions
                 </strong>
 
-                <p>
-                  SECURE · VIBELY
-                </p>
+                <p>SECURE · VIBELY</p>
               </div>
             </div>
           </div>
@@ -246,10 +299,7 @@ const PaymentsRefunds = () => {
               </div>
 
               <div>
-                <strong>
-                  Unable to load your activity
-                </strong>
-
+                <strong>Unable to load your activity</strong>
                 <p>{error}</p>
               </div>
             </div>
@@ -264,17 +314,9 @@ const PaymentsRefunds = () => {
                   </div>
 
                   <div>
-                    <span>
-                      ALL PAYMENTS
-                    </span>
-
-                    <strong>
-                      {payments.length}
-                    </strong>
-
-                    <p>
-                      Payment transactions
-                    </p>
+                    <span>ALL PAYMENTS</span>
+                    <strong>{payments.length}</strong>
+                    <p>Payment transactions</p>
                   </div>
                 </div>
 
@@ -284,17 +326,9 @@ const PaymentsRefunds = () => {
                   </div>
 
                   <div>
-                    <span>
-                      SUCCESSFUL
-                    </span>
-
-                    <strong>
-                      {successfulPayments}
-                    </strong>
-
-                    <p>
-                      Completed payments
-                    </p>
+                    <span>SUCCESSFUL</span>
+                    <strong>{successfulPayments}</strong>
+                    <p>Completed payments</p>
                   </div>
                 </div>
 
@@ -304,17 +338,11 @@ const PaymentsRefunds = () => {
                   </div>
 
                   <div>
-                    <span>
-                      TOTAL PAID
-                    </span>
-
+                    <span>TOTAL PAID</span>
                     <strong className="payment-summary-money">
                       {formatPrice(totalPaid)}
                     </strong>
-
-                    <p>
-                      Successful payments
-                    </p>
+                    <p>Successful payments</p>
                   </div>
                 </div>
 
@@ -324,21 +352,13 @@ const PaymentsRefunds = () => {
                   </div>
 
                   <div>
-                    <span>
-                      REFUNDED
-                    </span>
-
+                    <span>REFUNDED</span>
                     <strong className="payment-summary-money">
-                      {formatPrice(
-                        totalRefunded
-                      )}
+                      {formatPrice(totalRefunded)}
                     </strong>
-
                     <p>
-                      {refunds.length}{" "}
-                      {refunds.length === 1
-                        ? "refund"
-                        : "refunds"}
+                      {completedRefunds.length} completed{" "}
+                      {completedRefunds.length === 1 ? "refund" : "refunds"}
                     </p>
                   </div>
                 </div>
@@ -346,17 +366,10 @@ const PaymentsRefunds = () => {
 
               <div className="payments-section-heading">
                 <div>
-                  <span>
-                    FINANCIAL ACTIVITY
-                  </span>
-
-                  <h2>
-                    Transaction history
-                  </h2>
-
+                  <span>FINANCIAL ACTIVITY</span>
+                  <h2>Transaction history</h2>
                   <p>
-                    Review your Vibely payments
-                    and refund activity.
+                    Review your Vibely payments and refund activity.
                   </p>
                 </div>
 
@@ -364,13 +377,8 @@ const PaymentsRefunds = () => {
                   <i className="bi bi-shield-check"></i>
 
                   <div>
-                    <strong>
-                      Secure payments
-                    </strong>
-
-                    <span>
-                      Protected transactions
-                    </span>
+                    <strong>Secure payments</strong>
+                    <span>Protected transactions</span>
                   </div>
                 </div>
               </div>
@@ -378,42 +386,22 @@ const PaymentsRefunds = () => {
               <div className="payment-tabs">
                 <button
                   type="button"
-                  className={
-                    activeTab === "payments"
-                      ? "active"
-                      : ""
-                  }
-                  onClick={() =>
-                    setActiveTab("payments")
-                  }
+                  className={activeTab === "payments" ? "active" : ""}
+                  onClick={() => setActiveTab("payments")}
                 >
                   <i className="bi bi-credit-card"></i>
-
                   Payments
-
-                  <span>
-                    {payments.length}
-                  </span>
+                  <span>{payments.length}</span>
                 </button>
 
                 <button
                   type="button"
-                  className={
-                    activeTab === "refunds"
-                      ? "active"
-                      : ""
-                  }
-                  onClick={() =>
-                    setActiveTab("refunds")
-                  }
+                  className={activeTab === "refunds" ? "active" : ""}
+                  onClick={() => setActiveTab("refunds")}
                 >
                   <i className="bi bi-arrow-counterclockwise"></i>
-
                   Refunds
-
-                  <span>
-                    {refunds.length}
-                  </span>
+                  <span>{refunds.length}</span>
                 </button>
               </div>
 
@@ -425,155 +413,82 @@ const PaymentsRefunds = () => {
                         <i className="bi bi-credit-card"></i>
                       </div>
 
-                      <span>
-                        PAYMENT HISTORY
-                      </span>
-
-                      <h3>
-                        No payments yet
-                      </h3>
+                      <span>PAYMENT HISTORY</span>
+                      <h3>No payments yet</h3>
 
                       <p>
-                        Your Vibely payment
-                        history will appear here
-                        after you complete a
-                        transaction.
+                        Your Vibely payment history will appear here
+                        after you make a transaction.
                       </p>
                     </div>
                   ) : (
-                    payments.map(
-                      (payment, index) => (
+                    payments.map((payment, index) => {
+                      const category = getCategory(payment);
+
+                      return (
                         <article
                           className="payment-card"
-                          key={payment._id}
+                          key={`${payment.paymentType}-${payment._id}`}
                         >
                           <div className="payment-card-top">
                             <div className="payment-type">
                               <div className="payment-type-icon">
-                                <i className="bi bi-credit-card"></i>
+                                <i className={category.icon}></i>
                               </div>
 
                               <div>
                                 <span>
-                                  PAYMENT{" "}
-                                  {String(
-                                    index + 1
-                                  ).padStart(
-                                    2,
-                                    "0"
-                                  )}
+                                  {category.name.toUpperCase()} PAYMENT{" "}
+                                  {String(index + 1).padStart(2, "0")}
                                 </span>
 
-                                <h3>
-                                  {payment
-                                    .booking
-                                    ?.event
-                                    ?.title ||
-                                    "Event Payment"}
-                                </h3>
+                                <h3>{category.title}</h3>
 
-                                {payment
-                                  .booking
-                                  ?.event
-                                  ?.location && (
-                                    <p>
-                                      <i className="bi bi-geo-alt"></i>
-
-                                      {
-                                        payment
-                                          .booking
-                                          ?.event
-                                          ?.location
-                                      }
-                                    </p>
-                                  )}
+                                {category.location && (
+                                  <p>
+                                    <i className="bi bi-geo-alt"></i>{" "}
+                                    {category.location}
+                                  </p>
+                                )}
                               </div>
                             </div>
 
                             <div className="payment-amount-area">
-                              <span>
-                                AMOUNT
-                              </span>
-
+                              <span>AMOUNT</span>
                               <strong>
-                                {formatPrice(
-                                  payment.amount
-                                )}
+                                {formatPrice(payment.amount)}
                               </strong>
                             </div>
                           </div>
 
                           <div className="payment-information">
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-receipt"></i>
-                              </div>
+                            {renderInformation(
+                              "bi bi-receipt",
+                              "REFERENCE",
+                              payment.paymentReference ||
+                                payment.reference
+                            )}
 
-                              <div>
-                                <span>
-                                  REFERENCE
-                                </span>
+                            {renderInformation(
+                              category.icon,
+                              category.detailLabel,
+                              category.detail
+                            )}
 
-                                <strong>
-                                  {payment.paymentReference ||
-                                    "—"}
-                                </strong>
-                              </div>
-                            </div>
+                            {renderInformation(
+                              "bi bi-wallet2",
+                              "METHOD",
+                              payment.paymentMethod ||
+                                (payment.paymentType === "food"
+                                  ? "Online Payment"
+                                  : "—")
+                            )}
 
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-ticket-perforated"></i>
-                              </div>
-
-                              <div>
-                                <span>
-                                  TICKET CATEGORY
-                                </span>
-
-                                <strong>
-                                  {payment
-                                    .booking
-                                    ?.ticketType ||
-                                    "—"}
-                                </strong>
-                              </div>
-                            </div>
-
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-wallet2"></i>
-                              </div>
-
-                              <div>
-                                <span>
-                                  METHOD
-                                </span>
-
-                                <strong>
-                                  {payment.paymentMethod ||
-                                    "—"}
-                                </strong>
-                              </div>
-                            </div>
-
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-calendar3"></i>
-                              </div>
-
-                              <div>
-                                <span>
-                                  DATE
-                                </span>
-
-                                <strong>
-                                  {formatDate(
-                                    payment.createdAt
-                                  )}
-                                </strong>
-                              </div>
-                            </div>
+                            {renderInformation(
+                              "bi bi-calendar3",
+                              "DATE",
+                              formatDate(payment.createdAt)
+                            )}
                           </div>
 
                           <div className="payment-bottom">
@@ -582,45 +497,36 @@ const PaymentsRefunds = () => {
                                 className={`transaction-status ${payment.status || ""}`}
                               >
                                 <i
-                                  className={
-                                    payment.status ===
-                                      "success" ||
-                                      payment.status ===
-                                      "successful" ||
-                                      payment.status ===
-                                      "paid"
-                                      ? "bi bi-check-circle-fill"
-                                      : payment.status ===
-                                        "failed"
-                                        ? "bi bi-x-circle-fill"
-                                        : "bi bi-clock-fill"
-                                  }
-                                ></i>
-
-                                {formatStatus(
-                                  payment.status
-                                )}
+                                  className={getStatusIcon(
+                                    payment.status
+                                  )}
+                                ></i>{" "}
+                                {formatStatus(payment.status)}
                               </span>
                             </div>
 
-                            {payment.refundedAmount >
-                              0 && (
-                                <div className="payment-refunded-amount">
-                                  <span>
-                                    REFUNDED
-                                  </span>
+                            {Number(payment.refundedAmount) > 0 && (
+                              <div className="payment-refunded-amount">
+                                <span>REFUNDED</span>
+                                <strong>
+                                  {formatPrice(payment.refundedAmount)}
+                                </strong>
+                              </div>
+                            )}
 
+                            {payment.paymentType === "food" &&
+                              Number(payment.refundAmount) > 0 && (
+                                <div className="payment-refunded-amount">
+                                  <span>REFUND AMOUNT</span>
                                   <strong>
-                                    {formatPrice(
-                                      payment.refundedAmount
-                                    )}
+                                    {formatPrice(payment.refundAmount)}
                                   </strong>
                                 </div>
                               )}
                           </div>
                         </article>
-                      )
-                    )
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -633,126 +539,83 @@ const PaymentsRefunds = () => {
                         <i className="bi bi-arrow-counterclockwise"></i>
                       </div>
 
-                      <span>
-                        REFUND HISTORY
-                      </span>
-
-                      <h3>
-                        No refunds
-                      </h3>
+                      <span>REFUND HISTORY</span>
+                      <h3>No refunds</h3>
 
                       <p>
-                        You currently have no
-                        refund activity on your
+                        You currently have no refund activity on your
                         Vibely account.
                       </p>
                     </div>
                   ) : (
-                    refunds.map(
-                      (refund, index) => (
+                    refunds.map((refund, index) => {
+                      const category = getCategory(refund);
+
+                      return (
                         <article
                           className="payment-card refund-card"
-                          key={refund._id}
+                          key={`${refund.paymentType}-${refund._id}`}
                         >
                           <div className="payment-card-top">
                             <div className="payment-type">
                               <div className="payment-type-icon refund-icon">
-                                <i className="bi bi-arrow-counterclockwise"></i>
+                                <i className={category.icon}></i>
                               </div>
 
                               <div>
                                 <span>
-                                  REFUND{" "}
-                                  {String(
-                                    index + 1
-                                  ).padStart(
-                                    2,
-                                    "0"
-                                  )}
+                                  {category.name.toUpperCase()} REFUND{" "}
+                                  {String(index + 1).padStart(2, "0")}
                                 </span>
 
-                                <h3>
-                                  {refund.booking
-                                    ?.bookingReference ||
-                                    "Ticket Refund"}
-                                </h3>
+                                <h3>{category.title}</h3>
 
                                 <p>
-                                  <i className="bi bi-receipt"></i>
-
-                                  Vibely refund
-                                  transaction
+                                  <i className="bi bi-receipt"></i>{" "}
+                                  {category.name} refund transaction
                                 </p>
                               </div>
                             </div>
 
                             <div className="payment-amount-area">
-                              <span>
-                                REFUND AMOUNT
-                              </span>
-
+                              <span>REFUND AMOUNT</span>
                               <strong>
-                                {formatPrice(
-                                  refund.amount
-                                )}
+                                {formatPrice(refund.amount)}
                               </strong>
                             </div>
                           </div>
 
                           <div className="payment-information refund-information">
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-hash"></i>
-                              </div>
+                            {renderInformation(
+                              "bi bi-hash",
+                              "REFUND REFERENCE",
+                              refund.refundReference ||
+                                refund.paystackRefundId ||
+                                refund._id
+                            )}
 
-                              <div>
-                                <span>
-                                  REFUND ID
-                                </span>
+                            {renderInformation(
+                              category.icon,
+                              category.detailLabel,
+                              category.detail
+                            )}
 
-                                <strong>
-                                  {refund.paystackRefundId ||
-                                    "—"}
-                                </strong>
-                              </div>
-                            </div>
+                            {renderInformation(
+                              "bi bi-calendar3",
+                              "DATE",
+                              formatDate(
+                                refund.refundedAt ||
+                                  refund.updatedAt ||
+                                  refund.createdAt
+                              )
+                            )}
 
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-ticket-perforated"></i>
-                              </div>
-
-                              <div>
-                                <span>
-                                  TICKETS
-                                </span>
-
-                                <strong>
-                                  {refund
-                                    .tickets
-                                    ?.length ||
-                                    0}
-                                </strong>
-                              </div>
-                            </div>
-
-                            <div>
-                              <div className="payment-info-icon">
-                                <i className="bi bi-calendar3"></i>
-                              </div>
-
-                              <div>
-                                <span>
-                                  DATE
-                                </span>
-
-                                <strong>
-                                  {formatDate(
-                                    refund.createdAt
-                                  )}
-                                </strong>
-                              </div>
-                            </div>
+                            {refund.paymentType === "event" &&
+                              renderInformation(
+                                "bi bi-ticket-perforated",
+                                "TICKETS",
+                                refund.tickets?.length ?? 0
+                              )}
                           </div>
 
                           <div className="payment-bottom">
@@ -760,37 +623,22 @@ const PaymentsRefunds = () => {
                               className={`transaction-status ${refund.status || ""}`}
                             >
                               <i
-                                className={
-                                  refund.status ===
-                                    "success" ||
-                                    refund.status ===
-                                    "successful" ||
-                                    refund.status ===
-                                    "processed" ||
-                                    refund.status ===
-                                    "refunded"
-                                    ? "bi bi-check-circle-fill"
-                                    : refund.status ===
-                                      "failed"
-                                      ? "bi bi-x-circle-fill"
-                                      : "bi bi-clock-fill"
-                                }
-                              ></i>
-
-                              {formatStatus(
-                                refund.status
-                              )}
+                                className={getStatusIcon(
+                                  refund.status,
+                                  true
+                                )}
+                              ></i>{" "}
+                              {formatStatus(refund.status)}
                             </span>
 
                             <span className="refund-note">
                               <i className="bi bi-shield-check"></i>
-
                               Refund activity
                             </span>
                           </div>
                         </article>
-                      )
-                    )
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -801,21 +649,16 @@ const PaymentsRefunds = () => {
                 </div>
 
                 <div>
-                  <span>
-                    PAYMENT SECURITY
-                  </span>
+                  <span>PAYMENT SECURITY</span>
 
                   <h3>
-                    Your transaction history,
-                    all in one place.
+                    Your transaction history, all in one place.
                   </h3>
 
                   <p>
-                    Use this page to review
-                    your event payments and
-                    keep track of refund
-                    activity on your Vibely
-                    account.
+                    Use this page to review your event, apartment,
+                    and food payments and track refunds on your
+                    Vibely account.
                   </p>
                 </div>
               </div>
