@@ -11,6 +11,7 @@ import {
   useState
 } from "react";
 
+import { createPortal } from "react-dom";
 import vibelyLogo from "../assets/vibely-logo.png";
 import "../styles/signup.css";
 
@@ -271,6 +272,41 @@ const Signup = () => {
 
   return (
     <main className="auth-signup-page">
+
+      {notification &&
+  createPortal(
+    <div
+      className={`auth-form-message auth-form-message-${notification.type}`}
+      role={notification.type === "error" ? "alert" : "status"}
+    >
+      <div className="auth-form-message-icon">
+        <i
+          className={
+            notification.type === "success"
+              ? "bi bi-check-lg"
+              : "bi bi-exclamation-lg"
+          }
+        ></i>
+      </div>
+
+      <div className="auth-form-message-content">
+        <strong>{notification.title}</strong>
+        <p>{notification.message}</p>
+      </div>
+
+      <button
+        type="button"
+        className="auth-form-message-close"
+        onClick={() => setNotification(null)}
+        aria-label="Close notification"
+      >
+        <i className="bi bi-x-lg"></i>
+      </button>
+
+      <span className="auth-form-message-progress"></span>
+    </div>,
+    document.body
+  )}
       <div className="auth-signup-glow auth-signup-glow-one"></div>
 
       <div className="auth-signup-glow auth-signup-glow-two"></div>
@@ -310,7 +346,7 @@ const Signup = () => {
               </strong>
             </div>
 
-            {notification && (
+            {/* {notification && (
               <div
                 className={`auth-form-message auth-form-message-${notification.type}`}
               >
@@ -353,7 +389,7 @@ const Signup = () => {
 
                 <span className="auth-form-message-progress"></span>
               </div>
-            )}
+            )} */}
 
             <div className="auth-signup-heading">
               <span>

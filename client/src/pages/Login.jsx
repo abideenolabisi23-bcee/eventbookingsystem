@@ -4,6 +4,7 @@ import { useFormik } from "formik";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import vibelyLogo from "../assets/vibely-logo.png";
 import "../styles/login.css";
@@ -185,6 +186,40 @@ localStorage.setItem("userRole", "user");
 
   return (
     <main className="auth-login-page">
+      {notification &&
+  createPortal(
+    <div
+      className={`auth-form-message auth-form-message-${notification.type}`}
+      role={notification.type === "error" ? "alert" : "status"}
+    >
+      <div className="auth-form-message-icon">
+        <i
+          className={
+            notification.type === "success"
+              ? "bi bi-check-lg"
+              : "bi bi-exclamation-lg"
+          }
+        ></i>
+      </div>
+
+      <div className="auth-form-message-content">
+        <strong>{notification.title}</strong>
+        <p>{notification.message}</p>
+      </div>
+
+      <button
+        type="button"
+        className="auth-form-message-close"
+        onClick={() => setNotification(null)}
+        aria-label="Close notification"
+      >
+        <i className="bi bi-x-lg"></i>
+      </button>
+
+      <span className="auth-form-message-progress"></span>
+    </div>,
+    document.body
+  )}
       <div className="auth-login-glow auth-login-glow-one"></div>
       <div className="auth-login-glow auth-login-glow-two"></div>
       <div className="auth-login-glow auth-login-glow-three"></div>
@@ -283,37 +318,6 @@ localStorage.setItem("userRole", "user");
               <img src={vibelyLogo} alt="Vibely" />
               <strong>Vibely</strong>
             </div>
-
-            {notification && (
-              <div
-                className={`auth-form-message auth-form-message-${notification.type}`}
-              >
-                <div className="auth-form-message-icon">
-                  <i
-                    className={
-                      notification.type === "success"
-                        ? "bi bi-check-lg"
-                        : "bi bi-exclamation-lg"
-                    }
-                  ></i>
-                </div>
-
-                <div className="auth-form-message-content">
-                  <strong>{notification.title}</strong>
-                  <p>{notification.message}</p>
-                </div>
-
-                <button
-                  type="button"
-                  className="auth-form-message-close"
-                  onClick={() => setNotification(null)}
-                >
-                  <i className="bi bi-x-lg"></i>
-                </button>
-
-                <span className="auth-form-message-progress"></span>
-              </div>
-            )}
 
             <div className="auth-login-heading">
               <span>MEMBER ACCESS</span>

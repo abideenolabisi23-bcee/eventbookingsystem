@@ -117,26 +117,26 @@ const Footer = () => {
       </div>
 
       <div className="vibely-footer-column">
-        <h4>Contact Us</h4>
+  <h4>Contact Us</h4>
 
-        <p>Lagos, Nigeria</p>
+  <p>Lagos, Nigeria</p>
 
-        <p>
-          abideenolabisi23@gmail.com
-        </p>
+  <a href="mailto:abideenolabisi23@gmail.com">
+    <i className="bi bi-envelope"></i>
+    {" "}abideenolabisi23@gmail.com
+  </a>
 
-        <p>
-          +234 7030699097
-        </p>
+  <a
+    href="https://wa.me/2347030699097?text=Hello%20Vibely%2C%20I%20need%20assistance%20with%20a%20booking."
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <i className="bi bi-whatsapp"></i>
+    {" "}+234 8157880215
+  </a>
 
-        <p>
-          Mon - Fri, 9:00 AM - 6:00 PM
-        </p>
-      </div>
-
-      <div className="vibely-footer-vibe">
-        Find your vibe.
-      </div>
+  <p>Mon - Fri, 9:00 AM - 6:00 PM</p>
+</div>
     </footer>
   );
 };

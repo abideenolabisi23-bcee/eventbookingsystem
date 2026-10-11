@@ -12,6 +12,7 @@ import concertImage from "../assets/concert.jpg";
 import stayImage from "../assets/luxury.avif";
 import foodImage from "../assets/foods.jpg";
 import breakfastImage from "../assets/fooood.jpg";
+import popeImage from "../assets/pope.jpg";
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -30,7 +31,19 @@ const Home = () => {
       sideLabel: "SPECIAL MOMENTS",
     },
     {
-      id: 2,
+  id: 2,
+  image: popeImage,
+  eyebrow: "PARTIES · CELEBRATIONS · MEMORIES",
+  title: "Make every",
+  highlight: "moment special.",
+  description:
+    "Discover amazing parties, beautiful celebrations and unforgettable experiences with Vibely.",
+  buttonText: "Explore Events",
+  link: "/events",
+  sideLabel: "SPECIAL CELEBRATIONS",
+},
+    {
+      id: 3,
       image: concertImage,
       eyebrow: "LIVE EVENTS · MUSIC · EXPERIENCES",
       title: "Feel the",
@@ -43,7 +56,7 @@ const Home = () => {
     },
     
     {
-      id: 3,
+      id: 4,
       image: breakfastImage,
       eyebrow: "CONNECT · DISCOVER · EXPERIENCE",
       title: "Where ideas meet",
@@ -55,7 +68,7 @@ const Home = () => {
       sideLabel: "MEET & CONNECT",
     },
     {
-      id: 4,
+      id: 5,
       image: stayImage,
       eyebrow: "APARTMENTS · COMFORT · STYLE",
       title: "Stay",
@@ -67,7 +80,7 @@ const Home = () => {
       sideLabel: "PREMIUM SPACES",
     },
     {
-      id: 5,
+      id: 6,
       image: foodImage,
       eyebrow: "FOOD · FLAVOUR · GOOD MOMENTS",
       title: "Taste the",
@@ -238,14 +251,14 @@ const Home = () => {
             </button>
           </div>
         </div>
-
+{/* 
         <a href="#explore" className="hero-scroll">
           <span>SCROLL TO DISCOVER</span>
 
           <div>
             <i className="bi bi-arrow-down"></i>
           </div>
-        </a>
+        </a> */}
       </section>
 
       
@@ -274,7 +287,7 @@ const Home = () => {
             to="/events"
             className="experience-card experience-card-large"
           >
-            <img src={concertImage} alt="Events" />
+            <img src={popeImage} alt="Events" />
 
             <div className="experience-overlay"></div>
 
