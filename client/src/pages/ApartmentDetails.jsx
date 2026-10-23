@@ -294,9 +294,15 @@ if (error.response?.status === 401) {
     }
   };
 
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
+ const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const today = getLocalDateString();
 
   const apartmentImages = apartment
     ? [
@@ -748,43 +754,49 @@ Total Rooms
                   </div>
                 </div>
 
-                <div className="booking-date-grid">
-                  <div className="booking-field">
-                    <label>Check-in</label>
+           
+<div className="booking-date-grid">
+  <div className="booking-field">
+    <label>Check-in</label>
 
-                    <input
-                      type="date"
-                      min={today}
-                      value={checkInDate}
-                      onChange={(event) =>
-                        setCheckInDate(
-                          event.target.value
-                        )
-                      }
-                    />
-                  </div>
+    <input
+      type="date"
+      min={today}
+      value={checkInDate}
+      onChange={(event) => {
+        const selectedDate = event.target.value;
 
-                  {stayType ===
-                    "overnight" && (
-                      <div className="booking-field">
-                        <label>Check-out</label>
+        setCheckInDate(selectedDate);
 
-                        <input
-                          type="date"
-                          min={
-                            checkInDate ||
-                            today
-                          }
-                          value={checkOutDate}
-                          onChange={(event) =>
-                            setCheckOutDate(
-                              event.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    )}
-                </div>
+        if (
+          checkOutDate &&
+          selectedDate &&
+          checkOutDate <= selectedDate
+        ) {
+          setCheckOutDate("");
+        }
+      }}
+      required
+    />
+  </div>
+
+  {stayType === "overnight" && (
+    <div className="booking-field">
+      <label>Check-out</label>
+
+      <input
+        type="date"
+        min={checkInDate || today}
+        value={checkOutDate}
+        onChange={(event) =>
+          setCheckOutDate(event.target.value)
+        }
+        required
+      />
+    </div>
+  )}
+</div>
+
 
                 <div className="booking-field">
                   <label>
