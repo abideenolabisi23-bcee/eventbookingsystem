@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "./Navbar";
@@ -23,6 +23,8 @@ const FoodDetails = () => {
     type: "",
     message: ""
   });
+
+  const notificationTimeoutRef = useRef(null);
 
   useEffect(() => {
     fetchFood();
@@ -86,21 +88,39 @@ const FoodDetails = () => {
   food?.isAvailable === false;
 
  
+
 const showNotification = (type, message) => {
+  // Clear any previous notification timer
+  if (notificationTimeoutRef.current) {
+    clearTimeout(notificationTimeoutRef.current);
+  }
+
+  // Display the new notification
   setNotification({
     show: true,
     type,
     message
   });
 
-  setTimeout(() => {
+  // Hide it after exactly 5 seconds
+  notificationTimeoutRef.current = setTimeout(() => {
     setNotification({
       show: false,
       type: "",
       message: ""
     });
+
+    notificationTimeoutRef.current = null;
   }, 5000);
 };
+
+useEffect(() => {
+  return () => {
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+  };
+}, []);
 
 
   const decreaseQuantity = () => {
