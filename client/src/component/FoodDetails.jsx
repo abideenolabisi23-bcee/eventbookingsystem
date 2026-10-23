@@ -85,21 +85,23 @@ const FoodDetails = () => {
   Number(food?.quantity || 0) <= 0 ||
   food?.isAvailable === false;
 
-  const showNotification = (type, message) => {
-    setNotification({
-      show: true,
-      type,
-      message
-    });
+ 
+const showNotification = (type, message) => {
+  setNotification({
+    show: true,
+    type,
+    message
+  });
 
-    setTimeout(() => {
-      setNotification({
-        show: false,
-        type: "",
-        message: ""
-      });
-    }, 3500);
-  };
+  setTimeout(() => {
+    setNotification({
+      show: false,
+      type: "",
+      message: ""
+    });
+  }, 5000);
+};
+
 
   const decreaseQuantity = () => {
     setQuantity((currentQuantity) =>
