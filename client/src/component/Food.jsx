@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Navbar from "./Navbar";
@@ -58,6 +58,8 @@ const Food = () => {
     message: ""
   });
 
+  const notificationTimeoutRef = useRef(null);
+
   const fetchFoods = async () => {
     try {
       setLoading(true);
@@ -84,6 +86,13 @@ const Food = () => {
     fetchFoods();
   }, []);
 
+  useEffect(() => {
+  return () => {
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+  };
+}, []);
   const menuCategories = useMemo(() => {
     const known = new Set(categories.map((item) => item.name));
 
@@ -175,13 +184,43 @@ const Food = () => {
     );
   };
 
-  const showNotification = (type, message) => {
+  const hideNotification = () => {
+  if (notificationTimeoutRef.current) {
+    clearTimeout(notificationTimeoutRef.current);
+    notificationTimeoutRef.current = null;
+  }
+
+  setNotification({
+    show: false,
+    type: "",
+    message: ""
+  });
+};
+
+const showNotification = (type, message) => {
+  // Clear the previous timer if another food is added
+  if (notificationTimeoutRef.current) {
+    clearTimeout(notificationTimeoutRef.current);
+  }
+
+  // Display the notification
+  setNotification({
+    show: true,
+    type,
+    message
+  });
+
+  // Automatically hide it after 5 seconds
+  notificationTimeoutRef.current = setTimeout(() => {
     setNotification({
-      show: true,
-      type,
-      message
+      show: false,
+      type: "",
+      message: ""
     });
-  };
+
+    notificationTimeoutRef.current = null;
+  }, 5000);
+};
 
   const getFoodQuantity = (foodId) => {
   return foodQuantities[foodId] || 1;
@@ -275,18 +314,12 @@ const handleAddToCart = (food) => {
           </div>
 
           <button
-            type="button"
-            aria-label="Close notification"
-            onClick={() =>
-              setNotification({
-                show: false,
-                type: "",
-                message: ""
-              })
-            }
-          >
-            <i className="bi bi-x-lg"></i>
-          </button>
+  type="button"
+  aria-label="Close notification"
+  onClick={hideNotification}
+>
+  <i className="bi bi-x-lg"></i>
+</button>
         </div>
       )}
 

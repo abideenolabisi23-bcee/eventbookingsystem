@@ -87,7 +87,18 @@ const FoodDetails = () => {
   Number(food?.quantity || 0) <= 0 ||
   food?.isAvailable === false;
 
- 
+ const hideNotification = () => {
+  if (notificationTimeoutRef.current) {
+    clearTimeout(notificationTimeoutRef.current);
+    notificationTimeoutRef.current = null;
+  }
+
+  setNotification({
+    show: false,
+    type: "",
+    message: ""
+  });
+};
 
 const showNotification = (type, message) => {
   // Clear any previous notification timer
@@ -269,18 +280,13 @@ if (loading) {
             <p>{notification.message}</p>
           </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              setNotification({
-                show: false,
-                type: "",
-                message: ""
-              })
-            }
-          >
-            <i className="bi bi-x-lg"></i>
-          </button>
+         <button
+  type="button"
+  aria-label="Close notification"
+  onClick={hideNotification}
+>
+  <i className="bi bi-x-lg"></i>
+</button>
         </div>
       )}
 

@@ -1139,3 +1139,21 @@
     flex-direction: column;
   }
 }
+
+.food-details-notification {
+  position: fixed;
+  z-index: 9999;
+  animation: foodNotificationIn 0.25s ease-out;
+}
+
+@keyframes foodNotificationIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
