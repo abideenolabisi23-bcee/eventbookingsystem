@@ -122,7 +122,7 @@ const showNotification = (type, message) => {
     });
 
     notificationTimeoutRef.current = null;
-  }, 5000);
+  }, 3000);
 };
 
 useEffect(() => {
